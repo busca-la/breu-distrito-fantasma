@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#080d10"><title>BREU — Distrito Fantasma</title>
+<style>
+:root{--ink:#090d10;--muted:#a4adb3;--red:#dc655b;--silver:#e7e9e8;--panel:rgba(7,11,14,.87)}*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#090e12;color:#edf0f0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;user-select:none;touch-action:none}button,input{font:inherit}button{cursor:pointer}#scene{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 46%,transparent 23%,rgba(1,5,7,.25) 65%,rgba(0,0,0,.78) 100%);z-index:2}#grain{position:fixed;inset:-30%;opacity:.16;pointer-events:none;z-index:2;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.28' filter='url(%23n)'/%3E%3C/svg%3E")}#hurt{position:fixed;inset:0;pointer-events:none;z-index:9;background:radial-gradient(ellipse,transparent 36%,rgba(145,22,16,.85) 110%);opacity:0;transition:opacity .18s}
+#menu{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:clamp(24px,6vw,100px);background:linear-gradient(90deg,rgba(4,8,11,.96) 0%,rgba(4,8,11,.87) 37%,rgba(4,8,11,.18) 80%),linear-gradient(0deg,rgba(2,6,9,.62),transparent 45%)}.menuleft{width:min(530px,100%);position:relative;z-index:3}.eyebrow{color:#d8a7a1;text-transform:uppercase;letter-spacing:.29em;font-size:10px;font-weight:800}.brand{display:flex;align-items:center;gap:13px;font-size:13px;font-weight:900;letter-spacing:.29em;margin-bottom:clamp(38px,9vh,92px)}.brandmark{display:grid;place-items:center;border:1px solid #7b4945;width:38px;height:38px;transform:rotate(45deg);color:#d97469}.brandmark span{transform:rotate(-45deg);font-size:16px}h1{font-family:Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-.06em;line-height:.92;font-size:clamp(66px,10vw,124px);margin:20px 0 6px}h1 span{color:#bfc9ca}.subheading{font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3.2vw,37px);font-style:italic;color:#d4a39e;margin:10px 0 22px;line-height:1.14}.lead{max-width:410px;color:#b7bdc0;font-size:14px;line-height:1.8}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:33px}.primary,.secondary{border:1px solid #d6dcdb;color:#0a0d10;background:#e1e5e4;border-radius:2px;padding:15px 22px;font-size:11px;letter-spacing:.16em;font-weight:850;min-height:50px;transition:transform .2s,background .2s}.primary:hover,.secondary:hover{transform:translateY(-2px)}.secondary{background:rgba(9,13,16,.56);color:#e7e9e8;border-color:#465056}.primary:active,.secondary:active{transform:scale(.98)}.fineprint{font-size:11px;color:#899297;margin-top:22px;line-height:1.8}.kbd{display:inline-grid;place-items:center;border:1px solid #536169;min-width:21px;padding:2px 6px;border-radius:3px;font-size:10px;color:#d4dadb}#roomPane{display:none;background:rgba(5,9,12,.9);padding:18px;border:1px solid #354249;max-width:410px;margin-top:18px}#roomPane label{display:block;font-size:10px;letter-spacing:.18em;margin-bottom:8px;color:#aebec2}#roomPane input{width:100%;background:#111a20;color:white;border:1px solid #48545b;padding:12px 13px;outline:none;text-transform:uppercase;letter-spacing:.2em}#roomActions{display:flex;gap:9px;margin-top:12px}#roomActions button{padding:12px 14px}.smallStatus{font-size:11px;line-height:1.6;color:#b6bec0;margin-top:10px}#menuSide{align-self:flex-end;max-width:200px;text-align:right;border-right:1px solid rgba(222,232,233,.34);padding-right:18px;letter-spacing:.12em;color:#89979c;font-size:10px;line-height:2}.glow{position:absolute;top:13%;right:10%;width:8px;height:8px;background:#e9a7a0;border-radius:50%;box-shadow:0 0 10px #f8887c,0 0 60px 16px #a63a3190;pointer-events:none;opacity:.8}
+#hud{position:fixed;inset:0;z-index:5;pointer-events:none;display:none}#hudTop{position:absolute;top:30px;left:34px;display:flex;gap:24px;align-items:flex-start}.hudLogo{letter-spacing:.22em;font-weight:950;font-size:21px}.hudLogo small{display:block;margin-top:6px;font-size:10px;letter-spacing:.2em;color:#a8b1b4;font-weight:500}.hudVertical{border-left:1px solid #ffffff36;padding-left:17px;margin-top:3px}.caption{font-size:9px;letter-spacing:.19em;color:#95a3a7;text-transform:uppercase}.hudValue{font-size:14px;margin-top:5px;font-weight:700;letter-spacing:.03em}.hudRight{position:absolute;right:30px;top:28px;display:flex;align-items:flex-start;gap:12px}.chip{background:#0c1418ae;border:1px solid #89979b3c;padding:10px 13px;font-size:11px;letter-spacing:.12em}.chip span{color:#c5e6dc;font-weight:800}#reticle{position:absolute;top:50%;left:50%;width:4px;height:4px;background:#d3ded9;border-radius:100%;transform:translate(-50%,-50%);box-shadow:0 0 7px #d8ece8}#interaction{position:absolute;top:57%;left:50%;transform:translateX(-50%);font-size:12px;background:#0b1419e6;border:1px solid #6979818c;padding:11px 18px;color:#f5f7f4;display:none;white-space:nowrap}#objective{position:absolute;left:32px;bottom:35px;width:min(320px,75vw);padding:16px 19px;background:linear-gradient(90deg,rgba(5,11,15,.82),rgba(5,11,15,.2));border-left:2px solid #bd726b}.objectiveTitle{font-size:10px;letter-spacing:.19em;color:#d4aa9f}.objectiveMain{font-size:15px;font-weight:650;margin-top:8px}.fuses{display:flex;gap:9px;margin-top:13px}.fuse{width:24px;height:7px;border:1px solid #70848c;background:transparent;transform:skew(-15deg)}.fuse.active{background:#cce6df;border-color:#cce6df;box-shadow:0 0 10px #a7ecea55}.meterRow{display:flex;align-items:center;gap:11px;margin-top:18px}.meterRow label{font-size:9px;color:#a6b2b6;letter-spacing:.13em;width:52px}.meter{height:3px;background:#7c8b9055;flex:1;max-width:170px}.meter>div{height:100%;background:#dce7e2;width:100%;transition:width .1s}#message{position:absolute;left:50%;top:23%;transform:translateX(-50%);padding:14px 20px;max-width:85vw;background:#080f12d9;border:1px solid #6372765c;font-size:13px;letter-spacing:.04em;line-height:1.5;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none}#enemyWarn{position:absolute;bottom:16%;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.3em;color:#e88c83;text-shadow:0 0 12px #fb594b;display:none}#mapWrap{position:absolute;right:25px;bottom:25px;width:176px;height:176px;border:1px solid #76899158;background:#091115ce;padding:5px}#miniMap{display:block;width:100%;height:100%}#mapLabel{position:absolute;left:10px;bottom:11px;font-size:8px;letter-spacing:.14em;color:#c5d0d1;pointer-events:none}#mapWrap.expanded{width:min(430px,83vw);height:min(430px,65vh);top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:8;border-color:#9eb2b9a0;box-shadow:0 0 0 9999px #030608aa}
+#mobile{display:none;position:fixed;inset:0;z-index:8;pointer-events:none}#stickOuter{position:absolute;bottom:28px;left:26px;width:132px;height:132px;background:#dcebe712;border:1px solid #dcebe741;border-radius:50%;pointer-events:auto}#stickInner{position:absolute;width:53px;height:53px;top:39px;left:39px;background:#dcebe735;border:1px solid #dcebe75d;border-radius:50%;pointer-events:none}#mobileButtons{position:absolute;right:23px;bottom:24px;display:grid;grid-template-columns:65px 65px;grid-auto-rows:65px;gap:13px;pointer-events:auto}#mobileButtons button{border-radius:50%;background:#101a20b9;color:#e9f0ed;border:1px solid #a3b5b44b;letter-spacing:.05em;font-size:10px;font-weight:800;touch-action:none}#mobileButtons button:active{background:#566d70b3}#lookLabel{position:absolute;right:28px;bottom:183px;color:#e6eeee83;font-size:10px;letter-spacing:.16em}
+#endScreen{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;text-align:center;padding:26px;background:rgba(3,7,9,.87);backdrop-filter:blur(9px)}#endScreen h2{font:normal clamp(50px,9vw,112px)/.96 Georgia,serif;letter-spacing:-.06em;margin:16px 0;color:#e4e8e5}#endScreen p{max-width:480px;color:#adb9bd;font-size:14px;line-height:1.8;margin:15px auto 28px}.spooky{font-size:10px;letter-spacing:.28em;color:#e29e93}#unsupported{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#090e12;z-index:99;text-align:center;padding:30px}
+@media(max-width:730px){#menu{padding:25px 25px 45px;background:linear-gradient(90deg,rgba(4,8,11,.95),rgba(4,8,11,.6)),linear-gradient(0deg,#05090c,transparent)}.brand{margin-bottom:32px}h1{font-size:clamp(72px,19vw,110px)}.subheading{font-size:27px}.lead{font-size:13px}.actions{margin-top:26px}.primary,.secondary{padding:12px 15px;min-height:47px;font-size:10px}#menuSide{display:none}#hudTop{top:18px;left:18px;gap:12px}.hudLogo{font-size:17px}.hudLogo small{font-size:8px}.hudRight{right:13px;top:16px;gap:4px}.chip{font-size:9px;padding:7px 8px}.hudVertical{display:none}#objective{left:14px;bottom:200px;width:210px;padding:10px 12px}.objectiveMain{font-size:12px}.meterRow{margin-top:10px}#mapWrap{right:12px;bottom:210px;width:125px;height:125px}#message{top:16%;font-size:11px}#enemyWarn{bottom:36%}}@media(max-height:640px){.brand{margin-bottom:22px}h1{font-size:69px}.subheading{font-size:23px}.lead{font-size:12px}.fineprint{margin-top:10px}.actions{margin-top:19px}}
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas><div id="vignette"></div><div id="grain"></div><div id="hurt"></div>
+<section id="menu"><div class="glow"></div><div class="menuleft"><div class="brand"><div class="brandmark"><span>✣</span></div> UMA EXPERIÊNCIA NOTURNA</div><div class="eyebrow">DISTRITO 09 <span style="margin:0 9px">/</span> 03:17 AM</div><h1>BREU<span>.</span></h1><div class="subheading">O distrito nunca dorme.</div><p class="lead">As luzes do Distrito 09 estão morrendo. Nos becos há fios caídos, vitrines vazias e uma presença que segue seus passos. Recupere três núcleos e abra o portão antes que a rede apague de vez.</p><div class="actions"><button class="primary" id="startSolo">SOBREVIVER SOZINHO &nbsp; ↗</button><button class="secondary" id="makeRoom">CRIAR SALA</button><button class="secondary" id="joinRoom">ENTRAR COM AMIGOS</button></div><div id="roomPane"><label id="roomLabel">CÓDIGO DA SALA</label><input id="roomInput" maxlength="7" placeholder="EX.: NOITE7" autocomplete="off"><div id="roomActions"><button class="primary" id="roomConfirm">CONECTAR</button><button class="secondary" id="roomBack">VOLTAR</button><button class="secondary" id="copyRoom" style="display:none">COPIAR CÓDIGO</button></div><div id="roomStatus" class="smallStatus">O modo online usa conexão gratuita entre navegadores e requer internet.</div></div><p class="fineprint">PC: <span class="kbd">W A S D</span> mover &nbsp; <span class="kbd">SHIFT</span> correr &nbsp; <span class="kbd">F</span> lanterna &nbsp; <span class="kbd">E</span> interagir.<br>Celular: controles de toque. Som recomendado. <b>Sem sustos gráficos explícitos.</b></p></div><div id="menuSide">DISTRITO 09 / 03:17<br>NENHUMA RUA É SEGURA<br>···<br>LOCAL / COOPERATIVO</div></section>
+<div id="hud"><div id="hudTop"><div class="hudLogo">BREU<small>03:17 AM · DISTRITO 09</small></div><div class="hudVertical"><div class="caption">SETOR</div><div class="hudValue" id="sectorText">BECO DE ENTRADA</div></div></div><div class="hudRight"><div class="chip" id="roomChip" style="display:none">SALA <span id="roomChipText">------</span></div><div class="chip">EQUIPE <span id="playersText">1/4</span></div><div class="chip">LUZ <span id="lightText">LIGADA</span></div></div><div id="reticle"></div><div id="interaction"></div><div id="message"></div><div id="enemyWarn">ELE ESTÁ PERTO · NÃO PARE</div><div id="objective"><div class="objectiveTitle">OBJETIVO 01 — EVACUAÇÃO DO DISTRITO</div><div class="objectiveMain" id="objectiveText">Encontre os 3 núcleos</div><div class="fuses"><div class="fuse" id="f0"></div><div class="fuse" id="f1"></div><div class="fuse" id="f2"></div></div><div class="meterRow"><label>FÔLEGO</label><div class="meter"><div id="staminaFill"></div></div></div><div class="meterRow"><label>SAÚDE</label><div class="meter"><div id="healthFill"></div></div></div></div><div id="mapWrap"><canvas id="miniMap" width="300" height="300"></canvas><div id="mapLabel">TAB / M · MAPA</div></div></div>
+<div id="mobile"><div id="stickOuter"><div id="stickInner"></div></div><div id="lookLabel">ARRASTE PARA OLHAR ↔</div><div id="mobileButtons"><button id="btnLight">LUZ</button><button id="btnRun">CORRER</button><button id="btnAction">PEGAR</button><button id="btnMap">MAPA</button></div></div>
+<div id="endScreen"><div><div class="spooky" id="endTag">EXPEDIÇÃO ENCERRADA</div><h2 id="endTitle">SEM SAÍDA.</h2><p id="endDesc">O distrito não deixa ninguém sair.</p><button class="primary" id="restart">TENTAR NOVAMENTE</button></div></div><div id="unsupported">Seu navegador não conseguiu iniciar o mundo 3D. Tente abrir no Chrome, Edge ou Safari atualizado.</div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const canvas=$('scene'); let gl=canvas.getContext('webgl2',{antialias:false,alpha:false,powerPreference:'high-performance'});
+if(!gl){$('unsupported').style.display='flex';return;}
+const mobile=matchMedia('(pointer:coarse)').matches || innerWidth<740;
+const shaderVS=`#version 300 es
+precision highp float;
+layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNorm; layout(location=2) in vec3 aCol; layout(location=3) in float aEmit;
+uniform mat4 uViewProj; uniform mat4 uModel;
+out vec3 vWorld; out vec3 vNorm; out vec3 vCol; out float vEmit;
+void main(){vec4 w=uModel*vec4(aPos,1.0); vWorld=w.xyz; vNorm=mat3(uModel)*aNorm; vCol=aCol; vEmit=aEmit;gl_Position=uViewProj*w;}`;
+const shaderFS=`#version 300 es
+precision highp float;
+in vec3 vWorld,vNorm,vCol; in float vEmit;
+uniform vec3 uEye,uTorch,uFog; uniform float uFlash,uStorm,uTime;
+out vec4 outColor;
+void main(){ vec3 n=normalize(vNorm); vec3 moonDir=normalize(vec3(.32,.84,-.51));float diffuse=max(0.0,dot(n,moonDir));float light=.17+diffuse*.18+uStorm*.44;vec3 ray=vWorld-uEye;float d=length(ray);vec3 to=normalize(ray);float cone=dot(to,normalize(uTorch));float focus=smoothstep(.82,.965,cone);float lantern=uFlash*focus*min(1.0,20.0/(1.0+d*d*.06))*(.75+.25*max(0.0,dot(n,-to))); light+=lantern*.95; float phase=vWorld.x*.41+vWorld.z*.77;
+ float blink=step(-.27,sin(uTime*(3.5+mod(abs(vWorld.x),2.0))+phase));
+ float sputter=step(.72,sin(uTime*16.0+phase*2.7));
+ float emission=vEmit>1.5?vEmit:vEmit*(.17+.63*blink+.18*sputter);
+ vec3 c=vCol*light+vCol*emission*(1.10+uStorm*.16);float fog=1.0-exp(-d*.019);fog=clamp(fog,0.0,.95);c=mix(c,uFog,fog);c=pow(max(c,vec3(0.0)),vec3(.82));outColor=vec4(c,1.0);}`;
+function compile(t,src){let s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
+const prog=gl.createProgram();gl.attachShader(prog,compile(gl.VERTEX_SHADER,shaderVS));gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,shaderFS));gl.linkProgram(prog);if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(prog));gl.useProgram(prog);
+const loc={vp:gl.getUniformLocation(prog,'uViewProj'),model:gl.getUniformLocation(prog,'uModel'),eye:gl.getUniformLocation(prog,'uEye'),torch:gl.getUniformLocation(prog,'uTorch'),fog:gl.getUniformLocation(prog,'uFog'),flash:gl.getUniformLocation(prog,'uFlash'),storm:gl.getUniformLocation(prog,'uStorm'),time:gl.getUniformLocation(prog,'uTime')};
+const ident=new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
+function matModel(x=0,y=0,z=0,sx=1,sy=1,sz=1,ang=0){let c=Math.cos(ang),s=Math.sin(ang);return new Float32Array([c*sx,0,-s*sx,0,0,sy,0,0,s*sz,0,c*sz,0,x,y,z,1]);}
+const m4multiply=(a,b)=>{let o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];}return o};
+function perspective(fovy,aspect,near,far){let f=1/Math.tan(fovy/2);return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)/(near-far),-1,0,0,(2*far*near)/(near-far),0]);}
+function lookAt(eye,tar){const sub=(a,b)=>a.map((q,i)=>q-b[i]);const norm=a=>{let d=Math.hypot(...a)||1;return a.map(x=>x/d)};let z=norm(sub(eye,tar)), x=norm([z[2],0,-z[0]]), y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]];return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-(x[0]*eye[0]+x[1]*eye[1]+x[2]*eye[2]),-(y[0]*eye[0]+y[1]*eye[1]+y[2]*eye[2]),-(z[0]*eye[0]+z[1]*eye[1]+z[2]*eye[2]),1]);}
+function color(hex){let h=hex.replace('#','');return [parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255]}
+class Mesh{constructor(){this.v=[]}tri(a,b,c,col,emit=0){const u=b.map((n,i)=>n-a[i]),v=c.map((n,i)=>n-a[i]);let n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],k=Math.hypot(...n)||1;n=n.map(x=>x/k);for(const p of [a,b,c])this.v.push(...p,...n,...col,emit)}quad(a,b,c,d,col,e=0){this.tri(a,b,c,col,e);this.tri(a,c,d,col,e)}cube(x,y,z,w,h,d,c,e=0){let xa=x-w/2,xb=x+w/2,ya=y, yb=y+h,za=z-d/2,zb=z+d/2;let a=[xa,ya,za],b=[xb,ya,za],cc=[xb,yb,za],dd=[xa,yb,za],ee=[xa,ya,zb],f=[xb,ya,zb],g=[xb,yb,zb],hh=[xa,yb,zb];this.quad(ee,f,g,hh,c,e);this.quad(b,a,dd,cc,c,e);this.quad(a,ee,hh,dd,c,e);this.quad(f,b,cc,g,c,e);this.quad(hh,g,cc,dd,c,e);this.quad(a,b,f,ee,c,e)}cylinder(x,y,z,r0,r1,height,c,seg=8,e=0){for(let i=0;i<seg;i++){let a=i*Math.PI*2/seg,b=(i+1)*Math.PI*2/seg;let p=[x+Math.cos(a)*r0,y,z+Math.sin(a)*r0],q=[x+Math.cos(b)*r0,y,z+Math.sin(b)*r0],r=[x+Math.cos(b)*r1,y+height,z+Math.sin(b)*r1],s=[x+Math.cos(a)*r1,y+height,z+Math.sin(a)*r1];this.quad(p,q,r,s,c,e);this.tri([x,y+height,z],s,r,c,e);}}upload(){const vao=gl.createVertexArray();gl.bindVertexArray(vao);const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(this.v),gl.STATIC_DRAW);for(let i=0;i<4;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,i===3?1:3,gl.FLOAT,false,40,i===3?36:i*12)}gl.bindVertexArray(null);return {vao,count:this.v.length/10}}}
+// BREU — DISTRITO FANTASMA. Quadras comprimidas, ruas estreitas e horizonte saturado.
+const ground=color('#161b20'),asphalt=color('#171c23'),roadline=color('#56616a'),
+      concrete=color('#252c34'),wall=color('#242b32'),metal=color('#3c444d'),
+      shutter=color('#43454b'),pale=color('#99a5a8'),red=color('#a95857');
+let seed=731249;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;}
+const rand=(a,b)=>a+(b-a)*rnd(),distance=(a,b,c,d)=>Math.hypot(a-c,b-d);
+const world=new Mesh(),trees=[],colliders=[],cityBlocks=[];
+const laneX=[-90,-60,-30,0,30,60,90],crossZ=[-140,-90,-40,10,60,110,160];
+const fuses=[{x:-60,z:-40,done:false,name:'BECO 404'},
+             {x:60,z:10,done:false,name:'MERCADO SUBTERRÂNEO'},
+             {x:30,z:60,done:false,name:'TORRE RESIDENCIAL'}];
+const tower={x:0,z:-151};
+const cabins=[{x:-60,z:-40,w:3,d:3,title:'BECO 404'},
+              {x:60,z:10,w:3,d:3,title:'MERCADO SUBTERRÂNEO'},
+              {x:30,z:60,w:3,d:3,title:'TORRE RESIDENCIAL'}];
+world.cube(0,-.3,0,450,.27,450,ground);
+// Asfalto escuro com pequenas juntas e marcas apagadas.
+for(let i=0;i<laneX.length;i++){
+  let x=laneX[i],w=i===3?7.0:7.8;
+  world.cube(x,-.012,0,w,.025,365,asphalt);
+  for(let z=-165;z<181;z+=rand(12,19)) world.cube(x,.006,z,.055,.008,rand(.7,2.3),color('#3a464e'));
+}
+for(let i=0;i<crossZ.length;i++){
+  const z=crossZ[i],w=i%2===0?9.6:10.2;
+  world.cube(0,-.008,z,211,.024,w,color(i%2?'#1d242b':'#1b2026'));
+  for(let x=-94;x<100;x+=rand(6,11))world.cube(x,.012,z,.65,.008,.09,color('#47515a'));
+}
+function cable(a,b,hex='#2e3238',strength=0){
+  const c=color(hex);const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2];
+  let prev=a;
+  for(let i=1;i<=10;i++){
+    const t=i/10;let next=[a[0]+dx*t,a[1]+dy*t-Math.sin(t*Math.PI)*(1.2+Math.hypot(dx,dz)*.022),a[2]+dz*t];
+    const d=.023+((i+seed)%3)*.007;
+    world.quad([prev[0],prev[1]-d,prev[2]],[next[0],next[1]-d,next[2]],[next[0],next[1]+d,next[2]],[prev[0],prev[1]+d,prev[2]],c,strength);
+    prev=next;
+  }
+}
+const font={
+ '0':['111','101','101','101','111'],'4':['101','101','111','001','001'],
+ 'N':['101','111','111','111','101'],'O':['111','101','101','101','111'],
+ 'R':['110','101','110','101','101'],'U':['101','101','101','101','111'],
+ 'D':['110','101','101','101','110'],'E':['111','100','110','100','111'],
+ 'A':['010','101','111','101','101'],'T':['111','010','010','010','010'],
+ 'S':['011','100','010','001','110'],'X':['101','101','010','101','101'],
+ 'I':['111','010','010','010','111'],'V':['101','101','101','101','010'],
+ '!':['1','1','1','0','1']
+};
+function graffiti(x,y,z,text,hex='#a97175'){
+ const ink=color(hex),pix=.16,step=.195;let cursor=x;
+ // Tinta manchada atrás do stencil e escorridos na superfície.
+ for(let j=0;j<9;j++){let xx=x+rand(-.4,Math.max(1,text.length*4*.195)),yy=y+rand(-.7,1.1);
+  world.cube(xx,yy,z,.045,rand(.03,.12),.02,ink,.07);}
+ for(let ch of text){const glyph=font[ch]||font['0'];
+   glyph.forEach((r,ri)=>{for(let ci=0;ci<r.length;ci++)if(r[ci]==='1')world.cube(cursor+ci*step,y+(4-ri)*step,z,pix,pix,.04,ink,.16)});
+   cursor+=glyph[0].length*step+.22;
+ }
+ for(let k=0;k<2;k++)world.cube(x+rand(0,Math.max(.3,cursor-x)),y-rand(.1,.7),z,.06,rand(.15,.48),.022,ink,.05);
+}
+const facadeTones=['#292d34','#30323b','#212932','#2b2e35','#34343b','#242b33','#34303a'];
+function urbanBlock(x,z,w,d,height,idx){
+ const body=color(facadeTones[idx%facadeTones.length]),edge=color('#4b4d52');
+ world.cube(x,0,z,w,height,d,body);
+ world.cube(x,height,z,w+.35,.55,d+.35,color('#171d23'));
+ world.cube(x,1.35,z+d/2+.14,w*.85,2.5,.25,shutter);
+ for(let y=1.0;y<3.2;y+=.42)world.cube(x,y,z+d/2+.31,w*.85,.035,.03,color('#626367'));
+ // Grades, empenas, dutos expostos e aparelhos de ar.
+ for(let floor=0;floor<Math.min(7,Math.floor(height/4.6));floor++){
+  const y=5+floor*4.6;
+  world.cube(x,y-.25,z+d/2+.15,w+.45,.21,.47,color('#4a4b54'));
+  for(let n=-1;n<=1;n++){
+   const wx=x+n*(w*.285),wlit=rnd();
+   world.cube(wx,y+1,z+d/2+.16,w*.18,2.16,.08,color(wlit<.12?'#7b8781':'#101820'),wlit<.12?.52:0);
+   world.cube(wx,y+1,z-d/2-.16,w*.18,2.16,.07,color('#0f161e'));
+   if(wlit<.22)world.cube(wx,y+.1,z+d/2+.21,w*.19,.14,.04,color('#3c464b'));
+  }
+ }
+ for(let j=0;j<Math.min(3,Math.ceil(height/14));j++){
+  const yy=9+j*12,px=x-w*.36;
+  world.cube(px,yy,z+d/2+.5,1.65,1.02,.68,color('#5c6063'));
+  world.cube(px,yy,z+d/2+.9,1.13,.66,.06,color('#262f35'));
+ }
+ // Canaletas de fiação do térreo até os telhados.
+ world.cube(x+w*.41,height*.47,z+d/2+.22,.13,height*.9,.18,color('#596066'));
+ // Janelas e tubulações nas paredes laterais de cada beco.
+ for(let floor=0;floor<Math.min(8,Math.floor(height/4.7));floor++){
+   const yy=5.0+floor*4.5;
+   for(let l=-1;l<=1;l++){
+     const wz=z+l*d*.27;
+     const lit=rnd();
+     world.cube(x+w/2+.10,yy,wz,.12,1.85,3.1,color(lit<.12?'#677d80':'#10161e'),lit<.12?.42:0);
+     world.cube(x-w/2-.10,yy,wz,.12,1.85,3.1,color('#121922'));
+   }
+   world.cube(x+w/2+.20,yy-1.15,z,.26,.08,d*.8,color('#484e56'));
+ }
+ const px=x+w/2+.22;
+ world.cube(px,5.5,z+d*.32,.3,8.1,.15,color('#5b6069'));
+ for(let k=0;k<3;k++)world.cube(px+.12,7+k*2.7,z+d*.32,.38,.14,1.5,color('#424a4c'));
+ // Sinalização vertical em kanji abstrato, com luz enfraquecida.
+ if(idx%2===0){
+   world.cube(px+.35,9.3,z-d*.27,.48,5.3,1.22,color('#262c35'));
+   for(let k=0;k<4;k++)world.cube(px+.61,7.85+k*.96,z-d*.27,.06,.38,.59,color(idx%4?'#9b8682':'#7ea0a4'),.64);
+ }
+ // Pichação visível nas paredes laterais.
+ if(idx%2===1){
+  let sideX=x+w/2+.22,ink=color(idx%3?'#927679':'#647985');
+  for(let t=0;t<13;t++){
+    let zz=z-d*.28+t*d*.046,yy=2.0+Math.sin(t*.9+idx)*.72;
+    world.cube(sideX,yy,zz,.065,.19,.35,ink,.12);
+  }
+  for(let t=0;t<5;t++)world.cube(sideX,1.8-rand(0,.7),z-d*.2+t*.58,.045,rand(.3,.7),.06,ink,.09);
+ }
+ if(idx%3===0)graffiti(x-w*.27,2.25,z+d/2+.38,idx%2?'NO':'404',idx%2?'#607e83':'#a2696a');
+ if(idx%5===0)graffiti(x+.7,3.0,z+d/2+.4,'RUN','#9c7c7b');
+ // Placas luminosas verticais quase apagadas: poucas para preservar a escuridão.
+ if(idx%4===0){let xx=x+w/2-.66;
+  world.cube(xx,8.7,z+d/2+1.07,1.1,5.8,.33,color('#242a31'));
+  for(let k=0;k<5;k++)world.cube(xx,6.75+k*.91,z+d/2+1.26,.37,.23,.07,color(idx%8===0?'#729ba1':'#b27c71'),.42);
+ }
+ // Toldos amassados e marquises na fachada.
+ if(idx%3===1)world.cube(x,4.18,z+d/2+1.05,w*.6,.12,1.8,color('#3f4549'));
+ colliders.push({x,z,w,d});cityBlocks.push({x,z,w,d,h:height});
+}
+let idx=0;
+const blocksX=[-75,-45,-15,15,45,75];const blocksZ=[-115,-65,-15,35,85,135];
+for(const bx of blocksX)for(const bz of blocksZ){
+ let w=rand(22,24.4),d=rand(35.5,39.5),h=rand(21,51);
+ urbanBlock(bx+rand(-.45,.45),bz+rand(-1,1),w,d,h,idx++);
+}
+// Silhuetas externas, sem gerar bloqueios no mapa jogável.
+for(let i=0;i<78;i++){
+ const side=i%4,v=rand(-165,165),x=side===0?-120:side===1?120:v,z=side===2?-182:side===3?182:v;
+ world.cube(x,0,z,rand(14,25),rand(28,69),rand(15,28),color(facadeTones[i%7]));
+}
+// Fiação atravessando becos e pendurada das paredes: cabos intactos e pontas rompidas.
+for(let row=0;row<blocksZ.length;row++)for(let lane=0;lane<laneX.length;lane++){
+ const x=laneX[lane],z=blocksZ[row]+rand(-8,8),ht=rand(6.9,11.2);
+ cable([x-4.4,ht,z],[x+4.2,ht+rand(-1,1),z+rand(-1.8,1.8)],'#272e34');
+ if((row+lane)%3===0){cable([x-3.9,ht-.6,z+1],[x+4.3,ht-.3,z+1.9],'#505358');
+  cable([x+3.5,ht,z+2.2],[x+3.1,2.4,z+3.3],'#292c32');}
+}
+for(let l=0;l<laneX.length;l++)for(let k=0;k<6;k++){
+ const x=laneX[l],z=-135+k*51+rand(-4,4);
+ cable([x-3.2,rand(6.5,10),z],[x+3.2,rand(6.5,10),z+rand(.2,2)],'#3e4149');
+}
+// Tubos e fiações laterais servem de limites visuais das vielas.
+for(let i=0;i<65;i++){
+ const x=blocksX[i%6]+(i%2?-11.6:11.6),z=rand(-143,159);
+ world.cube(x,rand(5,7),z,.11,rand(5,10),.14,color('#555c60'));
+}
+// Postes e caixas elétricas piscando, com emissão propositalmente fraca.
+for(let i=0;i<laneX.length;i++)for(let k=0;k<crossZ.length;k++)if((i+k)%2===0){
+ const x=laneX[i]+2.1,z=crossZ[k]+2.5;
+ world.cylinder(x,0,z,.1,.095,7.6,color('#52575b'),6);
+ world.cube(x+.45,7.55,z,.95,.22,.33,color('#535e64'));
+ world.cube(x+.69,7.36,z,.42,.065,.26,color((i+k)%4?'#b7a78e':'#8caab0'),.73);
+ world.cube(x,1.8,z,.46,.95,.29,color('#454c51'));
+}
+// Entulho no piso, sacos de lixo, caixas amassadas, latas e pernas de manequins quebrados.
+for(let i=0;i<330;i++){
+ const vertical=rnd()<.68,lx=laneX[Math.floor(rnd()*laneX.length)],lz=crossZ[Math.floor(rnd()*crossZ.length)];
+ const x=vertical?lx+rand(-3,3):rand(-93,94),z=vertical?rand(-158,164):lz+rand(-3.5,3.5);
+ if(distance(x,z,0,24)<8||fuses.some(f=>distance(x,z,f.x,f.z)<5)||distance(x,z,0,-151)<8)continue;
+ const size=rand(.18,.84),kind=i%7;
+ if(kind===0||kind===6){world.cylinder(x,0,z,size*.6,size*.32,size*.7,color('#32363a'),5);}
+ else if(kind===1){world.cube(x,.06,z,size*1.8,.16,size*.9,color('#363b42'));}
+ else if(kind===2){world.cube(x,.08,z,size*.9,.25,size*.8,color('#56504e'));}
+ else if(kind===3){world.cube(x,.04,z,size*2,.09,size*.5,color('#454a54'));}
+ else if(kind===4){world.cylinder(x,0,z,size*.45,size*.5,size*.8,color('#434749'),7);}
+ else {world.cube(x,.05,z,size*.75,.1,size*1.8,color('#272e34'));}
+}
+for(let i=0;i<12;i++){
+ const x=laneX[Math.floor(rnd()*laneX.length)]+rand(-1,1),z=crossZ[Math.floor(rnd()*crossZ.length)]+rand(-2,2);
+ world.cylinder(x,.05,z,.18,.14,1.2,color('#707479'),6);
+ world.cube(x,.05,z+.45,.25,.14,.83,color('#77716f'));
+}
+// Chão úmido: fragmentos de poças fracas e placas de drenagem.
+for(let i=0;i<130;i++){
+ const x=laneX[Math.floor(rnd()*laneX.length)]+rand(-2.1,2.1),z=rand(-152,168);
+ world.cube(x,.018,z,rand(.65,2.8),.004,rand(.3,.95),color(i%4?'#2d3942':'#42515a'),.07);
+}
+// Portão de evacuação no fim do distrito, substitui a antiga torre no distrito.
+world.cube(0,0,tower.z-8,18,12,.85,color('#2b3037'));
+world.cube(0,0,tower.z-7.5,8,8,.87,color('#20282e'));
+world.cube(-5.2,8.4,tower.z-7,1.2,2.1,.3,color('#a98579'),.65);
+world.cube(0,3.4,tower.z+10,3.1,2.9,1.2,color('#535d61'));
+world.cube(0,6.12,tower.z+10.8,2.5,.25,.18,color('#a1aca5'),.67);
+for(let i=0;i<3;i++){
+ const f=fuses[i];world.cube(f.x,0,f.z,3.6,.1,3.6,color('#3e4750'));
+ world.cube(f.x+1.3,.7,f.z+.9,.7,1.4,.9,color('#4d555c'));
+}
+
+// Passarela e placas tortas sobre o beco de entrada.
+world.cube(0,6.7,5,7.8,.32,1.4,color('#333a43'));
+world.cube(0,6.15,5.65,5.9,1.05,.13,color('#1b252d'));
+for(let q=0;q<6;q++)world.cube(-2.4+q*.96,6.2,5.75,.36,.2,.1,color(q%2?'#b1aaa2':'#7b9ba3'),.62);
+for(const xx of [-3.3,3.3]){
+ world.cube(xx,7.5,5,.1,4.2,.12,color('#444850'));
+ cable([xx,9.4,5],[xx*.72,6.6,4.8],'#4b5259');
+}
+// Fiação cruzando o corredor inicial, com isoladores pendentes.
+for(let k=0;k<5;k++){
+ cable([-3.1,9.0-k*.35,25-k*7.0],[3.1,9.4-k*.35,24-k*7.0],'#3c424b');
+ world.cube(-3.1,8.6-k*.35,25-k*7,.2,.38,.25,color('#62666a'));
+}
+const staticMesh=world.upload();world.v.length=0;
+const pickupGeom=new Mesh();pickupGeom.cylinder(0,0,0,.66,.66,1.55,color('#83d5d0'),8,.75);pickupGeom.cube(0,1.4,0,.8,.25,.8,color('#d6fff0'),1.35);const pickupMesh=pickupGeom.upload();
+const monsterParts=[];function part(mesh,x,y,z,sx,sy,sz){monsterParts.push({mesh:mesh.upload(),x,y,z,sx,sy,sz});}
+let mes=new Mesh();mes.cylinder(0,0,0,.4,.22,2.7,color('#151f1e'),7);part(mes,0,0,0,.95,1,1);
+mes=new Mesh();mes.cylinder(0,0,0,.16,.13,1.6,color('#14211e'),7);part(mes,-.32,-1.5,0,1,1,1);part(mes,.32,-1.5,0,1,1,1);
+mes=new Mesh();mes.cylinder(0,0,0,.13,.07,2.8,color('#1d2723'),6);part(mes,-.73,-.5,0,1,1,1);part(mes,.73,-.5,0,1,1,1);
+mes=new Mesh();mes.cylinder(0,0,0,.48,.4,.85,color('#1c2724'),8);part(mes,0,2.65,0,1,1,1);
+mes=new Mesh();mes.cube(0,0,0,.18,.11,.1,color('#ed3d37'),3.0);part(mes,-.18,3.1,-.42,1,1,1);part(mes,.18,3.1,-.42,1,1,1);
+const friendMeshBuilder=new Mesh();friendMeshBuilder.cylinder(0,0,0,.34,.30,1.65,color('#5b777a'),9);friendMeshBuilder.cylinder(0,1.64,0,.3,.28,.55,color('#b2a89c'),9);friendMeshBuilder.cylinder(-.48,.3,0,.11,.09,1.35,color('#52676c'),7);friendMeshBuilder.cylinder(.48,.3,0,.11,.09,1.35,color('#52676c'),7);friendMeshBuilder.cylinder(-.17,-1.3,0,.13,.11,1.27,color('#303d42'),7);friendMeshBuilder.cylinder(.17,-1.3,0,.13,.11,1.27,color('#303d42'),7);const friendMesh=friendMeshBuilder.upload();
+const dir=(yaw,pitch=0)=>[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)];
+let p={x:0,z:24,yaw:0,pitch:-.02,stamina:100,health:100,flash:true,headbob:0};let monster={x:60,z:-22,heading:0,phase:0},taken=[false,false,false],state='menu',onlineMode='solo',isHost=false,peer=null,hostConn=null,clients=new Map(),friends=new Map(),roomCode='',peerReady=false,peerScriptError=false;
+let last=performance.now(),time=0,win=false,dead=false,cooldown=0,hitFlash=0,stormFlash=0,stormNext=12,toastUntil=0,nearInteract=null,mapExpanded=false,lookDown=false;
+const keys=new Set();let joyX=0,joyY=0,mobileRun=false,touches=new Map(),lastMap=0;
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),lerp=(a,b,t)=>a+(b-a)*t;
+const isMoving=()=>keys.has('KeyW')||keys.has('KeyS')||keys.has('KeyA')||keys.has('KeyD')||Math.abs(joyX)+Math.abs(joyY)>.12;
+function toast(s,ms=2800){$('message').textContent=s;$('message').style.opacity=1;toastUntil=performance.now()+ms}
+function updateUI(){let count=taken.filter(Boolean).length;$('objectiveText').textContent=count===3?'Vá ao portão e ative o painel':`Encontre os 3 núcleos (${count}/3)`;taken.forEach((v,i)=>$('f'+i).classList.toggle('active',v));$('staminaFill').style.width=p.stamina+'%';$('healthFill').style.width=p.health+'%';$('lightText').textContent=p.flash?'LIGADA':'APAGADA';$('lightText').style.color=p.flash?'#c5e6dc':'#f0a49c';$('playersText').textContent=(1+friends.size)+'/4';let sect='RUAS DO DISTRITO';if(distance(p.x,p.z,0,24)<18)sect='BECO DE ENTRADA';else if(distance(p.x,p.z,tower.x,tower.z)<25)sect='PORTÃO DE EVACUAÇÃO';else for(const b of cabins)if(distance(p.x,p.z,b.x,b.z)<29){sect=b.title;break;}$('sectorText').textContent=sect;}
+function setGame(start='solo'){state='playing';$('menu').style.display='none';$('hud').style.display='block';if(mobile)$('mobile').style.display='block';$('endScreen').style.display='none';$('roomChip').style.display=onlineMode==='solo'?'none':'block';$('roomChipText').textContent=roomCode;if(start==='solo')toast('Encontre os 3 núcleos. O portão fica no fim do distrito.');else toast('Vocês estão no Distrito 09. Fiquem juntos nos becos.');initAudio();if(!mobile)canvas.requestPointerLock?.().catch(()=>{});}
+function resetWorld(){p={x:0,z:24,yaw:0,pitch:-.02,stamina:100,health:100,flash:true,headbob:0};monster={x:60,z:-22,heading:0,phase:0};taken=[false,false,false];cooldown=0;win=false;dead=false;state='menu';}
+function finish(success){if(state!=='playing')return;state='end';win=success;dead=!success;document.exitPointerLock?.();$('hud').style.display='none';$('mobile').style.display='none';$('endScreen').style.display='flex';$('endTag').textContent=success?'O SINAL CHEGOU AO OUTRO LADO':'EXPEDIÇÃO ENCERRADA';$('endTitle').textContent=success?'VOCÊS SAÍRAM.':'A CIDADE VENCEU.';$('endDesc').textContent=success?'O portão abriu. A equipe deixou o Distrito 09 — mas a última câmera ainda mostra alguém parado na rua...':'A criatura encontrou você no distrito. Use os becos com cuidado e não confie nas luzes.';sound(success?'victory':'death');}
+$('startSolo').onclick=()=>setGame('solo');$('restart').onclick=()=>{if(onlineMode!=='solo'){if(peer)try{peer.destroy()}catch{};peer=null;clients.clear();friends.clear();onlineMode='solo'}resetWorld();$('endScreen').style.display='none';$('menu').style.display='flex';$('roomPane').style.display='none';};
+function toggleFlash(){if(state!=='playing')return;p.flash=!p.flash;sound('toggle');updateUI()}
+function action(){if(state!=='playing')return;const fuseIndex=fuses.findIndex((f,i)=>!taken[i]&&distance(p.x,p.z,f.x,f.z)<8);if(fuseIndex>=0){if(onlineMode==='guest'&&hostConn?.open){hostConn.send({t:'pickup',i:fuseIndex});toast('Solicitando coleta ao anfitrião...');}else takeFuse(fuseIndex);return;}if(taken.every(Boolean)&&distance(p.x,p.z,tower.x,tower.z+10)<11){if(onlineMode==='guest'&&hostConn?.open)hostConn.send({t:'win'});else {if(onlineMode==='host')broadcast({t:'win'});finish(true)}return;}toast('Nada por perto para interagir.',1200);}
+function takeFuse(i){if(taken[i])return;taken[i]=true;sound('pickup');toast(taken.every(Boolean)?'TODOS OS NÚCLEOS! Vá ao portão de evacuação ao norte.':`NÚCLEO ${taken.filter(Boolean).length}/3 COLETADO`);if(onlineMode==='host')broadcast({t:'taken',i});updateUI()}
+function toggleMap(){if(state!=='playing')return;mapExpanded=!mapExpanded;$('mapWrap').classList.toggle('expanded',mapExpanded);}
+window.addEventListener('keydown',e=>{if(e.target?.tagName==='INPUT')return;keys.add(e.code);if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.repeat)return;if(e.code==='KeyF')toggleFlash();if(e.code==='KeyE')action();if(e.code==='Tab'||e.code==='KeyM')toggleMap();if(e.code==='Escape'&&mapExpanded)toggleMap()});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>keys.clear());
+document.addEventListener('mousemove',e=>{if(state==='playing'&&document.pointerLockElement===canvas){p.yaw+=e.movementX*.00225;p.pitch=clamp(p.pitch-e.movementY*.00225,-1.27,1.27)}});
+canvas.addEventListener('click',()=>{if(state==='playing'&&!mobile&&document.pointerLockElement!==canvas)canvas.requestPointerLock?.().catch(()=>{})});
+let joyPointer=null;const stick=$('stickOuter');function stickSet(e){let b=stick.getBoundingClientRect(),x=e.clientX-(b.left+b.width/2),y=e.clientY-(b.top+b.height/2),d=Math.hypot(x,y),lim=43;joyX=clamp(x/lim,-1,1);joyY=clamp(-y/lim,-1,1);if(d>lim){joyX=x/d;joyY=-y/d;}$('stickInner').style.transform=`translate(${joyX*43}px,${-joyY*43}px)`}
+stick.addEventListener('pointerdown',e=>{e.preventDefault();joyPointer=e.pointerId;stick.setPointerCapture(e.pointerId);stickSet(e)});stick.addEventListener('pointermove',e=>{if(joyPointer===e.pointerId)stickSet(e)});function resetStick(e){if(joyPointer===e.pointerId){joyPointer=null;joyX=joyY=0;$('stickInner').style.transform='translate(0,0)'}}stick.addEventListener('pointerup',resetStick);stick.addEventListener('pointercancel',resetStick);
+let lookPointer=null,lookLast={x:0,y:0};canvas.addEventListener('pointerdown',e=>{if(!mobile||state!=='playing'||lookPointer!==null)return;lookPointer=e.pointerId;lookLast={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(lookPointer!==e.pointerId)return;let dx=e.clientX-lookLast.x,dy=e.clientY-lookLast.y;lookLast={x:e.clientX,y:e.clientY};p.yaw+=dx*.0051;p.pitch=clamp(p.pitch-dy*.0045,-1.27,1.27)});canvas.addEventListener('pointerup',e=>{if(e.pointerId===lookPointer)lookPointer=null});canvas.addEventListener('pointercancel',e=>{if(e.pointerId===lookPointer)lookPointer=null});
+$('btnLight').onclick=toggleFlash;$('btnAction').onclick=action;$('btnMap').onclick=toggleMap;$('btnRun').addEventListener('pointerdown',e=>{e.preventDefault();mobileRun=true});for(const ev of ['pointerup','pointercancel','pointerleave'])$('btnRun').addEventListener(ev,()=>mobileRun=false);
+// Audio procedimental de ambiente: sem arquivos externos.
+let actx=null,drone=null,wind=null,beepTime=0;function initAudio(){if(actx){actx.resume().catch(()=>{});return}try{actx=new (window.AudioContext||window.webkitAudioContext)();let osc=actx.createOscillator();osc.type='sine';osc.frequency.value=54;let gain=actx.createGain();gain.gain.value=.035;osc.connect(gain).connect(actx.destination);osc.start();drone={osc,gain};let len=actx.sampleRate*2,buff=actx.createBuffer(1,len,actx.sampleRate),a=buff.getChannelData(0);for(let i=0;i<len;i++)a[i]=(Math.random()*2-1)*.2;let src=actx.createBufferSource();src.buffer=buff;src.loop=true;let low=actx.createBiquadFilter();low.type='lowpass';low.frequency.value=270;let vol=actx.createGain();vol.gain.value=.11;src.connect(low).connect(vol).connect(actx.destination);src.start();wind=vol;}catch(err){console.warn('Áudio indisponível',err)}}
+function sound(kind){if(!actx)return;let o=actx.createOscillator(),g=actx.createGain(),n=actx.currentTime;let start=kind==='pickup'?630:kind==='death'?160:kind==='victory'?300:kind==='heartbeat'?85:340;let end=kind==='pickup'?1090:kind==='death'?34:kind==='victory'?660:kind==='heartbeat'?42:215;let duration=kind==='death'?1.5:kind==='victory'?.8:kind==='heartbeat'?.25:.13;o.type=kind==='pickup'||kind==='victory'?'sine':'triangle';o.frequency.setValueAtTime(start,n);o.frequency.exponentialRampToValueAtTime(end,n+duration);g.gain.setValueAtTime(kind==='heartbeat'?.08:.095,n);g.gain.exponentialRampToValueAtTime(.001,n+duration);o.connect(g).connect(actx.destination);o.start(n);o.stop(n+duration+.01)}
+function checkCollision(x,z){if(Math.abs(x)>220||Math.abs(z)>220)return true;for(const b of colliders){if(Math.abs(x-b.x)<b.w/2+1.1&&Math.abs(z-b.z)<b.d/2+1.1)return true;}for(const t of trees)if((x-t.x)**2+(z-t.z)**2<(t.r+.32)**2)return true;return false;}
+function movement(dt){let forward=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0)+joyY;let side=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0)+joyX;let m=Math.hypot(forward,side);const running=(keys.has('ShiftLeft')||keys.has('ShiftRight')||mobileRun)&&p.stamina>3&&m>.1;let speed=running?11:5.9;forward/=Math.max(1,m);side/=Math.max(1,m);const dx=(Math.sin(p.yaw)*forward+Math.cos(p.yaw)*side)*speed*dt,dz=(-Math.cos(p.yaw)*forward+Math.sin(p.yaw)*side)*speed*dt;if(!checkCollision(p.x+dx,p.z))p.x+=dx;if(!checkCollision(p.x,p.z+dz))p.z+=dz;p.stamina=clamp(p.stamina+(running?-23:14)*dt,0,100);p.headbob+=m*speed*dt*1.6;}
+function enemyStep(dt){if(onlineMode==='guest')return;let target={x:p.x,z:p.z},dist=distance(monster.x,monster.z,p.x,p.z);for(let fr of friends.values()){let d=distance(monster.x,monster.z,fr.x,fr.z);if(d<dist){dist=d;target=fr}}let speed=dist<58?(p.flash?7.2:6.4):1.3;if(taken.filter(Boolean).length>=2)speed*=1.28;if(dist<(p.flash?130:72)){let dx=target.x-monster.x,dz=target.z-monster.z,dd=Math.hypot(dx,dz)||1;const nearest=(arr,v)=>arr.reduce((a,b)=>Math.abs(b-v)<Math.abs(a-v)?b:a);
+ let lane=nearest(laneX,target.x),cross=nearest(crossZ,monster.z);
+ let wx=target.x,wz=target.z;
+ if(Math.abs(lane-monster.x)>3.0){if(Math.abs(monster.z-cross)>1.2){wx=monster.x;wz=cross;}else{wx=lane;wz=cross;}}
+ const mx=wx-monster.x,mz=wz-monster.z,md=Math.hypot(mx,mz)||1;
+ const px=monster.x+mx/md*speed*dt,pz=monster.z+mz/md*speed*dt;
+ if(!checkCollision(px,monster.z))monster.x=px;
+ if(!checkCollision(monster.x,pz))monster.z=pz;
+ monster.heading=Math.atan2(mx,-mz);}else{monster.x+=Math.cos(time*.12)*dt*1.3;monster.z+=Math.sin(time*.16)*dt*1.2;}monster.phase+=dt*(dist<58?9:3);if(monster.x>210||monster.x< -210||monster.z>210||monster.z< -210){monster.x=60;monster.z=-40}}
+function threats(dt){let dist=distance(p.x,p.z,monster.x,monster.z);$('enemyWarn').style.display=dist<41?'block':'none';$('hurt').style.opacity=String(clamp((30-dist)/26,0,.32)+hitFlash);if(dist<6&&cooldown<=0){cooldown=2.4;hitFlash=.55;p.health=clamp(p.health-34,0,100);sound('death');toast('A CRIATURA ESTÁ AQUI! CORRA!',2000);if(p.health<=0){finish(false);return;}}cooldown-=dt;hitFlash=Math.max(0,hitFlash-dt*.48);if(dist<29&&time-beepTime>Math.max(.36,dist/42)){beepTime=time;sound('heartbeat')}}
+let netTimer=0;function update(dt){time+=dt;const stormWait=time>stormNext;if(stormWait){stormFlash=1;stormNext=time+rand(18,40);sound('toggle')}stormFlash=Math.max(0,stormFlash-dt*2);if(state==='playing'){movement(dt);enemyStep(dt);threats(dt);nearInteract=null;const idx=fuses.findIndex((f,i)=>!taken[i]&&distance(p.x,p.z,f.x,f.z)<8);if(idx>=0)nearInteract='[E] RECOLHER NÚCLEO';else if(taken.every(Boolean)&&distance(p.x,p.z,tower.x,tower.z+10)<11)nearInteract='[E] ABRIR PORTÃO';$('interaction').style.display=nearInteract?'block':'none';if(nearInteract)$('interaction').textContent=nearInteract;netTimer+=dt;if(netTimer>.1){netTimer=0;sendState()}updateUI()}if(toastUntil<performance.now())$('message').style.opacity=0;}
+function setupDraw(eye,target){let fov=mobile?1.18:1.10;let pv=perspective(fov,canvas.width/canvas.height,.075,270);gl.uniformMatrix4fv(loc.vp,false,m4multiply(pv,lookAt(eye,target)));gl.uniform3f(loc.eye,...eye);let d=dir(p.yaw,p.pitch);gl.uniform3f(loc.torch,...d);gl.uniform3f(loc.fog,.041,.052,.063);gl.uniform1f(loc.flash,p.flash?1:0);gl.uniform1f(loc.storm,stormFlash);gl.uniform1f(loc.time,time);}
+function draw(mesh,model){gl.bindVertexArray(mesh.vao);gl.uniformMatrix4fv(loc.model,false,model);gl.drawArrays(gl.TRIANGLES,0,mesh.count)}
+let renderScale=mobile?.68:.82;function resize(){const dpr=Math.min(devicePixelRatio||1,mobile?1.6:1.7);canvas.width=Math.max(1,Math.floor(innerWidth*dpr*renderScale));canvas.height=Math.max(1,Math.floor(innerHeight*dpr*renderScale));canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';gl.viewport(0,0,canvas.width,canvas.height)}addEventListener('resize',resize);resize();gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(.026,.034,.041,1);
+function render(){gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let moving=isMoving()&&state==='playing';let bob=moving?Math.sin(p.headbob*2)*.045:Math.sin(time*.65)*.015;let eye=[p.x,1.78+bob,p.z];let d=dir(p.yaw,p.pitch);let target=[eye[0]+d[0],eye[1]+d[1],eye[2]+d[2]];if(state==='menu'){eye=[0,2.6,32];target=[-.35,2.2,-29];}setupDraw(eye,target);draw(staticMesh,ident);
+for(let i=0;i<3;i++)if(!taken[i]){let f=fuses[i];draw(pickupMesh,matModel(f.x,.55+Math.sin(time*2+i)*.2,f.z,.95,.95,.95,time*.75+i));}
+let dist=distance(p.x,p.z,monster.x,monster.z);if(dist<170||state==='menu'){const baseX=monster.x,baseZ=monster.z,ang=monster.heading,bounce=Math.sin(monster.phase)*.17;for(let i=0;i<monsterParts.length;i++){let o=monsterParts[i],sz=i>=1&&i<=4?Math.sin(monster.phase+(i%2)*Math.PI)*.2:0;draw(o.mesh,matModel(baseX+Math.cos(ang)*o.x+Math.sin(ang)*o.z,o.y+2.05+bounce+sz,baseZ-Math.sin(ang)*o.x+Math.cos(ang)*o.z,o.sx,o.sy,o.sz,ang))}}
+for(const f of friends.values()){if(distance(p.x,p.z,f.x,f.z)>150)continue;draw(friendMesh,matModel(f.x,.86,f.z,.72,.62,.72,f.yaw||0));}
+drawMap();}
+const mapCanvas=$('miniMap'),mctx=mapCanvas.getContext('2d');function drawMap(){
+ let w=300,h=300,sc=mapExpanded?.68:1.32;
+ mctx.clearRect(0,0,w,h);mctx.fillStyle='#0a1017';mctx.fillRect(0,0,w,h);
+ mctx.save();mctx.translate(w/2,h/2);mctx.scale(sc,sc);mctx.translate(-p.x,-p.z);
+ mctx.strokeStyle='#36454e';mctx.lineWidth=6;
+ mctx.beginPath();for(const x of laneX){mctx.moveTo(x,-168);mctx.lineTo(x,172)}
+ for(const z of crossZ){mctx.moveTo(-104,z);mctx.lineTo(104,z)}mctx.stroke();
+ mctx.fillStyle='#4a5058';for(const b of cityBlocks)mctx.fillRect(b.x-b.w/2,b.z-b.d/2,b.w,b.d);
+ mctx.fillStyle='#b27b73';mctx.fillRect(tower.x-5,tower.z-9,10,8);
+ for(let i=0;i<3;i++)if(!taken[i]){let f=fuses[i];mctx.beginPath();mctx.arc(f.x,f.z,4,0,Math.PI*2);mctx.fillStyle='#bdd8cb';mctx.fill()}
+for(const f of friends.values()){mctx.beginPath();mctx.arc(f.x,f.z,4,0,Math.PI*2);mctx.fillStyle='#a4badd';mctx.fill()}
+mctx.beginPath();mctx.arc(p.x,p.z,5,0,Math.PI*2);mctx.fillStyle='#f0f0e5';mctx.fill();mctx.beginPath();mctx.moveTo(p.x,p.z);mctx.lineTo(p.x+Math.sin(p.yaw)*18,p.z-Math.cos(p.yaw)*18);mctx.strokeStyle='#f0f0e5';mctx.lineWidth=2;mctx.stroke();mctx.restore();mctx.fillStyle='#91a7a6';mctx.font='bold 16px sans-serif';mctx.textAlign='center';mctx.fillText('N',w/2,18);}
+function frame(now){let dt=Math.min(.05,(now-last)/1000);last=now;update(dt);render();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+// Multiplayer WebRTC usando sinalização pública PeerJS. O jogo solo funciona mesmo sem a rede.
+function loadPeerJS(){let s=document.createElement('script');s.src='https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js';s.async=true;s.onload=()=>{peerReady=true};s.onerror=()=>{peerScriptError=true};document.head.appendChild(s)}loadPeerJS();
+let roomAction='host',roomReady=false;function roomMessage(s){$('roomStatus').textContent=s;}function openRoomPane(host){roomReady=false;roomAction=host?'host':'guest';$('roomPane').style.display='block';$('roomLabel').textContent=host?'CÓDIGO DO DISTRITO DE CONVITE':'CÓDIGO DA SALA DO SEU AMIGO';$('roomInput').value=host?Array.from({length:6},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''):'';$('roomInput').readOnly=host;$('copyRoom').style.display=host?'block':'none';$('roomConfirm').textContent=host?'CRIAR E JOGAR':'CONECTAR';roomMessage('Conexão gratuita por WebRTC. Cada jogador precisa abrir este mesmo jogo com internet.');}
+$('copyRoom').onclick=async()=>{let code=$('roomInput').value;let invite=(location.protocol==='http:'||location.protocol==='https:')?location.href.split('#')[0].split('?')[0]+'?sala='+code:code;try{await navigator.clipboard.writeText(invite);roomMessage('Convite copiado! Envie ao seu amigo.')}catch{roomMessage('Código: '+code+' — selecione e copie para enviar ao seu amigo.');$('roomInput').select()}};
+$('makeRoom').onclick=()=>openRoomPane(true);$('joinRoom').onclick=()=>openRoomPane(false);$('roomBack').onclick=()=>{$('roomPane').style.display='none';};
+const inviteCode=new URLSearchParams(location.search).get('sala');if(inviteCode){openRoomPane(false);$('roomInput').value=inviteCode.toUpperCase().slice(0,7);roomMessage('Convite recebido. Clique em CONECTAR para entrar com seus amigos.');}
+$('roomConfirm').onclick=()=>{if(roomAction==='host'&&roomReady){setGame('host');return;}if(!window.Peer){roomMessage(peerScriptError?'Serviço online indisponível neste navegador. Jogue solo por enquanto.':'Carregando conexão online… Tente novamente em alguns segundos.');return;}let code=$('roomInput').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4){roomMessage('Use um código de pelo menos 4 caracteres.');return;}roomCode=code;roomMessage('Conectando ao servidor de salas…');if(roomAction==='host')hostRoom(code);else joinHost(code)};
+function hostRoom(code){onlineMode='host';isHost=true;try{peer=new Peer('breu-'+code,{debug:0});peer.on('open',()=>{roomReady=true;roomMessage(`Sala ${code} criada! Envie este código aos amigos. Eles devem abrir o jogo e selecionar ENTRAR COM AMIGOS.`);$('roomConfirm').textContent='INICIAR EXPEDIÇÃO';});peer.on('connection',conn=>{if(clients.size>=3){conn.on('open',()=>conn.send({t:'full'}));return;}bindClient(conn)});peer.on('error',err=>{roomMessage('Não foi possível criar a sala: '+(err.type==='unavailable-id'?'código já em uso. Tente outro.':err.type||err.message));});}catch(e){roomMessage('Falha ao criar sala: '+e.message)}}
+function joinHost(code){onlineMode='guest';isHost=false;try{peer=new Peer(undefined,{debug:0});peer.on('open',()=>{let conn=peer.connect('breu-'+code,{reliable:true});hostConn=conn;conn.on('open',()=>{roomMessage('Conectado! Entrando no distrito…');conn.send({t:'hello',name:'Explorador'});setGame('guest')});conn.on('data',msg=>receiveHost(msg));conn.on('close',()=>{toast('O anfitrião saiu. A sala foi encerrada.',5000);onlineMode='solo';hostConn=null;friends.clear()});conn.on('error',()=>roomMessage('Não foi possível entrar nesta sala.'));});peer.on('error',err=>roomMessage('Erro ao conectar: '+(err.type==='peer-unavailable'?'a sala não existe ou o anfitrião saiu.':err.type||err.message)));}catch(e){roomMessage('Falha ao conectar: '+e.message)}}
+function bindClient(conn){conn.on('open',()=>{clients.set(conn.peer,conn);friends.set(conn.peer,{x:0,z:23,yaw:0});conn.send({t:'sync',items:taken,monster:{x:monster.x,z:monster.z},friends:[['host',{x:p.x,z:p.z,yaw:p.yaw}],...Array.from(friends.entries()).filter(([id])=>id!==conn.peer)],room:roomCode});broadcast({t:'friendJoined',id:conn.peer,x:0,z:23},conn.peer);updateUI()});conn.on('data',m=>{if(!m||typeof m!=='object')return;let remote=friends.get(conn.peer);if(m.t==='state'&&remote){remote.x=clamp(Number(m.x)||0,-220,220);remote.z=clamp(Number(m.z)||0,-220,220);remote.yaw=Number(m.yaw)||0;broadcast({t:'friendState',id:conn.peer,x:remote.x,z:remote.z,yaw:remote.yaw},conn.peer)}if(m.t==='pickup'&&Number.isInteger(m.i)&&m.i>=0&&m.i<3&&remote&&!taken[m.i]&&distance(remote.x,remote.z,fuses[m.i].x,fuses[m.i].z)<11)takeFuse(m.i);if(m.t==='win'&&remote&&taken.every(Boolean)&&distance(remote.x,remote.z,tower.x,tower.z+10)<12){broadcast({t:'win'});finish(true)}});conn.on('close',()=>{clients.delete(conn.peer);friends.delete(conn.peer);broadcast({t:'friendLeft',id:conn.peer});updateUI()})}
+function broadcast(msg,except){for(const [id,conn] of clients)if(id!==except&&conn.open)try{conn.send(msg)}catch{}}
+function receiveHost(msg){if(!msg||typeof msg!=='object')return;switch(msg.t){case 'sync':taken=msg.items||taken;monster.x=msg.monster?.x||monster.x;monster.z=msg.monster?.z||monster.z;friends.clear();for(let [id,f] of msg.friends||[])friends.set(id,f);break;case 'stateWorld':if(msg.monster){monster.x=msg.monster.x;monster.z=msg.monster.z;monster.heading=msg.monster.heading||0;monster.phase+=.15;}break;case 'friendJoined':friends.set(msg.id,{x:msg.x,z:msg.z,yaw:0});toast('Outro explorador entrou no distrito.');break;case 'friendLeft':friends.delete(msg.id);toast('Um explorador saiu do distrito.');break;case 'friendState':friends.set(msg.id,{x:msg.x,z:msg.z,yaw:msg.yaw});break;case 'taken':if(!taken[msg.i]){taken[msg.i]=true;sound('pickup');toast(`NÚCLEO ${taken.filter(Boolean).length}/3 COLETADO`)}break;case 'win':finish(true);break;case 'full':toast('Sala cheia (máximo de 4 jogadores).');break;}}
+function sendState(){if(onlineMode==='guest'&&hostConn?.open)hostConn.send({t:'state',x:p.x,z:p.z,yaw:p.yaw});if(onlineMode==='host'){broadcast({t:'stateWorld',monster:{x:monster.x,z:monster.z,heading:monster.heading}});broadcast({t:'friendState',id:'host',x:p.x,z:p.z,yaw:p.yaw});}}
+// Exposição mínima para testes de execução, sem afetar a interface.
+window.__BREU_TEST__={get state(){return state},get position(){return {x:p.x,z:p.z}},get fuses(){return [...taken]},get online(){return onlineMode},get gl(){return !!gl},get geometryVertices(){return staticMesh.count},moveTo(x,z){p.x=x;p.z=z},collect:action};
+})();
+</script>
+</body>
+</html>
