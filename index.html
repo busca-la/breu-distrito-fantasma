@@ -15,7 +15,7 @@
 <body>
 <canvas id="scene"></canvas><div id="vignette"></div><div id="grain"></div><div id="hurt"></div>
 <section id="menu"><div class="glow"></div><div class="menuleft"><div class="brand"><div class="brandmark"><span>✣</span></div> UMA EXPERIÊNCIA NOTURNA</div><div class="eyebrow">SUBSOLO 09 <span style="margin:0 9px">/</span> 03:17 AM</div><h1>BREU<span>.</span></h1><div class="subheading">O shopping não deixa sair.</div><p class="lead">Há anos ninguém entra no shopping do Distrito 09. As passagens mal cabem duas pessoas, as grades das lojas rangem e os fluorescentes morrem um a um. Encontre três núcleos e alcance a saída de emergência antes que algo encontre você.</p><div class="actions"><button class="primary" id="startSolo">SOBREVIVER SOZINHO &nbsp; ↗</button><button class="secondary" id="makeRoom">CRIAR SALA</button><button class="secondary" id="joinRoom">ENTRAR COM AMIGOS</button></div><div id="roomPane"><label id="roomLabel">CÓDIGO DA SALA</label><input id="roomInput" maxlength="7" placeholder="EX.: NOITE7" autocomplete="off"><div id="roomActions"><button class="primary" id="roomConfirm">CONECTAR</button><button class="secondary" id="roomBack">VOLTAR</button><button class="secondary" id="copyRoom" style="display:none">COPIAR CÓDIGO</button></div><div id="roomStatus" class="smallStatus">O modo online usa conexão gratuita entre navegadores e requer internet.</div></div><p class="fineprint">PC: <span class="kbd">W A S D</span> mover &nbsp; <span class="kbd">SHIFT</span> correr &nbsp; <span class="kbd">F</span> lanterna &nbsp; <span class="kbd">E</span> interagir.<br>Celular: controles de toque. Som recomendado. <b>Sem sustos gráficos explícitos.</b></p></div><div id="menuSide">SUBSOLO 09 / 03:17<br>OS CORREDORES ESTÃO FECHANDO<br>···<br>LOCAL / COOPERATIVO</div></section>
-<div id="hud"><div id="hudTop"><div class="hudLogo">BREU<small>03:17 AM · SUBSOLO 09</small></div><div class="hudVertical"><div class="caption">SETOR</div><div class="hudValue" id="sectorText">BECO DE ENTRADA</div></div></div><div class="hudRight"><div class="chip" id="roomChip" style="display:none">SALA <span id="roomChipText">------</span></div><div class="chip">EQUIPE <span id="playersText">1/4</span></div><div class="chip">LUZ <span id="lightText">LIGADA</span></div></div><div id="reticle"></div><div id="interaction"></div><div id="message"></div><div id="enemyWarn">ELE ESTÁ PERTO · NÃO PARE</div><div id="objective"><div class="objectiveTitle">OBJETIVO 01 — SAÍDA DO SHOPPING</div><div class="objectiveMain" id="objectiveText">Encontre os 3 núcleos</div><div class="fuses"><div class="fuse" id="f0"></div><div class="fuse" id="f1"></div><div class="fuse" id="f2"></div></div><div class="meterRow"><label>FÔLEGO</label><div class="meter"><div id="staminaFill"></div></div></div><div class="meterRow"><label>SAÚDE</label><div class="meter"><div id="healthFill"></div></div></div></div><div id="mapWrap"><canvas id="miniMap" width="300" height="300"></canvas><div id="mapLabel">TAB / M · MAPA</div></div></div>
+<div id="hud"><div id="hudTop"><div class="hudLogo">BREU<small>03:17 AM · SUBSOLO 09</small></div><div class="hudVertical"><div class="caption">SETOR</div><div class="hudValue" id="sectorText">ENTRADA DO SHOPPING</div></div></div><div class="hudRight"><div class="chip" id="roomChip" style="display:none">SALA <span id="roomChipText">------</span></div><div class="chip">EQUIPE <span id="playersText">1/4</span></div><div class="chip">LUZ <span id="lightText">LIGADA</span></div></div><div id="reticle"></div><div id="interaction"></div><div id="message"></div><div id="enemyWarn">ELE ESTÁ PERTO · NÃO PARE</div><div id="objective"><div class="objectiveTitle">OBJETIVO 01 — SAÍDA DO SHOPPING</div><div class="objectiveMain" id="objectiveText">Encontre os 3 núcleos</div><div class="fuses"><div class="fuse" id="f0"></div><div class="fuse" id="f1"></div><div class="fuse" id="f2"></div></div><div class="meterRow"><label>FÔLEGO</label><div class="meter"><div id="staminaFill"></div></div></div><div class="meterRow"><label>SAÚDE</label><div class="meter"><div id="healthFill"></div></div></div></div><div id="mapWrap"><canvas id="miniMap" width="300" height="300"></canvas><div id="mapLabel">TAB / M · MAPA</div></div></div>
 <div id="mobile"><div id="stickOuter"><div id="stickInner"></div></div><div id="lookLabel">ARRASTE PARA OLHAR ↔</div><div id="mobileButtons"><button id="btnLight">LUZ</button><button id="btnRun">CORRER</button><button id="btnAction">PEGAR</button><button id="btnMap">MAPA</button></div></div>
 <div id="endScreen"><div><div class="spooky" id="endTag">EXPEDIÇÃO ENCERRADA</div><h2 id="endTitle">SEM SAÍDA.</h2><p id="endDesc">O distrito não deixa ninguém sair.</p><button class="primary" id="restart">TENTAR NOVAMENTE</button></div></div><div id="unsupported">Seu navegador não conseguiu iniciar o mundo 3D. Tente abrir no Chrome, Edge ou Safari atualizado.</div>
 <script>
@@ -255,7 +255,7 @@ for(let i=0;i<6;i++)world.cube(-2.5+i,3.8,94.52,.28,.21,.08,color('#8eada7'),.4)
 
 // Cartazes rasgados, pichações orientadas na superfície da persiana (paredes X).
 function wallText(x,y,z,text,front,shade='#985d64'){
- const ink=color(shade),scale=.18,shift=front>0?.27:-.27;let zz=z;
+ const ink=color(shade),scale=.18,shift=front>0?-.27:.27;let zz=z;
  for(const letter of text){const rows=font[letter]||font['0'];for(let r=0;r<rows.length;r++)for(let k=0;k<rows[r].length;k++)if(rows[r][k]==='1')
  world.cube(x+shift,y+(4-r)*.20,zz+k*.19,.048,.17,.16,ink,.13);zz+=rows[0].length*.19+.14;}
  for(let i=0;i<6;i++)world.cube(x+shift,y-rand(.2,.9),z+rand(0,Math.max(1,(zz-z))),.04,rand(.12,.6),.06,ink);
@@ -290,6 +290,39 @@ for(let j=0;j<22;j++){
  world.cube(xx+sg*.11,.08,z+.4,.25,.1,.8,color('#768181'));
  world.cube(xx+sg*.28,.03,z-.45,.12,.06,1.3,color('#515e61'));
 }
+// Fachadas comerciais: placas e etiquetas legíveis de perto, todas dentro do shopping.
+for(const [lo,hi] of intervals){
+ const z=(lo+hi)/2;
+ for(const side of [-1,1]){
+  const x=side*1.69; // superfície externa das grades, virada para o corredor
+  // Marcas grandes de tinta borrada, tinta escorrendo e adesivos rasgados.
+  for(let k=0;k<9;k++){
+    const zz=z+rand(-15,15),yy=rand(.5,2.65),cc=k%3===0?'#986665':k%3===1?'#667775':'#98836b';
+    world.cube(x,yy,zz,.07,rand(.06,.21),rand(.13,.65),color(cc),.035);
+    if(k%2===0)world.cube(x,yy-rand(.1,.5),zz+.12,.072,rand(.17,.55),.044,color(cc),.02);
+  }
+  // Lojas deterioradas identificadas por placas que piscam, sem neon exagerado.
+  for(let k=-1;k<=1;k++){
+    let zz=z+k*10,sgnCol=color(k===0?'#8e827b':'#626b6a');
+    world.cube(x,3.12,zz,.19,.31,5.5,color('#252d30'));
+    for(let j=-2;j<=2;j++)world.cube(x-side*.16,3.12,zz+j*.86,.06,.10,.52,sgnCol,.34);
+  }
+ }
+}
+// Cortinas de plástico opaco rasgadas, balançando sobre as cabeças e fios baixos.
+for(const x of laneX)for(const z of [-118,-53,9,61]){
+ for(let j=0;j<8;j++){
+  const xx=x-1.65+j*.45;
+  const length=rand(.3,1.15);
+  world.cube(xx,3.11-length/2,z,.23,length,.035,color(j%3===0?'#6b6b61':'#525a58'));
+ }
+}
+// Colunas riscadas, sinalização de emergência parcialmente apagada.
+for(const z of [-107,-65,-17,40,89])for(const x of laneX){
+ world.cube(x-2.38,1.4,z+.32,.06,.55,.37,color('#b26b63'),.14);
+ world.cube(x+2.38,2.0,z+.31,.06,.45,.48,color('#b9ad9e'),.22);
+}
+
 // Escombro de placas de teto nos cruzamentos; a passagem continua aberta.
 for(let i=0;i<38;i++){
  const x=rand(-34,34),z=crossZ[Math.floor(rnd()*crossZ.length)]+rand(-2.1,2.1);
@@ -315,7 +348,7 @@ function toast(s,ms=2800){$('message').textContent=s;$('message').style.opacity=
 function updateUI(){let count=taken.filter(Boolean).length;$('objectiveText').textContent=count===3?'Vá à saída e ative o painel':`Encontre os 3 núcleos (${count}/3)`;taken.forEach((v,i)=>$('f'+i).classList.toggle('active',v));$('staminaFill').style.width=p.stamina+'%';$('healthFill').style.width=p.health+'%';$('lightText').textContent=p.flash?'LIGADA':'APAGADA';$('lightText').style.color=p.flash?'#c5e6dc':'#f0a49c';$('playersText').textContent=(1+friends.size)+'/4';let sect='CORREDOR DO SHOPPING';if(distance(p.x,p.z,0,89)<17)sect='ENTRADA DO SHOPPING';else if(distance(p.x,p.z,tower.x,tower.z)<25)sect='SAÍDA DE EMERGÊNCIA';else for(const b of cabins)if(distance(p.x,p.z,b.x,b.z)<29){sect=b.title;break;}$('sectorText').textContent=sect;}
 function setGame(start='solo'){state='playing';$('menu').style.display='none';$('hud').style.display='block';if(mobile)$('mobile').style.display='block';$('endScreen').style.display='none';$('roomChip').style.display=onlineMode==='solo'?'none':'block';$('roomChipText').textContent=roomCode;if(start==='solo')toast('Encontre os 3 núcleos. A saída fica no fim da galeria.');else toast('Vocês estão no shopping. Não se separem nos corredores.');initAudio();if(!mobile)canvas.requestPointerLock?.().catch(()=>{});}
 function resetWorld(){p={x:0,z:89,yaw:0,pitch:-.02,stamina:100,health:100,flash:true,headbob:0};monster={x:28,z:-60,heading:0,phase:0};taken=[false,false,false];cooldown=0;win=false;dead=false;state='menu';}
-function finish(success){if(state!=='playing')return;state='end';win=success;dead=!success;document.exitPointerLock?.();$('hud').style.display='none';$('mobile').style.display='none';$('endScreen').style.display='flex';$('endTag').textContent=success?'O SINAL CHEGOU AO OUTRO LADO':'EXPEDIÇÃO ENCERRADA';$('endTitle').textContent=success?'VOCÊS SAÍRAM.':'A CIDADE VENCEU.';$('endDesc').textContent=success?'O portão abriu. A equipe escapou do shopping — mas as câmeras ainda mostram alguém entre as vitrines...':'A criatura encontrou você no shopping. Evite os corredores sem saída e não confie nas luzes.';sound(success?'victory':'death');}
+function finish(success){if(state!=='playing')return;state='end';win=success;dead=!success;document.exitPointerLock?.();$('hud').style.display='none';$('mobile').style.display='none';$('endScreen').style.display='flex';$('endTag').textContent=success?'O SINAL CHEGOU AO OUTRO LADO':'EXPEDIÇÃO ENCERRADA';$('endTitle').textContent=success?'VOCÊS SAÍRAM.':'O SHOPPING VENCEU.';$('endDesc').textContent=success?'O portão abriu. A equipe escapou do shopping — mas as câmeras ainda mostram alguém entre as vitrines...':'A criatura encontrou você no shopping. Evite os corredores sem saída e não confie nas luzes.';sound(success?'victory':'death');}
 $('startSolo').onclick=()=>setGame('solo');$('restart').onclick=()=>{if(onlineMode!=='solo'){if(peer)try{peer.destroy()}catch{};peer=null;clients.clear();friends.clear();onlineMode='solo'}resetWorld();$('endScreen').style.display='none';$('menu').style.display='flex';$('roomPane').style.display='none';};
 function toggleFlash(){if(state!=='playing')return;p.flash=!p.flash;sound('toggle');updateUI()}
 function action(){if(state!=='playing')return;const fuseIndex=fuses.findIndex((f,i)=>!taken[i]&&distance(p.x,p.z,f.x,f.z)<3.7);if(fuseIndex>=0){if(onlineMode==='guest'&&hostConn?.open){hostConn.send({t:'pickup',i:fuseIndex});toast('Solicitando coleta ao anfitrião...');}else takeFuse(fuseIndex);return;}if(taken.every(Boolean)&&distance(p.x,p.z,tower.x,tower.z+10)<4.8){if(onlineMode==='guest'&&hostConn?.open)hostConn.send({t:'win'});else {if(onlineMode==='host')broadcast({t:'win'});finish(true)}return;}toast('Nada por perto para interagir.',1200);}
