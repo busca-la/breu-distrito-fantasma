@@ -29,8 +29,10 @@ for(const [type,side,z] of shops){
   assert(circleFits(x,z,.32),type+' doorway is blocked at '+x+','+z);
  }
 }
-for(const point of [INTERACTION.radio,INTERACTION.relay,INTERACTION.panel]){
- assert(circleFits(point.x,point.z,.1),'Mission interaction lies inside an impossible wall');
+for(const [id,x,z] of [['radio',-4.35,-10.4],['relay',5.45,-26.1],['panel',14.6,-51.4]]){
+ const target=INTERACTION[id];
+ assert(circleFits(x,z,.31),id+' has no space to stand in front of the equipment');
+ assert(Math.hypot(x-target.x,z-target.z)<target.r,id+' cannot be interacted with from the available standing space');
 }
 const physics=await BreuPhysics.create();
 function approach(x,z,seconds=1.2){
