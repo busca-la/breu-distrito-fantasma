@@ -22,6 +22,8 @@ test('objective UI keeps compass needle when distance value changes',()=>{
  assert(!main.includes('distance.textContent='));
  assert(main.includes('escapeSequence.update(clock)'));
  assert(main.includes('physics.unlockExit()'));
+ assert(main.includes('if(!physics){location.reload();return;}'));
+ assert(main.includes('RECARREGAR E TENTAR NOVAMENTE'));
 });
 
 test('game HUD activates alarm, delays the physical exit and then finishes escape',async()=>{

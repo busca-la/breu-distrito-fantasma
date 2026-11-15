@@ -19,7 +19,7 @@ let joystick={x:0,y:0};
 const keys=new Set();
 const sound=new BreuSound();
 const vec=(x,y,z)=>new THREE.Vector3(x,y,z);
-function showError(err){console.error(err);status.textContent='Falha ao iniciar o motor: '+String(err?.message||err);status.style.color='#ff9a90';$('#play').disabled=false;}
+function showError(err){console.error(err);status.textContent='Falha ao iniciar o motor: '+String(err?.message||err);status.style.color='#ff9a90';$('#play').disabled=false;$('#play').textContent='RECARREGAR E TENTAR NOVAMENTE';}
 function renderSetup(){
  const gl=canvas.getContext('webgl2',{antialias:true,alpha:false,powerPreference:'high-performance'});
  if(!gl)throw new Error('O navegador precisa de WebGL2 para abrir esta versão.');
@@ -44,7 +44,7 @@ function renderSetup(){
  window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 }
 function start(){
- if(!physics)return;
+ if(!physics){location.reload();return;}
  if(escaped||defeated){location.reload();return;}
  started=true;paused=false;intro.classList.add('hide');hud.classList.remove('hide');
  void sound.start().catch(e=>console.warn('Audio unavailable:',e));
