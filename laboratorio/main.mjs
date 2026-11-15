@@ -3,7 +3,9 @@ import {BreuPhysics} from './physics.mjs';
 import {createLevel} from './level.mjs';
 import {BreuSound} from './ambient-audio.mjs';
 import {createStalker} from './stalker.mjs';
-import {EscapeSequence,BreuStory} from './mission.mjs';
+import {EscapeSequence,BreuStory,STORY_RADIO} from './mission.mjs';
+import {createMissionGuide} from './mission-guide.mjs';
+import {hasLineOfSight,reachedExit} from './perception.mjs';
 import {createEnvironmentMotion} from './environment-motion.mjs';
 import {createLiveEncounters} from './live-encounters.mjs';
 import {WING, WALLS, INTERACTION, STORE_SIGNS} from './layout.mjs';
@@ -15,7 +17,7 @@ const mapCanvas=$('#map'),mapCtx=mapCanvas.getContext('2d');
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
 const lowPowerDevice=touch||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<=4);
 const quality={ratio:1,min:touch?.62:.72,max:1,seconds:0,frames:0,goodWindows:0};
-let scene,renderer,camera,physics,stage,flashlight,stalker,motion,encounters;
+let scene,renderer,camera,physics,stage,flashlight,stalker,motion,encounters,missionGuide;
 let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
 const escapeSequence=new EscapeSequence(12),story=new BreuStory();let exitOpen=false;
 let yaw=0,pitch=0,flashOn=true,interactHeld=false,requestJump=false;
@@ -44,6 +46,7 @@ function renderSetup(){
  stage=createLevel(scene);stalker=createStalker(scene);
  motion=createEnvironmentMotion(scene,{lowPower:lowPowerDevice});
  encounters=createLiveEncounters(scene);
+ missionGuide=createMissionGuide(scene);
  const light=new THREE.SpotLight('#e7ddd1',25,19,Math.PI/7,.78,1.6);
  flashlight=light;scene.add(light);scene.add(light.target);
  light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
@@ -54,9 +57,15 @@ function renderSetup(){
 }
 function start(){
  if(!physics){location.reload();return;}
- if(escaped||defeated){location.reload();return;}
+ if(escaped){location.reload();return;}
+ if(defeated){
+  defeated=false;
+  physics.reset(story.checkpoint);
+  stalker.reset(clock);
+  keys.clear();interactHeld=false;requestJump=false;joystick.x=joystick.y=0;
+ }
  started=true;paused=false;intro.classList.add('hide');hud.classList.remove('hide');
- void sound.start().catch(e=>console.warn('Audio unavailable:',e));
+ void sound.start().then(()=>sound.setPaused(false)).catch(e=>console.warn('Audio unavailable:',e));
  $('#mobile-controls').classList.toggle('hide',!touch);
  $('#pause').textContent='II';
  if(!touch&&canvas.requestPointerLock)canvas.requestPointerLock();
@@ -93,16 +102,29 @@ function inputSetup(){
  const clear=()=>{lookId=null;lx=null;ly=null};look.addEventListener('pointerup',clear);look.addEventListener('pointercancel',clear);
 }
 function onCaught(){
- defeated=true;paused=true;sound.setPaused(true);intro.classList.remove('hide');hud.classList.add('hide');
- $('#intro-headline').textContent='ELE TE VIU.';$('#intro-copy').textContent='O corredor ficou em silêncio. Você demorou demais entre as vitrines.';
- $('#play').textContent='TENTAR NOVAMENTE';if(document.pointerLockElement)document.exitPointerLock();
+ defeated=true;paused=true;sound.setPaused(true);
+ intro.classList.remove('hide');hud.classList.add('hide');
+ $('#intro-headline').textContent='ELE TE ENCONTROU.';
+ $('#intro-copy').textContent='Você fez barulho ou ficou na luz. Use F para apagar a lanterna e evite correr perto da criatura. Seu progresso foi preservado.';
+ $('#play').textContent='RETOMAR DO ÚLTIMO PONTO';
+ if(document.pointerLockElement)document.exitPointerLock();
+}
+function finishEscape(){
+ if(!escapeSequence.finish())return;
+ story.advance('exit');
+ escaped=true;paused=true;sound.setPaused(true);
+ intro.classList.remove('hide');hud.classList.add('hide');
+ $('#intro-headline').textContent='VOCÊ ESCAPOU.';
+ $('#intro-copy').textContent=`Você recuperou a energia, abriu o portão e deixou o Shopping 09. Tempo: ${Math.round(clock)} segundos. Mas o funcionário que correu no início nunca respondeu ao rádio.`;
+ $('#play').textContent='JOGAR DE NOVO';
+ if(document.pointerLockElement)document.exitPointerLock();
 }
 function updateObjective(pos){
- // The gate is powered by a different circuit from the final exit.
- // Restoring that circuit allows entry into the real security office.
+ // Nothing is collected for its own sake: radio explains the power failure,
+ // power unlocks the guard post, guard post starts the actual exit motor.
  if(alarm&&!exitOpen&&escapeSequence.update(clock)){
   exitOpen=true;stage.openExit(clock);
-  environmentCue({kind:'alarm',text:'TRAVA DE INCÊNDIO DESTRAVADA. O PORTÃO ESTÁ SUBINDO.'});
+  environmentCue({kind:'alarm',text:'PORTÃO DE INCÊNDIO: MECANISMO ACIONADO. AGUENTE MAIS UM POUCO.'},4200);
  }
  const task=story.current;
  objective.textContent=task.title;
@@ -113,42 +135,42 @@ function updateObjective(pos){
  const distance=Math.hypot(pos.x-target.x,pos.z-target.z);
  distanceValue.textContent=`${Math.round(distance)} m`;
  const near=distance<target.r;
- const openingSecurity=story.phase==='security'&&!stage.isSecurityPassable();
- const openingExit=story.phase==='escape'&&!stage.isExitPassable();
- if(alarm&&openingExit)objective.textContent=exitOpen?'PORTÃO ABRINDO — SOBREVIVA':'PORTÃO ABRE EM '+Math.ceil(escapeSequence.remaining(clock))+' S';
- const canUse=near&&!openingSecurity&&!openingExit;
- hint.classList.toggle('hide',!canUse);
- actionButton.classList.toggle('hide',!canUse||!touch);
- if(canUse)hint.textContent=(touch?'TOQUE EM INTERAGIR':'[E]')+' · '+task.action;
+ if(story.phase==='escape'){
+  hint.classList.add('hide');
+  actionButton.classList.add('hide');
+  if(alarm&&!stage.isExitPassable()){
+   objective.textContent=exitOpen?'PORTÃO SUBINDO — ENCONTRE COBERTURA':'PORTÃO ABRE EM '+Math.ceil(escapeSequence.remaining(clock))+' S';
+  }
+  if(reachedExit(pos,stage.isExitPassable()))finishEscape();
+ }else{
+  const waiting=story.phase==='security'&&!stage.isSecurityPassable();
+  const canUse=near&&!waiting&&hasLineOfSight(pos,target);
+  hint.classList.toggle('hide',!canUse);
+  actionButton.classList.toggle('hide',!canUse||!touch);
+  if(canUse)hint.textContent=(touch?'TOQUE EM INTERAGIR':'[E]')+' · '+task.action;
+  if(interactHeld){
+   interactHeld=false;
+   if(waiting&&near){
+    environmentCue({kind:'metal',text:'A GRADE ESTÁ SUBINDO. ENTRE QUANDO ABRIR.'});
+   }else if(canUse){
+    if(story.phase==='radio'){
+     story.advance('radio');
+     environmentCue({kind:'pursuit',text:STORY_RADIO},6800);
+    }else if(story.phase==='relay'){
+     story.advance('relay');
+     stage.restorePower(clock);
+     environmentCue({kind:'electric',text:'DISJUNTOR ATIVO: LUZES DA ALA VOLTARAM. A GRADE DA SEGURANÇA ESTÁ SUBINDO.'},4500);
+    }else if(story.phase==='security'){
+     story.advance('panel');
+     alarm=true;escapeSequence.activate(clock);
+     environmentCue({kind:'alarm',text:'ALARME DE EVACUAÇÃO: PORTÃO ABRE EM 12 SEGUNDOS. A CRIATURA OUVIU.'},4600);
+    }
+   }
+  }
+ }
  const bearing=Math.atan2(-(target.x-pos.x),-(target.z-pos.z));
  const angle=((bearing-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;
  $('#needle').style.transform=`rotate(${-angle}rad)`;
- if(!interactHeld)return;
- interactHeld=false;
- if(!canUse){
-  if(near&&openingSecurity)environmentCue({kind:'metal',text:'A GRADE ESTÁ SUBINDO. AGUARDE A ABERTURA.'});
-  return;
- }
- if(story.phase==='radio'){
-  story.advance('radio');
-  environmentCue({kind:'pursuit',text:'RÁDIO: SEM ENERGIA. USE O DISJUNTOR AUXILIAR DA DENKI.'});
- }else if(story.phase==='relay'){
-  story.advance('relay');
-  stage.restorePower(clock);
-  environmentCue({kind:'electric',text:'ENERGIA RESTABELECIDA. A GRADE DA SEGURANÇA ESTÁ ABRINDO.'});
- }else if(story.phase==='security'){
-  story.advance('panel');
-  alarm=true;escapeSequence.activate(clock);
-  environmentCue({kind:'alarm',text:'CENTRAL: ABERTURA DE EMERGÊNCIA INICIADA. A CRIATURA OUVIU.'});
- }else if(story.phase==='escape'&&stage.isExitPassable()&&escapeSequence.finish()){
-  story.advance('exit');
-  escaped=true;paused=true;sound.setPaused(true);
-  intro.classList.remove('hide');hud.classList.add('hide');
-  $('#intro-headline').textContent='VOCÊ ESCAPOU.';
-  $('#intro-copy').textContent=`O rádio, o disjuntor e a central funcionaram. Você escapou em ${Math.round(clock)} segundos.`;
-  $('#play').textContent='REINICIAR EXPEDIÇÃO';
-  if(document.pointerLockElement)document.exitPointerLock();
- }
 }
 function drawMap(pos){
  const c=mapCtx,w=mapCanvas.width,h=mapCanvas.height;c.clearRect(0,0,w,h);c.fillStyle='rgba(5,10,12,.9)';c.fillRect(0,0,w,h);
@@ -159,14 +181,14 @@ function drawMap(pos){
  c.fillStyle=alarm?'#f1b2a3':'#c9d4cf';const target=INTERACTION[story.target]||INTERACTION.exit;c.beginPath();c.arc(sx(target.x),sy(target.z),4,0,Math.PI*2);c.fill();
  c.fillStyle='#d9e9ee';c.beginPath();c.arc(sx(pos.x),sy(pos.z),3,0,Math.PI*2);c.fill();
 }
-function environmentCue(event){
+function environmentCue(event,duration=2400){
  if(!event)return;
  sound.cue(event.kind);
  // Keep the cinematic message short and never block player input.
  const label=$('#notice');
  label.textContent=event.text;label.classList.add('show');
  clearTimeout(environmentCue.timeout);
- environmentCue.timeout=setTimeout(()=>label.classList.remove('show'),2200);
+ environmentCue.timeout=setTimeout(()=>label.classList.remove('show'),duration);
 }
 const fps={last:0,acc:0,second:0,frames:0};
 // Change resolution only every few seconds to avoid constantly reallocating
@@ -205,11 +227,22 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
    camera.fov+=(targetFov-camera.fov)*Math.min(1,dt*7);
    if(Math.abs(targetFov-camera.fov)>.08)camera.updateProjectionMatrix();
    sound.tick(clock,{walking:Math.abs(forward)+Math.abs(strafe)>.12,sprinting:sprint,alarm,zone:Math.max(0,Math.min(5,Math.floor((13-p.z)/14)))});
-   const result=stalker?.update(dt,p,alarm,clock);
+   const walking=Math.abs(forward)+Math.abs(strafe)>.12;
+   const actuallySprinting=sprint&&walking;
+   const result=stalker?.update(dt,p,alarm,clock,{
+    sprinting:actuallySprinting,walking,flashOn,
+    securityOpen:physics.securityGateUnlocked,exitOpen:physics.exitUnlocked
+   });
+   const threat=$('#threat-state'),noise=$('#noise-state');
+   if(threat)threat.textContent=result?.chasing?'PERIGO: SENDO CAÇADO':'AMEAÇA: PROCURANDO';
+   if(noise)noise.textContent=actuallySprinting?'RUÍDO ALTO · CORRENDO':walking?'RUÍDO BAIXO · ANDANDO':'SILENCIOSO';
+   if(result?.spotted)environmentCue({kind:'pursuit',text:'ELE OUVIU OU VIU VOCÊ. QUEBRE A LINHA DE VISÃO!'},3000);
+   if(result?.lost)environmentCue({kind:'metal',text:'VOCÊ DESPISTOU A CRIATURA. USE AS LOJAS PARA SE ESCONDER.'},3000);
    $('#danger').style.opacity=String(result?Math.max(0,Math.min(.67,(12-result.distance)/17)):0);
    if(result?.caught){onCaught();return;}
    updateObjective(p);
    environmentCue(motion?.update(dt,clock,p,{flashlight:flashOn,alarm}));
+   missionGuide?.update(p,story.target,clock);
    for(const event of encounters?.update(clock,p)||[])environmentCue(event);
    fps.frames++;fps.second+=elapsed;adjustQuality(elapsed);
    if(fps.second>=1){$('#fps').textContent=`${Math.round(fps.frames/fps.second)} FPS`;fps.frames=0;fps.second=0;drawMap(p)}
