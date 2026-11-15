@@ -146,7 +146,7 @@ export function createLevel(scene){
    box('store pillar',x,1.55,s.z+dz,.22,3.1,.25,palette.frame);
    box('store sconce',x-s.side*.09,2.48,s.z+dz,.12,.38,.13,accent,false);
   }
-  const open=s.type!=='maintenance'; // All public shop entrances have matching physical openings.
+  const open=true; // Even maintenance is accessible; the only story locks are the two security gates.
   if(!open){
    // Each shop type has its own construction and material language. All of
    // these closures correspond to physically sealed divider walls in layout.mjs.
@@ -239,6 +239,12 @@ export function createLevel(scene){
   const zz=-35.8+j*2.2;
   box('interior arcade cabinet',-8.7,1.05,zz,.72,1.78,.83,palette.black,false);
   box('arcade phosphor screen',-8.3,1.5,zz,.02,.60,.62,palette.red,false);
+ }
+ // Maintenance service room: usable open entry, with tools against the back
+ // wall. The player can retreat here during the chase.
+ box('maintenance tool bench',-8.6,.76,-47.9,1.15,.15,1.95,palette.wood,false);
+ for(let i=0;i<3;i++){
+  box('maintenance wall tool rack',-9.8,1.45,-49.1+i*1.1,.18,.75,.58,palette.shutter,false);
  }
  // Low-ceiling service transition with reinforcing lintel.
  box('service lintel',8.4,3.3,-46.8,8.0,.35,.7,palette.rust);
