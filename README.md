@@ -1,46 +1,30 @@
 # BREU — Distrito Fantasma
 
-Jogo experimental de terror 3D no navegador, ambientado em um shopping abandonado de dois pavimentos. O código roda como página HTML estática com WebGL2, sem aplicativo nem serviços pagos.
+Jogo experimental de terror 3D em navegador ambientado em um shopping futurista abandonado, com dois andares e multiplayer experimental.
 
 **Jogar:** https://breu-distrito-fantasma.vercel.app
 
-## Versão 0.9 — auditoria estrutural e de jogabilidade
+## Art pass v1.0 (experimental)
 
-A versão anterior escondia problemas que não eram detectados apenas por verificar a conectividade superficial do mapa. A revisão atua na **causa física e visual**, não somente na decoração.
+A estrutura continua a mesma; a revisão trabalha na aparência especialmente das galerias de entrada e serviço:
 
-- **Acesso aos banheiros** desviado da caixa da escada de serviço: agora há uma circulação própria, fora do vão das escadas.
-- **Escadas desobstruídas**: objetos e mesas não são gerados sobre os degraus e patamares.
-- **Navegação corrigida**: o grafo de caminhos verifica amostras ao longo de cada ligação, incluindo a largura do corpo e altura do teto; a criatura não recebe mais variáveis do salto do jogador.
-- **Colisão aprimorada**: nove pontos no perímetro do corpo, verificação de teto, móveis e mudanças de nível; estado físico independente entre jogador, monstro e colegas conectados.
-- **Geometria fechada**: vãos menores na cobertura selados sem cobrir os acessos das escadas; fundo físico sob o mapa e paredes de perímetro contínuas, em vez de centenas de cubinhos.
-- **Pisos alinhados** com a altura física, faces do piso superior orientadas para cima e material apropriado também no segundo pavimento.
-- **Menos trabalho no celular**: atualizações de HUD e minimapa limitadas, junção de trechos de paredes em painéis contínuos e PeerJS carregado somente quando se acessa o multiplayer.
+- Fachadas com lojas diferentes, vitrines com profundidade, persianas metálicas deterioradas e molduras.
+- Lâmpadas de teto, dutos, tubulação, fiação suspensa, grelhas de drenagem e estruturas abandonadas.
+- Máquinas de venda, carrinho de compras, balcão e outros objetos com colisão onde necessário.
+- Luzes fracas de temperatura variada que piscam irregularmente em locais diferentes.
 
-## Verificação automática
+O mapa mantém as 13 salas, banheiros, praça de alimentação, galeria, cinema e três acessos ao segundo andar. Objetivo: acionar o alarme na sala de segurança e fugir pela doca.
 
-Requer somente Node.js, sem pacotes externos:
+## Validação e limitações
 
-```bash
-npm test
-```
+- Sintaxe JavaScript: aprovada.
+- Geometria e conectividade entre ambientes: aprovada no teste automático local.
+- Movimento físico do jogador até todos os ambientes e objetivos: aprovado.
+- Perseguição entre andares: aprovada em teste local.
+- **Renderização WebGL2 e qualidade visual da revisão:** não verificadas neste ambiente, pois o Chromium utilizado não disponibilizou WebGL2.
+- **Multiplayer real em dois celulares:** ainda não verificado.
+- A arte é procedural de baixo custo; as outras áreas ainda precisam de acabamento. **Esta versão não é um jogo visualmente finalizado.**
 
-Os testes de geometria e movimentação avaliam:
+## Tecnologia
 
-- 13 ambientes, três escadas, conexões e colisão de corpo;
-- amostragem da cobertura de teto em ambos os andares;
-- obstáculos nas rotas de navegação e acesso aos objetivos;
-- travessia real da malha por passos, do spawn a todos os ambientes;
-- perseguição da criatura do térreo ao mezanino;
-- mapa fora dos limites, independência da colisão de personagem/monstro.
-
-## Limitações ainda abertas
-
-Este é um **protótipo procedural**, não um jogo 3D com acabamento artístico definitivo. Não foi possível garantir a ausência de falhas visuais em todos os ângulos nem medir FPS em celulares reais. A conexão WebRTC de quatro jogadores ainda **não foi testada ponta a ponta em telefones diferentes**. O modo online depende de um serviço externo de sinalização (PeerJS), portanto não há garantia de disponibilidade permanente.
-
-## Controles
-
-PC: WASD, Shift, Espaço (pular), E (interagir), F (lanterna), Tab/M (mapa). Celular: direcional, arrastar para olhar, botões PULAR, USAR, CORRER, LUZ e MAPA.
-
-## Publicação
-
-O Vercel está ligado à branch `main`; cada alteração aprovada nessa branch dispara uma publicação. Código principal: `index.html`.
+Página HTML + JavaScript com WebGL2, sem instalar aplicativo. O Vercel publica automaticamente commits na branch `main`.
