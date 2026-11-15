@@ -11,6 +11,8 @@ const canvas=$('#world'),status=$('#loading-status'),intro=$('#intro'),hud=$('#h
 const objective=$('#objective'),distanceValue=$('#distance-value'),hint=$('#hint'),actionButton=$('#action-btn');
 const mapCanvas=$('#map'),mapCtx=mapCanvas.getContext('2d');
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
+const lowPowerDevice=touch||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<=4);
+const quality={ratio:1,min:touch?.62:.72,max:1,seconds:0,frames:0,goodWindows:0};
 let scene,renderer,camera,physics,stage,flashlight,stalker;
 let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
 const escapeSequence=new EscapeSequence(12);let exitOpen=false;
@@ -21,15 +23,18 @@ const sound=new BreuSound();
 const vec=(x,y,z)=>new THREE.Vector3(x,y,z);
 function showError(err){console.error(err);status.textContent='Falha ao iniciar o motor: '+String(err?.message||err);status.style.color='#ff9a90';$('#play').disabled=false;$('#play').textContent='RECARREGAR E TENTAR NOVAMENTE';}
 function renderSetup(){
- const gl=canvas.getContext('webgl2',{antialias:true,alpha:false,powerPreference:'high-performance'});
+ const gl=canvas.getContext('webgl2',{antialias:!lowPowerDevice,alpha:false,powerPreference:'high-performance'});
  if(!gl)throw new Error('O navegador precisa de WebGL2 para abrir esta versão.');
- renderer=new THREE.WebGLRenderer({canvas,context:gl,antialias:true,powerPreference:'high-performance'});
+ renderer=new THREE.WebGLRenderer({canvas,context:gl,antialias:!lowPowerDevice,powerPreference:'high-performance'});
  renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.toneMapping=THREE.ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.06;
- renderer.setPixelRatio(Math.min(devicePixelRatio,touch?1.25:1.6));
- renderer.setSize(innerWidth,innerHeight);
- renderer.shadowMap.enabled=!touch;
+ quality.max=Math.min(devicePixelRatio||1,touch?1.15:lowPowerDevice?1.3:1.55);
+ quality.min=Math.min(quality.max,quality.min);
+ quality.ratio=Math.min(quality.max,touch?.95:lowPowerDevice?1.10:1.32);
+ renderer.setPixelRatio(quality.ratio);
+ renderer.setSize(innerWidth,innerHeight,false);
+ renderer.shadowMap.enabled=!lowPowerDevice;
  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
  scene=new THREE.Scene();scene.background=new THREE.Color('#0b1014');scene.fog=new THREE.FogExp2('#091015',.034);
  camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.035,125);
@@ -37,11 +42,11 @@ function renderSetup(){
  stage=createLevel(scene);stalker=createStalker(scene);
  const light=new THREE.SpotLight('#e7ddd1',25,19,Math.PI/7,.78,1.6);
  flashlight=light;scene.add(light);scene.add(light.target);
- light.castShadow=!touch;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
+ light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
  const fill=new THREE.SpotLight('#d0d5ce',2,9,Math.PI/2,.8,2);
  fill.position.set(0,1.6,12);fill.target.position.set(0,1,-1);scene.add(fill,fill.target);
  camera.position.set(0,1.62,13);scene.add(camera);
- window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
+ window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 }
 function start(){
  if(!physics){location.reload();return;}
@@ -129,9 +134,28 @@ function drawMap(pos){
  c.fillStyle=alarm?'#f1b2a3':'#c9d4cf';const target=alarm?INTERACTION.exit:INTERACTION.panel;c.beginPath();c.arc(sx(target.x),sy(target.z),4,0,Math.PI*2);c.fill();
  c.fillStyle='#d9e9ee';c.beginPath();c.arc(sx(pos.x),sy(pos.z),3,0,Math.PI*2);c.fill();
 }
-const fps={last:0,delta:0,acc:0,second:0,frames:0};
+const fps={last:0,acc:0,second:0,frames:0};
+// Change resolution only every few seconds to avoid constantly reallocating
+// the framebuffer. The scene geometry, textures and collision stay untouched.
+function adjustQuality(elapsed){
+ if(!started||paused||document.hidden||!renderer)return;
+ quality.seconds+=Math.min(.25,elapsed);quality.frames++;
+ if(quality.seconds<2.5)return;
+ const frameMs=quality.seconds/quality.frames*1000;
+ quality.seconds=0;quality.frames=0;
+ let next=quality.ratio;
+ if(frameMs>28){next=Math.max(quality.min,next-.10);quality.goodWindows=0;}
+ else if(frameMs<18){if(++quality.goodWindows>=3){next=Math.min(quality.max,next+.05);quality.goodWindows=0;}}
+ else quality.goodWindows=0;
+ if(Math.abs(next-quality.ratio)>.015){
+  quality.ratio=next;
+  renderer.setPixelRatio(quality.ratio);
+  renderer.setSize(innerWidth,innerHeight,false);
+ }
+}
 function frame(t){requestAnimationFrame(frame);if(!renderer)return;
- const dt=Math.min(.05,(t-fps.last)/1000||0);fps.last=t;clock+=(!paused?dt:0);
+ const elapsed=fps.last?Math.min(.25,(t-fps.last)/1000):1/60;
+ const dt=Math.min(.05,elapsed);fps.last=t;clock+=(!paused?dt:0);
  if(physics){
   if(started&&!paused){
    const forward=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-joystick.y;
@@ -148,7 +172,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
    $('#danger').style.opacity=String(result?Math.max(0,Math.min(.67,(12-result.distance)/17)):0);
    if(result?.caught){onCaught();return;}
    updateObjective(p);
-   fps.frames++;fps.second+=dt;
+   fps.frames++;fps.second+=elapsed;adjustQuality(elapsed);
    if(fps.second>=1){$('#fps').textContent=`${Math.round(fps.frames/fps.second)} FPS`;fps.frames=0;fps.second=0;drawMap(p)}
   }else if(!started){
    camera.position.set(Math.sin(t*.00015)*.10,1.62,13);camera.rotation.set(Math.sin(t*.00019)*-.025,Math.sin(t*.0001)*.035,0);
