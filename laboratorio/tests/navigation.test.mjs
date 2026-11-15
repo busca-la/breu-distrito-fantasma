@@ -31,3 +31,12 @@ test('all map boundaries have physical walls and gameplay props are not phantom'
  assert(PROPS.every(p=>!p.blocking||p.w>0&&p.h>0&&p.d>0));
  for(let z=-55;z<15;z+=2){assert(!circleFits(-11,z,.32),`West shell breached at ${z}`)}
 });
+
+
+test('renovation choke creates a narrow but walkable passage rather than a decorative wall',()=>{
+ const z=-18.6;
+ assert(circleFits(0,z,.33),'Centre of claustrophobic passage should stay walkable');
+ assert(!circleFits(1.2,z,.33)&&!circleFits(-1.2,z,.33),'Renovation barriers should be solid');
+ const route=nav.route({x:0,z:-13},{x:0,z:-24});
+ assert(route.length>0,'Choke must not disconnect the main gallery');
+});

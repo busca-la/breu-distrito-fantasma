@@ -49,6 +49,8 @@ export const STORE_SIGNS=[
 ];
 export const INTERACTION={panel:{x:15.5,y:1.37,z:-51.4,r:1.75},exit:{x:21.05,y:1.45,z:-51.0,r:1.12}};
 export const PROPS = [
+ {name:'sealed west renovation',x:-2.20,z:-18.6,w:2.70,d:1.65,h:2.85,blocking:true},
+ {name:'sealed east renovation',x:2.20,z:-18.6,w:2.70,d:1.65,h:2.32,blocking:true},
  {name:'fallen rack',x:-1.70,z:-3.0,w:1.25,d:.55,h:.8,blocking:true},
  {name:'electric cabinet',x:2.70,z:-16.4,w:.6,d:1.1,h:1.8,blocking:true},
  {name:'collapsed kiosk',x:-1.9,z:-24.0,w:1.65,d:1.2,h:1.15,blocking:true},

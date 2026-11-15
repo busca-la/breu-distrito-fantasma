@@ -103,8 +103,33 @@ export function createLevel(scene){
   }
   const open=s.type==='ramen'||s.type==='electronics';
   if(!open){
-   box('corrugated steel shutter',x-s.side*.03,1.43,s.z,.1,2.65,3.7,palette.shutter);
-   for(let j=0;j<16;j++)box('shutter rib',x-s.side*.11,.18+j*.151,s.z,.065,.024,3.72,j%5===0?palette.rust:palette.board,false);
+   // Each shop type has its own construction and material language. All of
+   // these closures correspond to physically sealed divider walls in layout.mjs.
+   const front=x-s.side*.11;
+   if(s.type==='camera'||s.type==='fashion'){
+    box('abandoned mirrored shop front',front,1.43,s.z,.08,2.68,3.75,palette.glass);
+    for(let dz=-1.3;dz<=1.3;dz+=1.3)box('dark glazing mullion',front-s.side*.06,1.38,s.z+dz,.08,2.77,.085,palette.frame);
+    if(s.type==='camera'){
+     for(let j=0;j<3;j++)box('crossed anti-looting plank',front-s.side*.12,.60+j*.74,s.z,.09,.13,3.75,j===1?palette.wood:palette.rust);
+    }else{
+     box('fashion display black backing',front-s.side*.06,1.65,s.z,.055,2.12,3.28,palette.black);
+     for(let j=0;j<3;j++)box('high-fashion steel frame',front-s.side*.13,.66+j*.56,s.z,.065,.055,3.33,palette.frame);
+    }
+   }else if(s.type==='pharmacy'){
+    box('pharmacy frosted glass',front,1.43,s.z,.1,2.68,3.70,palette.tile);
+    for(let j=0;j<10;j++)box('pharmacy security grille vertical',front-s.side*.13,1.38,s.z-1.78+j*.39,.09,2.68,.037,palette.board,false);
+    for(let j=0;j<4;j++)box('pharmacy security grille horizontal',front-s.side*.15,.47+j*.64,s.z,.09,.041,3.70,palette.rust,false);
+   }else if(s.type==='arcade'){
+    box('arcade welded inner screen',front,1.43,s.z,.11,2.68,3.65,palette.black);
+    for(let j=0;j<12;j++)box('arcade half-slotted gate',front-s.side*.11,.25+j*.205,s.z,.055,.075,3.6,j%5===0?palette.rust:palette.shutter,false);
+   }else if(s.type==='maintenance'){
+    box('maintenance bulkhead door',front,1.43,s.z,.24,2.72,3.55,palette.rust);
+    for(const sideZ of [-1.48,1.48])box('security hinge column',front-s.side*.15,1.41,s.z+sideZ,.12,2.67,.16,palette.frame);
+    box('maintenance metal crash bar',front-s.side*.19,1.0,s.z,.06,.11,2.4,palette.board);
+   }else{
+    box('corrugated steel shutter',front,1.43,s.z,.10,2.65,3.7,palette.shutter);
+    for(let j=0;j<16;j++)box('shutter rib',front-s.side*.06,.18+j*.151,s.z,.065,.024,3.72,j%5===0?palette.rust:palette.board,false);
+   }
   }else{
    box('retracted rolling shutter',x-s.side*.1,2.75,s.z,.32,.5,3.85,palette.shutter);
    for(let j=0;j<5;j++)box('rolled shutter blades',x-s.side*.27,2.66+j*.075,s.z,.08,.037,3.85,palette.rust,false);
@@ -161,6 +186,17 @@ export function createLevel(scene){
  interactive.exit=door;
  // Each solid collision prop gets a visual volume aligned with the physics collider.
  for(const p of PROPS){
+  if(p.name.startsWith('sealed ')){
+   box('temporary evacuation hoarding',p.x,p.h/2,p.z,p.w,p.h,p.d,palette.rust);
+   // The visual hoarding is the same precise volume as the Rapier collider.
+   for(const dx of [-p.w/2+.18,p.w/2-.18]){
+    box('corrugated reinforcement',p.x+dx,p.h/2,p.z+.015,.08,p.h,.12,palette.shutter,false);
+   }
+   for(let i=0;i<3;i++){
+    box('faded chevron hazard strip',p.x,p.h*.20+i*p.h*.29,p.z+p.d/2+.015,p.w-.12,.08,.03,palette.board,false);
+   }
+   continue;
+  }
   const material=p.name.includes('crate')?palette.wood:p.name.includes('cabinet')?palette.rust:p.name.includes('trolley')?palette.board:palette.frame;
   box(p.name,p.x,p.h/2,p.z,p.w,p.h,p.d,material);
   if(p.name==='fallen rack'){
