@@ -34,9 +34,10 @@ const shaderFS=`#version 300 es
 precision highp float;
 in vec3 vWorld,vNorm,vCol; in float vEmit;
 uniform vec3 uEye,uTorch,uFog; uniform float uFlash,uStorm,uTime;
+uniform sampler2D uNoise;
 out vec4 outColor;
-float hash21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
-float fbm(vec2 p){float a=0.0;float k=.5;for(int i=0;i<3;i++){a+=hash21(floor(p))*k;p=p*2.13+vec2(9.1,3.7);k*=.5;}return a;}
+// Baked at startup: texture fetch replaces six costly trigonometric hashes per pixel.
+float fbm(vec2 p){return texelFetch(uNoise,ivec2(mod(floor(p),256.0)),0).r;}
 void main(){
  vec3 n=normalize(vNorm);vec3 to=vWorld-uEye;float d=length(to);vec3 viewDir=normalize(to);
  float above=abs(n.y);float floorDistance=min(abs(vWorld.y),abs(vWorld.y-4.8));float floorMat=step(.82,above)*(1.-smoothstep(.18,.35,floorDistance));
@@ -97,6 +98,21 @@ void main(){
 function compile(t,src){let s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 const prog=gl.createProgram();gl.attachShader(prog,compile(gl.VERTEX_SHADER,shaderVS));gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,shaderFS));gl.linkProgram(prog);if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(prog));gl.useProgram(prog);
 const loc={vp:gl.getUniformLocation(prog,'uViewProj'),model:gl.getUniformLocation(prog,'uModel'),eye:gl.getUniformLocation(prog,'uEye'),torch:gl.getUniformLocation(prog,'uTorch'),fog:gl.getUniformLocation(prog,'uFog'),flash:gl.getUniformLocation(prog,'uFlash'),storm:gl.getUniformLocation(prog,'uStorm'),time:gl.getUniformLocation(prog,'uTime')};
+// Bake the original three-octave grime noise once on the CPU; use two
+// texture lookups per fragment instead of procedural sine/hash loops.
+const noiseSize=256,noisePixels=new Uint8Array(noiseSize*noiseSize);
+const noiseHash=(x,y)=>{let v=Math.sin(x*127.1+y*311.7)*43758.5453123;return v-Math.floor(v);};
+for(let z=0;z<noiseSize;z++)for(let x=0;x<noiseSize;x++){
+ let xx=x,zz=z,a=0,k=.5;
+ for(let o=0;o<3;o++){a+=noiseHash(Math.floor(xx),Math.floor(zz))*k;xx=xx*2.13+9.1;zz=zz*2.13+3.7;k*=.5;}
+ noisePixels[z*noiseSize+x]=Math.round(a*255);
+}
+const noiseTexture=gl.createTexture();
+gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,noiseTexture);
+gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,noiseSize,noiseSize,0,gl.RED,gl.UNSIGNED_BYTE,noisePixels);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+gl.uniform1i(gl.getUniformLocation(prog,'uNoise'),1);
 const ident=new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
 function matModel(x=0,y=0,z=0,sx=1,sy=1,sz=1,ang=0){let c=Math.cos(ang),s=Math.sin(ang);return new Float32Array([c*sx,0,-s*sx,0,0,sy,0,0,s*sz,0,c*sz,0,x,y,z,1]);}
 const m4multiply=(a,b)=>{let o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];}return o};
@@ -695,7 +711,29 @@ for(let level=0;level<=1;level++){
  }
 }
 
-const staticMesh=world.upload();world.v.length=0;
+// Split static geometry by sector without cutting triangles. Long floor/ceiling
+// spans remain global, so no seams can appear at chunk boundaries.
+function uploadWorldChunks(vertices){
+ const sectors=new Map(),global=new Mesh(),cell=24;
+ for(let i=0;i<vertices.length;i+=30){
+  const ax=vertices[i],az=vertices[i+2],bx=vertices[i+10],bz=vertices[i+12],cx=vertices[i+20],cz=vertices[i+22];
+  const minX=Math.min(ax,bx,cx),maxX=Math.max(ax,bx,cx),minZ=Math.min(az,bz,cz),maxZ=Math.max(az,bz,cz);
+  let dest;
+  if(maxX-minX>cell||maxZ-minZ>cell)dest=global;
+  else{
+   const key=Math.floor((ax+bx+cx)/(3*cell))+','+Math.floor((az+bz+cz)/(3*cell));
+   if(!sectors.has(key)){const mesh=new Mesh();mesh.minX=mesh.minZ=Infinity;mesh.maxX=mesh.maxZ=-Infinity;sectors.set(key,mesh);}
+   dest=sectors.get(key);
+   dest.minX=Math.min(dest.minX,minX);dest.maxX=Math.max(dest.maxX,maxX);
+   dest.minZ=Math.min(dest.minZ,minZ);dest.maxZ=Math.max(dest.maxZ,maxZ);
+  }
+  for(let j=0;j<30;j++)dest.v.push(vertices[i+j]);
+ }
+ const chunks=[];
+ for(const m of sectors.values())chunks.push({...m.upload(),minX:m.minX,maxX:m.maxX,minZ:m.minZ,maxZ:m.maxZ});
+ return {chunks,global:global.v.length?global.upload():null};
+}
+const staticWorld=uploadWorldChunks(world.v);world.v.length=0;
 const monsterParts=[];function part(mesh,x,y,z,sx,sy,sz){monsterParts.push({mesh:mesh.upload(),x,y,z,sx,sy,sz});}
 let mes=new Mesh();mes.cylinder(0,0,0,.4,.22,2.7,color('#151f1e'),7);part(mes,0,0,0,.95,1,1);
 mes=new Mesh();mes.cylinder(0,0,0,.16,.13,1.6,color('#14211e'),7);part(mes,-.32,-1.5,0,1,1,1);part(mes,.32,-1.5,0,1,1,1);
@@ -1028,8 +1066,39 @@ let netTimer=0;function update(dt){time+=dt;
 }
 function setupDraw(eye,target){let fov=mobile?1.05:.98;let pv=perspective(fov,canvas.width/canvas.height,.075,270);gl.uniformMatrix4fv(loc.vp,false,m4multiply(pv,lookAt(eye,target)));gl.uniform3f(loc.eye,...eye);let d=dir(p.yaw,p.pitch);gl.uniform3f(loc.torch,...d);gl.uniform3f(loc.fog,.035,.045,.049);gl.uniform1f(loc.flash,p.flash?1:0);gl.uniform1f(loc.storm,stormFlash);gl.uniform1f(loc.time,time);}
 function draw(mesh,model){gl.bindVertexArray(mesh.vao);gl.uniformMatrix4fv(loc.model,false,model);gl.drawArrays(gl.TRIANGLES,0,mesh.count)}
-let renderScale=mobile?.61:.79;function resize(){const dpr=Math.min(devicePixelRatio||1,mobile?1.6:1.7);canvas.width=Math.max(1,Math.floor(innerWidth*dpr*renderScale));canvas.height=Math.max(1,Math.floor(innerHeight*dpr*renderScale));canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';gl.viewport(0,0,canvas.width,canvas.height)}addEventListener('resize',resize);resize();gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(.026,.034,.041,1);
-function render(){gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let moving=isMoving()&&state==='playing';let bob=moving?Math.sin(p.headbob*2)*.045:Math.sin(time*.65)*.015;let eye=[p.x,1.72+bob+floorHeight(p.x,p.z,p.level)+p.jumpY,p.z];let d=dir(p.yaw,p.pitch);let target=[eye[0]+d[0],eye[1]+d[1],eye[2]+d[2]];if(state==='menu'){eye=[0,1.73,73];target=[1,1.72,54];}setupDraw(eye,target);draw(staticMesh,ident);
+// Pixel density adapts to the device instead of forcing expensive Retina
+// rendering when the GPU cannot maintain a playable frame rate.
+let renderScale=mobile?.73:.88;
+const minRenderScale=mobile?.44:.48,maxRenderScale=mobile?.89:1.0;
+const baseDpr=Math.min(devicePixelRatio||1,mobile?1.28:1.35);
+function resize(){const dpr=baseDpr;canvas.width=Math.max(1,Math.floor(innerWidth*dpr*renderScale));canvas.height=Math.max(1,Math.floor(innerHeight*dpr*renderScale));canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';gl.viewport(0,0,canvas.width,canvas.height)}addEventListener('resize',resize);resize();gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(.026,.034,.041,1);
+function drawStaticWorld(eye,target){
+ if(staticWorld.global)draw(staticWorld.global,ident);
+ const ox=eye[0],oz=eye[2],forwardX=target[0]-ox,forwardZ=target[2]-oz;
+ const length=Math.hypot(forwardX,forwardZ)||1,fx=forwardX/length,fz=forwardZ/length;
+ for(const mesh of staticWorld.chunks){
+  const nx=Math.max(0,mesh.minX-ox,ox-mesh.maxX),nz=Math.max(0,mesh.minZ-oz,oz-mesh.maxZ);
+  if(nx*nx+nz*nz>90*90)continue;
+  const cx=(mesh.minX+mesh.maxX)*.5-ox,cz=(mesh.minZ+mesh.maxZ)*.5-oz;
+  const dist=Math.hypot(cx,cz),radius=Math.hypot(mesh.maxX-mesh.minX,mesh.maxZ-mesh.minZ)*.5;
+  // Conservative back-facing rejection: nearby geometry is never removed.
+  if(dist>radius+14&&(cx*fx+cz*fz)<-.12*dist)continue;
+  draw(mesh,ident);
+ }
+}
+let qualityWindow=0,qualitySamples=0,goodQualityWindows=0;
+function tuneRendering(elapsed){
+ if(state!=='playing'||document.hidden)return;
+ qualityWindow+=Math.min(.25,elapsed);qualitySamples++;
+ if(qualityWindow<2.5)return;
+ const avg=qualityWindow/qualitySamples;qualityWindow=qualitySamples=0;
+ let next=renderScale;
+ if(avg>.028){next=Math.max(minRenderScale,next-.075);goodQualityWindows=0;}
+ else if(avg<.018){if(++goodQualityWindows>=3){next=Math.min(maxRenderScale,next+.035);goodQualityWindows=0;}}
+ else goodQualityWindows=0;
+ if(Math.abs(next-renderScale)>.01){renderScale=next;resize();}
+}
+function render(){gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let moving=isMoving()&&state==='playing';let bob=moving?Math.sin(p.headbob*2)*.045:Math.sin(time*.65)*.015;let eye=[p.x,1.72+bob+floorHeight(p.x,p.z,p.level)+p.jumpY,p.z];let d=dir(p.yaw,p.pitch);let target=[eye[0]+d[0],eye[1]+d[1],eye[2]+d[2]];if(state==='menu'){eye=[0,1.73,73];target=[1,1.72,54];}setupDraw(eye,target);drawStaticWorld(eye,target);
 
 let dist=distance(p.x,p.z,monster.x,monster.z);if(dist<170||state==='menu'){const baseX=monster.x,baseZ=monster.z,ang=monster.heading,bounce=Math.sin(monster.phase)*.17;for(let i=0;i<monsterParts.length;i++){let o=monsterParts[i],sz=i>=1&&i<=4?Math.sin(monster.phase+(i%2)*Math.PI)*.2:0;draw(o.mesh,matModel(baseX+Math.cos(ang)*o.x+Math.sin(ang)*o.z,o.y+floorHeight(monster.x,monster.z,monster.level)+2.05+bounce+sz,baseZ-Math.sin(ang)*o.x+Math.cos(ang)*o.z,o.sx,o.sy,o.sz,ang))}}
 for(const f of friends.values()){if(distance(p.x,p.z,f.x,f.z)>150)continue;draw(friendMesh,matModel(f.x,.86+floorHeight(f.x,f.z,f.level||0),f.z,.72,.62,.72,f.yaw||0));}
@@ -1053,7 +1122,7 @@ const mapCanvas=$('miniMap'),mctx=mapCanvas.getContext('2d');function drawMap(){
  mctx.strokeStyle='#f1f0e4';mctx.lineWidth=1;mctx.beginPath();mctx.moveTo(p.x,p.z);mctx.lineTo(p.x+Math.sin(p.yaw)*9,p.z-Math.cos(p.yaw)*9);mctx.stroke();
  mctx.restore();mctx.fillStyle='#dce5df';mctx.font='bold 14px monospace';mctx.textAlign='left';mctx.fillText(p.level?'02 / MEZANINO':'01 / TÉRREO',12,20);
 }
-function frame(now){let dt=Math.min(.14,(now-last)/1000);last=now;lastFrameDt=dt;update(dt);render();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+function frame(now){const elapsed=Math.max(0,(now-last)/1000),dt=Math.min(.14,elapsed);last=now;lastFrameDt=dt;update(dt);render();tuneRendering(elapsed);requestAnimationFrame(frame)}requestAnimationFrame(frame);
 // Multiplayer WebRTC usando sinalização pública PeerJS. O jogo solo funciona mesmo sem a rede.
 let peerLoading=false;function loadPeerJS(){if(peerLoading||window.Peer)return;peerLoading=true;let s=document.createElement('script');s.src='https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js';s.async=true;s.onload=()=>{peerReady=true};s.onerror=()=>{peerScriptError=true;peerLoading=false};document.head.appendChild(s)}
 let roomAction='host',roomReady=false;function roomMessage(s){$('roomStatus').textContent=s;}function openRoomPane(host){loadPeerJS();roomReady=false;roomAction=host?'host':'guest';$('roomPane').style.display='block';$('roomLabel').textContent=host?'CÓDIGO DO SHOPPING PARA CONVITE':'CÓDIGO DA SALA DO SEU AMIGO';$('roomInput').value=host?Array.from({length:6},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''):'';$('roomInput').readOnly=host;$('copyRoom').style.display=host?'block':'none';$('roomConfirm').textContent=host?'CRIAR E JOGAR':'CONECTAR';roomMessage('Conexão gratuita por WebRTC. Cada jogador precisa abrir este mesmo jogo com internet.');}
