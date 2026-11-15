@@ -120,6 +120,9 @@ function updateObjective(pos){
  hint.classList.toggle('hide',!canUse);
  actionButton.classList.toggle('hide',!canUse||!touch);
  if(canUse)hint.textContent=(touch?'TOQUE EM INTERAGIR':'[E]')+' · '+task.action;
+ const bearing=Math.atan2(-(target.x-pos.x),-(target.z-pos.z));
+ const angle=((bearing-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;
+ $('#needle').style.transform=`rotate(${-angle}rad)`;
  if(!interactHeld)return;
  interactHeld=false;
  if(!canUse){
