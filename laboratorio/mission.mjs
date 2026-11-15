@@ -37,7 +37,7 @@ export class BreuStory {
  get current(){return STORY_STEPS[this.phase];}
  get target(){return this.current.target;}
  advance(action){
-  const next={radio:'relay',relay:'security',security:'escape',exit:'done'};
+  const next={radio:'relay',relay:'security',security:'escape',escape:'done'};
   const accepted={radio:'radio',relay:'relay',security:'panel',escape:'exit'};
   if(accepted[this.phase]!==action)return false;
   this.visited.add(action);
