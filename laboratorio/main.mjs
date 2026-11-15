@@ -5,6 +5,7 @@ import {BreuSound} from './ambient-audio.mjs';
 import {createStalker} from './stalker.mjs';
 import {EscapeSequence} from './mission.mjs';
 import {createEnvironmentMotion} from './environment-motion.mjs';
+import {createLiveEncounters} from './live-encounters.mjs';
 import {WING, WALLS, INTERACTION, STORE_SIGNS} from './layout.mjs';
 
 const $=s=>document.querySelector(s);
@@ -14,7 +15,7 @@ const mapCanvas=$('#map'),mapCtx=mapCanvas.getContext('2d');
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
 const lowPowerDevice=touch||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<=4);
 const quality={ratio:1,min:touch?.62:.72,max:1,seconds:0,frames:0,goodWindows:0};
-let scene,renderer,camera,physics,stage,flashlight,stalker,motion;
+let scene,renderer,camera,physics,stage,flashlight,stalker,motion,encounters;
 let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
 const escapeSequence=new EscapeSequence(12);let exitOpen=false;
 let yaw=0,pitch=0,flashOn=true,interactHeld=false,requestJump=false;
@@ -42,6 +43,7 @@ function renderSetup(){
  camera.rotation.order='YXZ';
  stage=createLevel(scene);stalker=createStalker(scene);
  motion=createEnvironmentMotion(scene,{lowPower:lowPowerDevice});
+ encounters=createLiveEncounters(scene);
  const light=new THREE.SpotLight('#e7ddd1',25,19,Math.PI/7,.78,1.6);
  flashlight=light;scene.add(light);scene.add(light.target);
  light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
@@ -187,6 +189,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
    if(result?.caught){onCaught();return;}
    updateObjective(p);
    environmentCue(motion?.update(dt,clock,p,{flashlight:flashOn,alarm}));
+   for(const event of encounters?.update(clock,p)||[])environmentCue(event);
    fps.frames++;fps.second+=elapsed;adjustQuality(elapsed);
    if(fps.second>=1){$('#fps').textContent=`${Math.round(fps.frames/fps.second)} FPS`;fps.frames=0;fps.second=0;drawMap(p)}
   }else if(!started){
