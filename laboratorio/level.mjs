@@ -146,7 +146,7 @@ export function createLevel(scene){
    box('store pillar',x,1.55,s.z+dz,.22,3.1,.25,palette.frame);
    box('store sconce',x-s.side*.09,2.48,s.z+dz,.12,.38,.13,accent,false);
   }
-  const open=s.type==='ramen'||s.type==='electronics';
+  const open=s.type!=='maintenance'; // All public shop entrances have matching physical openings.
   if(!open){
    // Each shop type has its own construction and material language. All of
    // these closures correspond to physically sealed divider walls in layout.mjs.
@@ -208,16 +208,45 @@ export function createLevel(scene){
  }
  box('store cashier counter',7,1.02,-29,3.05,1.14,.85,palette.frame);
  box('glass countertop',7,1.62,-29,3.1,.08,.9,palette.glass);
- // Arcade machine silhouettes set into the shuttered storefront, visible from gallery.
+ // Arcade machines are inside the shop: its doorway must remain traversable.
  for(let j=0;j<2;j++){
   const z=-34.4+(j-.5)*1.15;
-  box('arcade standing cabinet',-3.17,1.05,z,.8,1.86,.84,palette.black);
-  box('arcade bevel display',-2.736,1.5,z,.035,.67,.65,palette.red,false);
-  box('arcade controls',-2.75,.94,z,.12,.15,.65,palette.frame);
+  box('arcade standing cabinet',-6.2,1.05,z,.8,1.86,.84,palette.black);
+  box('arcade bevel display',-5.766,1.5,z,.035,.67,.65,palette.red,false);
+  box('arcade controls',-5.75,.94,z,.12,.15,.65,palette.frame);
  }
  // Low-ceiling service transition with reinforcing lintel.
  box('service lintel',8.4,3.3,-46.8,8.0,.35,.7,palette.rust);
  for(let x=4.2;x<19;x+=1.8){box('service pipe',x,3.87,-47.2,.12,.12,8.5,palette.copper,false)}
+ // Mission 1: a maintenance radio left at the ramen shop. The player can
+ // examine it for a real instruction rather than collecting a generic item.
+ box('radio worktop',-5.45,.82,-10.4,1.1,.11,.72,palette.wood,false);
+ const radio=box('maintenance radio',INTERACTION.radio.x,1.05,INTERACTION.radio.z,.55,.29,.29,palette.plastic,false);
+ box('radio speaker grille',-5.45,1.14,-10.24,.30,.11,.025,palette.black,false);
+ const radioDial=box('radio red tuning indicator',-5.64,1.16,-10.236,.07,.07,.03,new THREE.MeshBasicMaterial({color:'#bd6255'}),false);
+ const radioAntenna=cylinder('radio antenna',-5.27,1.46,-10.48,.009,.015,.63,palette.shutter);
+ interactive.radio=radio;interactive.radioDial=radioDial;
+ // Mission 2: the emergency distribution board inside a real walkable
+ // electronics store. Only this relay can raise the security grille.
+ const relay=box('DENKI auxiliary breaker panel',INTERACTION.relay.x,1.25,INTERACTION.relay.z,.55,.87,.19,palette.rust,false);
+ const relayHandle=box('manual power handle',INTERACTION.relay.x,1.24,INTERACTION.relay.z+.13,.16,.42,.12,palette.shutter,false);
+ const relayLampMaterial=new THREE.MeshBasicMaterial({color:'#9a3834'});
+ const relayLamp=box('relay indicator light',INTERACTION.relay.x,1.58,INTERACTION.relay.z+.135,.18,.08,.04,relayLampMaterial,false);
+ interactive.relay=relay;interactive.relayHandle=relayHandle;interactive.relayLamp=relayLamp;
+ // A sealed SECURIDADE gate is the single story-driven closure. Unlike the
+ // old fake shop fronts it has a matching collider and visibly rolls up.
+ const securityGate=new THREE.Group();
+ securityGate.name='Powered security shutter';
+ securityGate.position.set(11.45,0,-51.25);
+ const gateMetal=new THREE.MeshStandardMaterial({color:'#58666a',metalness:.62,roughness:.69});
+ const mainShutter=new THREE.Mesh(new THREE.BoxGeometry(.24,3.04,3.38),gateMetal);
+ mainShutter.position.y=1.53;securityGate.add(mainShutter);
+ for(let i=0;i<12;i++){
+  const rib=new THREE.Mesh(new THREE.BoxGeometry(.04,.048,3.38),palette.frame);
+  rib.position.set(-.145,.27+i*.23,0);securityGate.add(rib);
+ }
+ scene.add(securityGate);
+ interactive.securityGate=securityGate;
  // Security office desk and panels: actual purpose, not collectibles.
  box('security counter',16.2,.57,-53.6,2.15,1.04,.63,palette.frame);
  box('security desk top',16.2,1.11,-53.6,2.22,.12,.73,palette.wood);
@@ -298,15 +327,21 @@ export function createLevel(scene){
  const detail=addArtPass(scene,{mobile});
  const amb=new THREE.HemisphereLight('#9eafc1','#262727',.4);scene.add(amb);
  const emergency=new THREE.PointLight('#b7534e',0,13,2);emergency.position.set(13,2.7,-51);scene.add(emergency);
- const batching=batchStaticGeometry(scene,new Set([interactive.panel,interactive.exit]));
+ const batching=batchStaticGeometry(scene,new Set([interactive.panel,interactive.exit,interactive.radio,interactive.relay,interactive.relayHandle,interactive.relayLamp,interactive.radioDial]));
  // A physical blast door has a visible raising sequence. The collider only
  // unlocks after the lower edge is above the player's capsule height.
- let doorOpeningAt=null,doorClearance=false;
+ let doorOpeningAt=null,doorClearance=false,securityGateAt=null,securityClear=false;
  return {interactive,lights,emergency,box,batching,count:items.length+detail.count,update(time,alarm){
   detail.update(time,alarm);
   for(const l of lights){const strobe=l.flag?(Math.sin(time*11+l.seed)+Math.sin(time*37+l.seed*2))*.5:0;
    l.light.intensity=Math.max(.04,l.base*(l.flag&&strobe>.45?.12:1+strobe*.09));}
   emergency.intensity=alarm?(10+5*Math.sin(time*9)):0;
+  if(securityGateAt!==null){
+   const t=Math.max(0,Math.min(1,(time-securityGateAt)/2.25));
+   const eased=t*t*(3-2*t);
+   securityGate.position.y=eased*3.5;
+   securityClear=securityGate.position.y>2.18;
+  }
   if(doorOpeningAt!==null){
    const t=Math.max(0,Math.min(1,(time-doorOpeningAt)/2.4));
    const eased=t*t*(3-2*t);
@@ -315,5 +350,7 @@ export function createLevel(scene){
    doorClearance=lift>2.28;
   }else interactive.exit.position.y=1.61;
  },openExit(time){if(doorOpeningAt===null)doorOpeningAt=time;},
+ restorePower(time){if(securityGateAt!==null)return;securityGateAt=time;relayLampMaterial.color.set('#80c8ae');interactive.relayHandle.rotation.x=-.48;},
+ isSecurityPassable(){return securityClear;},
  isExitPassable(){return doorClearance;}};
 }
