@@ -21,7 +21,7 @@ export function createEnvironmentMotion(scene,{lowPower=false}={}){
  const cables=new THREE.CylinderGeometry(.012,.012,.48,5);
  const shade=new THREE.BoxGeometry(1.15,.16,.27);
  const strip=new THREE.BoxGeometry(1.06,.035,.18);
- for(const [x,z,phase] of [[.75,-5,0],[1.5,-24,1.3],[-.9,-41,2.5]]){
+ for(const [x,z,phase] of [[.25,9,0],[.75,-5,.9],[1.5,-24,1.3],[-.9,-41,2.5]]){
   const pivot=new THREE.Group();pivot.position.set(x,4.05,z);
   const cable=new THREE.Mesh(cables,metal);cable.position.y=-.24;
   const body=new THREE.Mesh(shade,metal);body.position.y=-.54;
@@ -38,6 +38,17 @@ export function createEnvironmentMotion(scene,{lowPower=false}={}){
   rib.position.y=-.20-i*.24;gate.add(rib);
  }
  scene.add(gate);
+ // A faulty ceiling inspection camera travels under the roof, tracks the
+ // corridor and retreats on approach. It never blocks the player's capsule.
+ const scanner=new THREE.Group();
+ const scannerBody=new THREE.Mesh(new THREE.BoxGeometry(.63,.19,.42),metal);
+ const scannerArm=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.36,6),metal);
+ scannerArm.position.y=.24;
+ const scannerEye=new THREE.Mesh(new THREE.BoxGeometry(.095,.07,.08),
+  new THREE.MeshBasicMaterial({color:'#be5148'}));
+ scannerEye.position.set(0,-.025,-.255);
+ scanner.add(scannerBody,scannerArm,scannerEye);
+ scene.add(scanner);
  // A single draw call for suspended dust, recycled around the viewer.
  const count=lowPower?18:42,positions=new Float32Array(count*3);
  const seeds=Array.from({length:count},(_,i)=>({
@@ -73,6 +84,13 @@ export function createEnvironmentMotion(scene,{lowPower=false}={}){
    f.glow.visible=!near||Math.sin(time*8+f.phase)>.04;
   }
   gate.rotation.z=(Math.abs(player.z+38.4)<13||alarm)?Math.sin(time*19)*.014:0;
+  // The security scanner is visible from the first corridor, but occupies
+  // the ceiling volume: visual animation cannot create invisible obstacles.
+  const scanZ=6.0+Math.sin(time*.43)*3.3;
+  scanner.position.set(.9+Math.sin(time*.67)*1.1,3.53+Math.sin(time*2.4)*.045,scanZ);
+  scanner.rotation.y=Math.sin(time*.63)*.48;
+  scanner.visible=player.z> -9&&player.z<17;
+  scannerEye.visible=alarm||Math.sin(time*7.9)>.22;
   dust.visible=flashlight;
   if(flashlight){
    for(let i=0;i<count;i++){
