@@ -119,8 +119,8 @@ export function addArtPass(scene,{mobile=false}={}){
   const signFace=new THREE.MeshStandardMaterial({map:graphicTexture(sign.s,sign.sub,s.accent),roughness:.59,emissive:s.lit?'#655957':'#141719',emissiveIntensity:s.lit?.19:.02,side:THREE.DoubleSide});
   plane('shop identity poster '+s.type,x-s.side*.16,2.64,s.z+1.16,1.25,.43,signFace,face);
   if(corroded){
-   for(let j=0;j<4;j++)box('welded protective bar',x-s.side*.11,.6+j*.55,s.z,.075,.042,3.5,MATERIAL.rust);
-   plane('warning sheet',x-s.side*.2,1.4,s.z-1.15,.78,.86,poster,face);
+   // Warning is mounted on the inside back wall, not across the portal.
+   plane('staff safety notice',-9.5,1.75,s.z-1.15,.78,.86,poster,Math.PI/2);
   }
   if(s.type==='fashion'){
    // Interior display, not a false wall across the accessible doorway.
