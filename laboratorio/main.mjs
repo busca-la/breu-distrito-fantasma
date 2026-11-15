@@ -75,7 +75,7 @@ function inputSetup(){
  joy.addEventListener('pointermove',e=>{if(e.pointerId===joystickId)dragJoy(e)});
  const end=()=>{joystickId=null;joystick.x=0;joystick.y=0;knob.style.transform='translate(-50%,-50%)'};
  joy.addEventListener('pointerup',end);joy.addEventListener('pointercancel',end);
- function dragJoy(e){const r=joy.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;const d=Math.max(1,Math.hypot(x,y)),s=Math.min(1,d/53);joystick.x=x/d*s;joystick.y=y/d*s;knob.style.transform=`translate(calc(-50% + ${joystick.x*39}px),calc(-50% + ${joystick.y*39}px))`;}
+ function dragJoy(e){const r=joy.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;const d=Math.max(1,Math.hypot(x,y)),s=Math.min(1,d/(r.width*.40));joystick.x=x/d*s;joystick.y=y/d*s;const max=r.width*.29;knob.style.transform=`translate(calc(-50% + ${joystick.x*max}px),calc(-50% + ${joystick.y*max}px))`;}
  const look=$('#look-area');let lx=null,ly=null,lookId=null;
  look.addEventListener('pointerdown',e=>{if(!touch)return;lookId=e.pointerId;look.setPointerCapture(e.pointerId);lx=e.clientX;ly=e.clientY});
  look.addEventListener('pointermove',e=>{if(e.pointerId!==lookId||paused)return;yaw-=(e.clientX-lx)*.0042;pitch=Math.max(-1.15,Math.min(1.15,pitch-(e.clientY-ly)*.0038));lx=e.clientX;ly=e.clientY});

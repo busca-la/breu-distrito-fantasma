@@ -15,7 +15,9 @@ A versão do laboratório evoluiu de uma estrutura simples de lojas para um seto
 - **Conexão visual-física:** placas de sujeira e revestimento não cobrem passagens de lojas abertas; os sólidos continuam definidos exclusivamente no `layout.mjs` e são usados também pelo Rapier.
 - **Criatura:** vigia abandonado com modelo procedural original e perseguição por uma malha derivada das colisões reais. Pode alcançar e encerrar a partida; movimento mais rápido após o alarme.
 - **Ambientação sonora:** hum de ventilação, ruído elétrico, goteiras, passos e alarme sintetizados localmente pelo Web Audio. Sem gravações de terceiros, contas, custos ou serviços externos. Botão para desligar o som na pausa.
-- **Desempenho:** simplificação do art pass e redução de luzes ativas nos aparelhos de toque; sombras da lanterna no desktop.
+- **Desempenho:** instanciamento GPU de caixas repetidas e redução das luzes/detalhes nos aparelhos de toque; sombras da lanterna no desktop.
+- **Pisos por setor:** entrada de porcelanato, galeria escurecida e doca de concreto desgastado, mantendo a mesma base de colisão.
+- **Interface:** menu narrativo, modo paisagem e retrato com controles touch proporcionais.
 - **Objetivo preservado:** achar a segurança, ativar o alarme e atravessar a saída de serviço aberta.
 
 ## Controles
@@ -53,5 +55,6 @@ npm run test:physics
 - `stalker.mjs` / `threat-nav.mjs` — criatura e malha de navegação.
 - `ambient-audio.mjs` — trilha procedural de ambiente (original).
 - `main.mjs` — câmera, controles, fluxo de fuga, HUD e integração.
+- `docs/art-direction.md` — critérios objetivos de acabamento, legibilidade e integração.
 
 O jogo tradicional permanece publicado na raiz. Não foi alterado nesta versão.

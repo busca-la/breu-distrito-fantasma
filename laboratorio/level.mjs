@@ -12,7 +12,7 @@ function rng(seed){let s=seed>>>0;return()=>((s=(s*1664525+1013904223)>>>0)/4294
 const rand=rng(21679);
 function texture(kind){
  const c=document.createElement('canvas');c.width=c.height=512;
- const g=c.getContext('2d'),base=kind==='floor'?'#474e4e':kind==='wall'?'#565e5d':kind==='ceiling'?'#414b4d':'#636a67';
+ const g=c.getContext('2d'),base=kind==='floor'?'#474e4e':kind==='wall'?'#565e5d':kind==='ceiling'?'#414b4d':kind==='service'?'#2c3639':kind==='entrance'?'#81827e':'#636a67';
  g.fillStyle=base;g.fillRect(0,0,512,512);
  const step=kind==='floor'?96:kind==='ceiling'?64:125;
  g.strokeStyle='rgba(10,15,18,.35)';g.lineWidth=2;
@@ -45,12 +45,45 @@ function inkGraphic(title,caption,color,mode='sign'){
  for(let i=0;i<60;i++) {g.fillStyle=rand()<.5?'#252b2d':'#07090c';g.fillRect(rand()*1024,rand()*280,rand()*30+2,rand()*4+1)}
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
 }
+// On phones, static box geometry of the same material is rendered as GPU
+// instances. The visible geometry and Rapier colliders stay exactly aligned.
+// Unique dynamic pieces (panel, exit door) and alpha windows are excluded.
+function batchStaticForMobile(scene,except){
+ const byMaterial=new Map();
+ for(const mesh of [...scene.children]){
+  if(!mesh.isMesh||mesh.geometry?.type!=='BoxGeometry'||except.has(mesh)||mesh.material?.transparent)continue;
+  const key=mesh.material.uuid;
+  if(!byMaterial.has(key))byMaterial.set(key,[]);
+  byMaterial.get(key).push(mesh);
+ }
+ let merged=0,instances=0;
+ for(const group of byMaterial.values()){
+  if(group.length<4)continue;
+  const instance=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),group[0].material,group.length);
+  instance.name='Static architectural batch';
+  instance.castShadow=false;instance.receiveShadow=true;instance.frustumCulled=false;
+  const tmp=new THREE.Object3D();
+  group.forEach((mesh,i)=>{
+   const {width=1,height=1,depth=1}=mesh.geometry.parameters||{};
+   tmp.position.copy(mesh.position);tmp.rotation.copy(mesh.rotation);
+   tmp.scale.set(width*mesh.scale.x,height*mesh.scale.y,depth*mesh.scale.z);
+   tmp.updateMatrix();instance.setMatrixAt(i,tmp.matrix);
+   scene.remove(mesh);mesh.geometry.dispose();
+  });
+  instance.instanceMatrix.needsUpdate=true;
+  scene.add(instance);instances+=group.length;merged++;
+ }
+ return {groups:merged,instances};
+}
 export function createLevel(scene){
  const mobile=('ontouchstart' in window||navigator.maxTouchPoints>0);
  const items=[];const interactive={};const lights=[];
  const concreteTex=texture('wall'),floorTex=texture('floor'),roofTex=texture('ceiling');
  const concrete=new THREE.MeshStandardMaterial({map:concreteTex,color:0xffffff,roughness:.98});
  const floorMat=new THREE.MeshStandardMaterial({map:floorTex,roughness:.46,metalness:.08,color:'#c2caca'});
+ const entranceMat=new THREE.MeshStandardMaterial({map:texture('entrance'),roughness:.63,metalness:.04,color:'#a6aba5'});
+ const serviceMat=new THREE.MeshStandardMaterial({map:texture('service'),roughness:.87,metalness:.02,color:'#919a96'});
+ const arcadeFloorMat=new THREE.MeshStandardMaterial({map:texture('wall'),roughness:.52,metalness:.08,color:'#747d7f'});
  const ceilingMat=new THREE.MeshStandardMaterial({map:roofTex,roughness:.95,color:'#acb2af'});
  function box(name,x,y,z,w,h,d,material=palette.concrete,shadows=true){
   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
@@ -66,6 +99,13 @@ export function createLevel(scene){
  }
  const floor=(x,z,w,d)=>box('wet ceramic tile',x,-.07,z,w,.14,d,floorMat,false);
  floor(0,-19.5,21.5,75.2);floor(11.65,-51.6,15.7,10.5);floor(20.75,-51,3.6,4.55);
+ // Transitions between construction epochs: pale entry, deteriorated retail and
+ // raw service flooring. These overlays do NOT alter the physical collision shell.
+ box('entrance worn porcelain floor',0,.015,6,7.15,.03,22.0,entranceMat,false);
+ box('central blackened retail floor',0,.015,-22.4,7.15,.03,34.6,arcadeFloorMat,false);
+ box('service stained bare concrete floor',0,.015,-47.25,7.15,.03,15.1,serviceMat,false);
+ box('emergency service dark floor',12.2,.015,-51.6,14.1,.03,8.4,serviceMat,false);
+ for(const z of [-5.2,-39.65])box('ceramic-to-service threshold',0,.041,z,7.15,.012,.065,palette.frame,false);
  for(const ceiling of CEILINGS)box('sealed acoustic ceiling',ceiling.x,ceiling.h+.1,ceiling.z,ceiling.w,.20,ceiling.d,ceilingMat,false);
  box('vestibule ceiling',20.75,4.45,-51,3.6,.26,4.55,ceilingMat,false);
  for(const w of WALLS){
@@ -253,7 +293,8 @@ export function createLevel(scene){
  const detail=addArtPass(scene,{mobile});
  const amb=new THREE.HemisphereLight('#9eafc1','#262727',.4);scene.add(amb);
  const emergency=new THREE.PointLight('#b7534e',0,13,2);emergency.position.set(13,2.7,-51);scene.add(emergency);
- return {interactive,lights,emergency,box,count:items.length+detail.count,update(time,alarm){
+ const batching=mobile?batchStaticForMobile(scene,new Set([interactive.panel,interactive.exit])):{groups:0,instances:0};
+ return {interactive,lights,emergency,box,batching,count:items.length+detail.count,update(time,alarm){
   detail.update(time,alarm);
   for(const l of lights){const strobe=l.flag?(Math.sin(time*11+l.seed)+Math.sin(time*37+l.seed*2))*.5:0;
    l.light.intensity=Math.max(.04,l.base*(l.flag&&strobe>.45?.12:1+strobe*.09));}

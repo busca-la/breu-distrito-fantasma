@@ -6,16 +6,19 @@ import {STORE_SIGNS,facadePanelAllowed,circleFits,WALLS,CEILINGS,PROPS,WING,INTE
 import {getNavigation} from '../threat-nav.mjs';
 
 class Color{constructor(value){this.value=value}set(value){this.value=value;return this}}
-class Material{constructor(opts={}){Object.assign(this,opts);this.color=new Color(opts.color)}clone(){return new Material({...this,color:this.color.value})}}
-class Vector3{constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z}}
-class G{constructor(...v){this.v=v}}
-class Mesh{constructor(geometry,material){this.geometry=geometry;this.material=material;this.position=new Vector3();this.position.set=(x,y,z)=>{this.position.x=x;this.position.y=y;this.position.z=z};this.rotation={x:0,y:0,z:0,set(x,y,z){this.x=x;this.y=y;this.z=z}};this.scale={set(){}};this.name=''}}
+let nextMaterialId=0;class Material{constructor(opts={}){Object.assign(this,opts);this.color=new Color(opts.color);this.uuid='mock-'+(++nextMaterialId)}clone(){return new Material({...this,color:this.color.value})}}
+class Vector3{constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z}copy(v){this.x=v.x;this.y=v.y;this.z=v.z;return this}}
+class G{constructor(...v){this.v=v;this.parameters={}}dispose(){}}
+class BoxGeom extends G{constructor(w=1,h=1,d=1){super(w,h,d);this.type='BoxGeometry';this.parameters={width:w,height:h,depth:d}}}
+class Mesh{constructor(geometry,material){this.geometry=geometry;this.material=material;this.isMesh=true;this.position=new Vector3();this.position.set=(x,y,z)=>{this.position.x=x;this.position.y=y;this.position.z=z};this.rotation={x:0,y:0,z:0,set(x,y,z){this.x=x;this.y=y;this.z=z},copy(v){this.x=v.x;this.y=v.y;this.z=v.z}};this.scale={x:1,y:1,z:1,set(x,y,z){this.x=x;this.y=y;this.z=z}};this.name=''}}
 class Lamp{constructor(color,intensity){this.color=color;this.intensity=intensity;this.position=new Vector3();this.position.set=(x,y,z)=>{this.position.x=x;this.position.y=y;this.position.z=z}}}
+class Object3D{constructor(){this.position=new Vector3();this.rotation={x:0,y:0,z:0,copy(v){this.x=v.x;this.y=v.y;this.z=v.z}};this.scale={set(){}};this.matrix={}}updateMatrix(){}}
+class InstancedMesh extends Mesh{constructor(geometry,material,count){super(geometry,material);this.count=count;this.isInstancedMesh=true;this.instanceMatrix={needsUpdate:false}}setMatrixAt(){}}
 class Group{constructor(){this.children=[];this.position=new Vector3();this.position.set=(x,y,z)=>{this.position.x=x;this.position.y=y;this.position.z=z};this.rotation={y:0}}add(x){this.children.push(x)}}
 class Texture{constructor(){this.repeat={set(){}}}}
 class Curve{constructor(points){this.points=points}}
-const THREE={Color,Mesh,Group,Vector3,CatmullRomCurve3:Curve,CanvasTexture:Texture,
- MeshStandardMaterial:Material,MeshPhysicalMaterial:Material,MeshBasicMaterial:Material,PlaneGeometry:G,BoxGeometry:G,CylinderGeometry:G,SphereGeometry:G,TorusGeometry:G,TubeGeometry:G,CircleGeometry:G,PointLight:Lamp,HemisphereLight:Lamp,
+const THREE={Color,Mesh,InstancedMesh,Object3D,Group,Vector3,CatmullRomCurve3:Curve,CanvasTexture:Texture,
+ MeshStandardMaterial:Material,MeshPhysicalMaterial:Material,MeshBasicMaterial:Material,PlaneGeometry:G,BoxGeometry:BoxGeom,CylinderGeometry:G,SphereGeometry:G,TorusGeometry:G,TubeGeometry:G,CircleGeometry:G,PointLight:Lamp,HemisphereLight:Lamp,
  SRGBColorSpace:'srgb',RepeatWrapping:1,DoubleSide:2};
 function canvas(){return {width:0,height:0,getContext(){return new Proxy({createRadialGradient(){return {addColorStop(){}}}}, {get(obj,key){return obj[key]??(()=>{})},set(obj,key,value){obj[key]=value;return true}})}}}
 const fakeDoc={createElement(){return canvas()}};
@@ -68,7 +71,23 @@ test('entire 3D scene constructs coherently and the alarm opens the visible exit
  assert(scene.children.some(o=>o.name==='public restroom entrance indicator'));
  assert(scene.children.filter(o=>o.name==='toilet rim').length===3);
  assert(scene.children.some(o=>o.name==='fluorescent translucent diffuser'));
+ assert(scene.children.some(o=>o.name==='entrance worn porcelain floor'));
+ assert(scene.children.some(o=>o.name==='service stained bare concrete floor'));
  assert.doesNotThrow(()=>stage.update(16,false));
  assert.doesNotThrow(()=>stage.update(44,true));
+ stage.openExit();assert.equal(stage.interactive.exit.visible,false);
+});
+
+
+test('phone rendering batches repeated static geometry but keeps the emergency door dynamic',()=>{
+ const scene={children:[],add(o){this.children.push(o)},remove(o){this.children=this.children.filter(x=>x!==o)}};
+ const mobileWindow={navigator:{maxTouchPoints:2}};
+ const {addArtPass}=evaluate('detail-pass.mjs','addArtPass');
+ const {createLevel}=evaluate('level.mjs','createLevel',{addArtPass,window:mobileWindow,navigator:mobileWindow.navigator});
+ const stage=createLevel(scene);
+ assert(stage.batching.groups>3,'No batching groups found');
+ assert(stage.batching.instances>70,'Insufficient mobile instancing');
+ assert(scene.children.some(x=>x.isInstancedMesh),'No GPU instanced meshes');
+ assert(scene.children.includes(stage.interactive.exit),'Exit door was merged into static geometry');
  stage.openExit();assert.equal(stage.interactive.exit.visible,false);
 });
