@@ -1,29 +1,29 @@
 # BREU — Distrito Fantasma
 
-Protótipo experimental de terror 3D cooperativo, jogável diretamente no navegador. Ambientado dentro de um shopping futurista abandonado, com corredores claustrofóbicos, lojas deterioradas, letreiros falhando e zonas técnicas.
+Jogo experimental de terror 3D em navegador, ambientado em um shopping futurista japonês abandonado e claustrofóbico.
 
-## Jogar
+**Jogar:** https://breu-distrito-fantasma.vercel.app
 
-https://breu-distrito-fantasma.vercel.app
+## v0.6 — reforma da arquitetura do mapa
 
-## Versão 0.5 — revisão visual
+O cenário anterior de lojas repetidas foi substituído por **um mapa autoral de dois pavimentos**, composto por galerias sinuosas, bifurcações e ambientes diferentes.
 
-- Letreiros e placas únicas para setores e lojas, produzidos por atlas gráfico procedural em Canvas e renderizados em WebGL2.
-- Fachadas comerciais distintas, cartazes rasgados, dutos, vidros e peças abandonadas.
-- Galerias com divisórias diagonais, estreitamentos e entradas de lojas parcialmente abertas.
-- Iluminação por zonas (âmbar, verde-fosco, azul frio e vermelho de emergência), neblina densa e materiais desgastados.
-- Ajustes do texto inicial e telas móveis; pulo, lanterna, alarme, perseguição e fuga preservados.
+- **Térreo:** portaria, praça de alimentação, banheiros com cabines, sala de segurança, fliperama, loja de roupas, área técnica, arquivos e doca de descarga.
+- **Mezanino:** cinema fechado, café superior, laboratório de telefonia e depósito.
+- **Conexões verticais jogáveis:** escada de serviço, escada rolante e escada do depósito, com mudança física de altura entre andares.
+- Corredores projetados por curvas interpoladas (não apenas caixas padronizadas), salas com mobília própria, letreiros distintos, cabos, sujeira e iluminação por setor.
+- Colisão fundamentada na planta do edifício, separada por pavimento e com obstáculos sólidos. Pulo no PC (Espaço) e celular (PULAR).
+- Perseguição com navegação de criatura por malha discretizada, contemplando os dois andares.
+- Missão: encontrar a sala de segurança, disparar o alarme e fugir pelo portão de incêndio na doca. **Sem coleta de núcleos.**
 
-## Testes
+## Plataforma e controles
 
-- Inicialização e renderização em Chromium com WebGL2 (ambiente local).
-- Início da partida, salto, colisões pontuais, interface móvel 390×844, ausência de exceções JavaScript.
-- Verificação automatizada de conectividade do mapa via grade 0,5 m da entrada até a central de segurança e da central até a saída.
+Tudo roda em `index.html` usando JavaScript, Canvas 2D para letreiros e WebGL2 para o mundo 3D. Não precisa instalar aplicativo. No PC use WASD, Shift para correr, Espaço para pular, F para lanterna, E para interagir e Tab/M para mapa. No celular use os controles na tela.
 
-## Limitações
+## Testes e limitações
 
-O jogo ainda possui geometria procedural simples (não é fotorrealista), e o modo multiplayer WebRTC/PeerJS entre celulares reais ainda não foi validado ponta a ponta. Testes gráficos locais feitos em Chromium não substituem validação em Safari e aparelhos diferentes.
+- **Confirmado:** verificação de sintaxe JavaScript; inicialização e lógica simulada em navegador; 13 ambientes alcançáveis pela malha de navegação; três subidas até o segundo andar; pulo, barreiras físicas externas, acionamento do alarme e conclusão da fuga.
+- **Pendente:** teste de **renderização WebGL2 real** neste ambiente (o navegador de teste não oferece contexto WebGL2; a lógica foi testada com contexto gráfico simulado), teste visual de FPS/qualidade em aparelhos reais e validação de multiplayer entre celulares.
+- A arte é procedural de baixo custo; ainda não é fotorrealista. O modo com amigos usa WebRTC/PeerJS e depende do serviço de sinalização e da rede.
 
-## Desenvolvimento
-
-O projeto é estático: `index.html` com WebGL2, HTML, CSS e JavaScript; Vercel publica automaticamente os commits em `main`.
+Repositório: [busca-la/breu-distrito-fantasma](https://github.com/busca-la/breu-distrito-fantasma).
