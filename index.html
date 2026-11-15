@@ -190,7 +190,51 @@ function walkable(x,z,level,margin=0){if(x<bounds.minX||x>bounds.maxX||z<bounds.
    if(distSeg(x,z,a,b)<rw)return true;
   }
  }return false;}
+// Every stair has a clear vertical shaft. The cutout matches the generated steps.
+const shaftRects=connectors.map(c=>({name:c.name,minX:c.x-c.w/2-.24,maxX:c.x+c.w/2+.24,
+ minZ:Math.min(c.z0,c.z1),maxZ:Math.max(c.z0,c.z1)}));
+const constructedSlabs=[];
+// Split an axis-aligned slab at EVERY shaft boundary. No triangles or solid ceilings
+// are allowed to bridge a staircase — including overlapping upper shop floors.
+function slabCells(x0,x1,z0,z1,emitCell,withShaftCut=true){
+ const cuts=withShaftCut?shaftRects.filter(s=>s.minX<x1&&s.maxX>x0&&s.minZ<z1&&s.maxZ>z0):[];
+ const xs=[x0,x1],zs=[z0,z1];
+ for(const c of cuts){xs.push(Math.max(x0,c.minX),Math.min(x1,c.maxX));zs.push(Math.max(z0,c.minZ),Math.min(z1,c.maxZ));}
+ xs.sort((a,b)=>a-b);zs.sort((a,b)=>a-b);
+ for(let i=0;i<xs.length-1;i++)for(let j=0;j<zs.length-1;j++){
+  const ax=xs[i],bx=xs[i+1],az=zs[j],bz=zs[j+1];
+  if(bx-ax<.001||bz-az<.001)continue;
+  const mx=(ax+bx)/2,mz=(az+bz)/2;
+  if(cuts.some(c=>mx>c.minX&&mx<c.maxX&&mz>c.minZ&&mz<c.maxZ))continue;
+  emitCell(ax,bx,az,bz);
+ }
+}
+function cutSlab(x,z,w,d,y,h,hex,kind){
+ slabCells(x-w/2,x+w/2,z-d/2,z+d/2,(ax,bx,az,bz)=>{
+  world.cube((ax+bx)/2,y,(az+bz)/2,bx-ax,h,bz-az,color(hex));
+  constructedSlabs.push({ax,bx,az,bz,bottom:y,top:y+h,kind});
+ },kind!=='upper-ceiling');
+}
+function cutFloorQuad(ax,bx,az,bz,y,hex){
+ slabCells(ax,bx,az,bz,(x0,x1,z0,z1)=>{
+  quadXZ([x0,z0],[x1,z0],[x1,z1],[x0,z1],y,hex);
+  constructedSlabs.push({ax:x0,bx:x1,az:z0,bz:z1,bottom:y,top:y,kind:'upper-floor'});
+ });
+}
 function floorHeight(x,z,level=0){const c=connectorAt(x,z);if(c)return layerY*stairT(c,z);return level?layerY:0;}
+const PLAYER_HEIGHT=1.76;
+// Collision clearance follows the same ceiling geometry as the visible slabs.
+function ceilingHeightAt(x,z,level=0){
+ if(level===0&&connectorAt(x,z))return Infinity;
+ const r=roomDefs.find(r=>r.level===level&&rectInside(x,z,r));
+ if(r){const h=r.type==='food'||r.type==='cinema'?4.05:r.type==='restroom'?2.92:3.52;
+  if(level===0&&shaftRects.some(c=>x>c.minX&&x<c.maxX&&z>c.minZ&&z<c.maxZ))return Infinity;
+  const corridor=pathDefs.some(a=>a.level===level&&x>a.bounds.minX&&x<a.bounds.maxX&&z>a.bounds.minZ&&z<a.bounds.maxZ&&a.samples.some(p=>Math.abs(p[0]-x)<a.width/2&&Math.abs(p[1]-z)<a.width/2));
+  return level*layerY+Math.min(h,corridor?3.90:Infinity)-.02;
+ }
+ return level*layerY+3.88;
+}
+
 function isOnLevel(x,z,level){return walkable(x,z,level,.09);}
 function polygonFloor(vertices,y,c){for(let i=1;i<vertices.length-1;i++)world.tri([vertices[0][0],y,vertices[0][1]],[vertices[i][0],y,vertices[i][1]],[vertices[i+1][0],y,vertices[i+1][1]],color(c));}
 function quadXZ(a,b,c,d,y,hex,emit=0){world.quad([a[0],y,a[1]],[b[0],y,b[1]],[c[0],y,c[1]],[d[0],y,d[1]],color(hex),emit);}
@@ -209,8 +253,18 @@ function routeBuild(r){const pts=r.samples,lev=r.level,base=lev?layerY:0,zone=zo
  for(let i=0;i<pts.length-1;i++){
   const a=pts[i],b=pts[i+1],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz)||1,nx=-dz/len,nz=dx/len,rw=r.width/2;
   const l0=[a[0]+nx*rw,a[1]+nz*rw],l1=[b[0]+nx*rw,b[1]+nz*rw],rr0=[a[0]-nx*rw,a[1]-nz*rw],rr1=[b[0]-nx*rw,b[1]-nz*rw];
-  const yy=base+.008;quadXZ(l0,l1,rr1,rr0,yy,zone.floor);
-  if(i%9===0){quadXZ([a[0]+nx*rw*.65,a[1]+nz*rw*.65],[b[0]+nx*rw*.65,b[1]+nz*rw*.65],[b[0]-nx*rw*.65,b[1]-nz*rw*.65],[a[0]-nx*rw*.65,a[1]-nz*rw*.65],yy+.012,'#414b49');}
+  const yy=base+.008;
+  if(lev===1){
+   cutFloorQuad(Math.min(l0[0],rr0[0],l1[0],rr1[0]),Math.max(l0[0],rr0[0],l1[0],rr1[0]),
+    Math.min(l0[1],rr0[1],l1[1],rr1[1]),Math.max(l0[1],rr0[1],l1[1],rr1[1]),yy,zone.floor);
+  }else quadXZ(l0,l1,rr1,rr0,yy,zone.floor);
+  // Continuous overhead closure with intentional full-height stair openings.
+  // This replaces intermittent decorative ceiling strips which left visible sky gaps.
+  {
+   const sx=Math.min(l0[0],l1[0],rr0[0],rr1[0]),ex=Math.max(l0[0],l1[0],rr0[0],rr1[0]);
+   const sz=Math.min(l0[1],l1[1],rr0[1],rr1[1]),ez=Math.max(l0[1],l1[1],rr0[1],rr1[1]);
+   cutSlab((sx+ex)/2,(sz+ez)/2,ex-sx,ez-sz,base+3.90,.16,'#1b2225',lev?'upper-ceiling':'lower-ceiling');
+  }
   // Checar ambiente EXTERIOR: nas interseções não criar paredes que tapem os corredores.
   for(const side of [1,-1]){
    const mx=(a[0]+b[0])/2+nx*side*(rw+.35),mz=(a[1]+b[1])/2+nz*side*(rw+.35);
@@ -219,7 +273,7 @@ function routeBuild(r){const pts=r.samples,lev=r.level,base=lev?layerY:0,zone=zo
    const rail=lev===1 && (Math.abs(mx)<13&&mz<10&&mz> -40);
    wallPanel(from,to,base,rail?1.20:3.55,zone.wall,zone.trim,rail);
   }
-  if(i%15===5){const t=i/(pts.length-1),x=a[0],z=a[1];
+  if(i%15===5 && !shaftRects.some(c=>Math.abs(a[0]-(c.minX+c.maxX)/2)<(c.maxX-c.minX)/2+.8&&a[1]>c.minZ-.8&&a[1]<c.maxZ+.8)){const t=i/(pts.length-1),x=a[0],z=a[1];
     world.cube(x,base+3.55,z,.75,.10,1.25,color(zone.light),rnd()<.35?.05:.78);
     cable([x-.7,base+3.75,z-1],[x+.55,base+3.25,z+1.5]);
     // teto de concreto com juntas e luminárias pendentes, 2 alturas diferentes.
@@ -228,10 +282,12 @@ function routeBuild(r){const pts=r.samples,lev=r.level,base=lev?layerY:0,zone=zo
  }
 }
 function makeRoom(r){const lev=r.level,base=lev?layerY:0,zone=zonePalette[r.zone],w=r.w,d=r.d;
- world.cube(r.x,base-.07,r.z,w,.16,d,color(zone.floor));
+ if(lev===1)cutSlab(r.x,r.z,w,d,base-.07,.16,zone.floor,'upper-floor');
+ else world.cube(r.x,base-.07,r.z,w,.16,d,color(zone.floor));
  // teto e vigas com alturas variáveis; salas técnicas mais baixas.
  const height=(r.type==='food'||r.type==='cinema'?4.05:r.type==='restroom'?2.92:3.52);
- world.cube(r.x,base+height,r.z,w,.19,d,color('#1c2325'));
+ if(lev===0)cutSlab(r.x,r.z,w,d,base+height,.19,'#1c2325','lower-ceiling');
+ else world.cube(r.x,base+height,r.z,w,.19,d,color('#1c2325'));
  const sides=[ [[r.x-w/2,r.z-d/2],[r.x+w/2,r.z-d/2]],[[r.x+w/2,r.z-d/2],[r.x+w/2,r.z+d/2]],[[r.x+w/2,r.z+d/2],[r.x-w/2,r.z+d/2]],[[r.x-w/2,r.z+d/2],[r.x-w/2,r.z-d/2]] ];
  for(const [a,b] of sides){const len=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(3,Math.ceil(len/.9)),ux=(b[0]-a[0])/n,uz=(b[1]-a[1])/n;
   for(let j=0;j<n;j++){
@@ -358,7 +414,7 @@ for(const room of roomDefs)makeRoom(room);
 for(const c of connectors)connectorBuild(c);
 // Atrium sem teto uniforme; galeria no piso superior visível por entre vigas e placas quebradas.
 for(let k=0;k<22;k++){
- const x=rand(-8,10),z=rand(-28,-2);if(!walkable(x,z,0))continue;
+ const x=rand(-8,10),z=rand(-28,-2);if(!walkable(x,z,0)||connectorAt(x,z))continue;
  world.cube(x,3.5+rand(0,.2),z,rand(.5,2.4),.12,rand(.4,1.6),color('#313739'));
 }
 // Interiores de lojas em níveis distintos: sem prateleiras clonadas ao longo de 200 metros.
@@ -393,6 +449,14 @@ world.cube(escapePanel.x,0,escapePanel.z-5,6,3.5,.8,color('#333b3a'));
 world.cube(escapePanel.x,2.9,escapePanel.z-4.8,5.2,.35,.1,color('#a48a78'),.48);
 world.cube(escapePanel.x-1.4,1.15,escapePanel.z-.4,.66,1.3,.22,color('#4d6c65'));
 world.cube(escapePanel.x-1.4,1.75,escapePanel.z-.27,.40,.25,.09,color('#c38b70'),.75);
+// Secondary enclosure: if a tiny crack is left by a junction, the viewer sees
+// an enclosed dark service shaft, never the infinite empty world/sky.
+const shellBottom=-.5,shellHeight=11.6,bw=bounds.maxX-bounds.minX,bd=bounds.maxZ-bounds.minZ;
+world.cube((bounds.minX+bounds.maxX)/2,10.05,(bounds.minZ+bounds.maxZ)/2,bw+2,.5,bd+2,color('#101819'));
+world.cube(bounds.minX-.45,shellBottom,(bounds.minZ+bounds.maxZ)/2,.90,shellHeight,bd+2,color('#161e20'));
+world.cube(bounds.maxX+.45,shellBottom,(bounds.minZ+bounds.maxZ)/2,.90,shellHeight,bd+2,color('#161e20'));
+world.cube((bounds.minX+bounds.maxX)/2,shellBottom,bounds.minZ-.45,bw+2,shellHeight,.90,color('#161e20'));
+world.cube((bounds.minX+bounds.maxX)/2,shellBottom,bounds.maxZ+.45,bw+2,shellHeight,.90,color('#161e20'));
 // Fachadas altas e shafts externos evitam enxergar o 'fim do mundo'.
 for(const r of roomDefs){const y=r.level?layerY:0,cc=zonePalette[r.zone];
  for(let i=0;i<4;i++){
@@ -574,6 +638,9 @@ function checkCollision(x,z,foot=floorHeight(p.x,p.z,p.level),level=p.level){
   if(!walkable(x+ox,z+oz,level))return true;
  }
  const ground=floorHeight(x,z,level);
+ // Stop the player before their head crosses a slab (including while jumping).
+ const clearance=ceilingHeightAt(x,z,level);
+ if(ground+p.jumpY+PLAYER_HEIGHT>clearance-.025)return true;
  // A full floor difference is never climbable without a stair/escalator.
  if(Math.abs(ground-foot)>Math.max(.47,p.jumpY+.38))return true;
  for(const b of colliders){
@@ -604,6 +671,9 @@ function movement(dt){let forward=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0)+
  const dz=(-Math.cos(p.yaw)*forward+Math.sin(p.yaw)*side)*speed*dt;
  moveAxis(dx,dz);
  p.vy-=16.3*dt;p.jumpY=Math.max(0,p.jumpY+p.vy*dt);
+ // The player's top capsule never crosses the ceiling, even at low FPS.
+ const allowedJump=Math.max(0,ceilingHeightAt(p.x,p.z,p.level)-floorHeight(p.x,p.z,p.level)-PLAYER_HEIGHT-.04);
+ if(p.jumpY>allowedJump){p.jumpY=allowedJump;p.vy=Math.min(0,p.vy);}
  if(p.jumpY<=0){p.jumpY=0;p.vy=0;}
  p.stamina=clamp(p.stamina+(running?-23:14)*dt,0,100);p.headbob+=m*speed*dt*1.6;
 }
@@ -744,7 +814,7 @@ function broadcast(msg,except){for(const [id,conn] of clients)if(id!==except&&co
 function receiveHost(msg){if(!msg||typeof msg!=='object')return;switch(msg.t){case 'sync':alarmActive=!!msg.alarm;escapeSeconds=Number(msg.seconds)||150;monster.x=msg.monster?.x||monster.x;monster.z=msg.monster?.z||monster.z;friends.clear();for(let [id,f] of msg.friends||[])friends.set(id,f);break;case 'stateWorld':if(msg.monster){monster.x=msg.monster.x;monster.z=msg.monster.z;monster.heading=msg.monster.heading||0;monster.phase+=.15;monster.level=msg.monster.level===1?1:0;}if(msg.alarm)alarmActive=true;if(Number.isFinite(msg.seconds))escapeSeconds=msg.seconds;break;case 'friendJoined':friends.set(msg.id,{x:msg.x,z:msg.z,yaw:0});toast('Outro explorador entrou no shopping.');break;case 'friendLeft':friends.delete(msg.id);toast('Um explorador saiu do shopping.');break;case 'friendState':friends.set(msg.id,{x:msg.x,z:msg.z,yaw:msg.yaw,level:msg.level===1?1:0});break;case 'alarm':alarmActive=true;escapeSeconds=Number(msg.seconds)||150;stormFlash=1;toast('ALARME ATIVADO! CORRAM PARA O PORTÃO DE INCÊNDIO!',4200);break;case 'lost':finish(false);break;case 'win':finish(true);break;case 'full':toast('Sala cheia (máximo de 4 jogadores).');break;}}
 function sendState(){if(onlineMode==='guest'&&hostConn?.open)hostConn.send({t:'state',x:p.x,z:p.z,yaw:p.yaw,level:p.level});if(onlineMode==='host'){broadcast({t:'stateWorld',monster:{x:monster.x,z:monster.z,heading:monster.heading,level:monster.level},seconds:escapeSeconds,alarm:alarmActive});broadcast({t:'friendState',id:'host',x:p.x,z:p.z,yaw:p.yaw,level:p.level});}}
 // Exposição mínima para testes de execução, sem afetar a interface.
-window.__BREU_TEST__={get state(){return state},get position(){return {x:p.x,z:p.z,y:floorHeight(p.x,p.z,p.level)+p.jumpY,level:p.level}},get alarm(){return alarmActive},get countdown(){return escapeSeconds},get online(){return onlineMode},get gl(){return !!gl},get geometryVertices(){return staticMesh.count},get rooms(){return roomDefs.map(r=>({...r}))},get connectors(){return connectors.map(c=>({...c}))},canWalk:(x,z,l=0)=>walkable(x,z,l,.43),moveTo(x,z,l){p.x=x;p.z=z;if(l===0||l===1)p.level=l},face(yaw,pitch=0){p.yaw=yaw;p.pitch=pitch},moveAxis,collides:checkCollision,jump,collect:action,reset:resetWorld,navGrid,monster};
+window.__BREU_TEST__={get state(){return state},get position(){return {x:p.x,z:p.z,y:floorHeight(p.x,p.z,p.level)+p.jumpY,level:p.level}},get alarm(){return alarmActive},get countdown(){return escapeSeconds},get online(){return onlineMode},get gl(){return !!gl},get geometryVertices(){return staticMesh.count},get slabs(){return constructedSlabs},get shafts(){return shaftRects.map(s=>({...s}))},get ceiling(){return ceilingHeightAt(p.x,p.z,p.level)},ceilingAt:ceilingHeightAt,get rooms(){return roomDefs.map(r=>({...r}))},get connectors(){return connectors.map(c=>({...c}))},canWalk:(x,z,l=0)=>walkable(x,z,l,.43),moveTo(x,z,l){p.x=x;p.z=z;if(l===0||l===1)p.level=l},face(yaw,pitch=0){p.yaw=yaw;p.pitch=pitch},moveAxis,collides:checkCollision,jump,collect:action,reset:resetWorld,navGrid,monster};
 })();
 </script>
 </body>
