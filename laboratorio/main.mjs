@@ -4,6 +4,7 @@ import {createLevel} from './level.mjs';
 import {BreuSound} from './ambient-audio.mjs';
 import {createStalker} from './stalker.mjs';
 import {EscapeSequence} from './mission.mjs';
+import {createEnvironmentMotion} from './environment-motion.mjs';
 import {WING, WALLS, INTERACTION, STORE_SIGNS} from './layout.mjs';
 
 const $=s=>document.querySelector(s);
@@ -13,7 +14,7 @@ const mapCanvas=$('#map'),mapCtx=mapCanvas.getContext('2d');
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
 const lowPowerDevice=touch||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<=4);
 const quality={ratio:1,min:touch?.62:.72,max:1,seconds:0,frames:0,goodWindows:0};
-let scene,renderer,camera,physics,stage,flashlight,stalker;
+let scene,renderer,camera,physics,stage,flashlight,stalker,motion;
 let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
 const escapeSequence=new EscapeSequence(12);let exitOpen=false;
 let yaw=0,pitch=0,flashOn=true,interactHeld=false,requestJump=false;
@@ -40,6 +41,7 @@ function renderSetup(){
  camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.035,125);
  camera.rotation.order='YXZ';
  stage=createLevel(scene);stalker=createStalker(scene);
+ motion=createEnvironmentMotion(scene,{lowPower:lowPowerDevice});
  const light=new THREE.SpotLight('#e7ddd1',25,19,Math.PI/7,.78,1.6);
  flashlight=light;scene.add(light);scene.add(light.target);
  light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
@@ -134,6 +136,15 @@ function drawMap(pos){
  c.fillStyle=alarm?'#f1b2a3':'#c9d4cf';const target=alarm?INTERACTION.exit:INTERACTION.panel;c.beginPath();c.arc(sx(target.x),sy(target.z),4,0,Math.PI*2);c.fill();
  c.fillStyle='#d9e9ee';c.beginPath();c.arc(sx(pos.x),sy(pos.z),3,0,Math.PI*2);c.fill();
 }
+function environmentCue(event){
+ if(!event)return;
+ sound.cue(event.kind);
+ // Keep the cinematic message short and never block player input.
+ const label=$('#notice');
+ label.textContent=event.text;label.classList.add('show');
+ clearTimeout(environmentCue.timeout);
+ environmentCue.timeout=setTimeout(()=>label.classList.remove('show'),2200);
+}
 const fps={last:0,acc:0,second:0,frames:0};
 // Change resolution only every few seconds to avoid constantly reallocating
 // the framebuffer. The scene geometry, textures and collision stay untouched.
@@ -166,12 +177,16 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
    const p=physics.position();
    walkBob+=(Math.abs(forward)+Math.abs(strafe))*.035;
    camera.position.set(p.x,p.y+.64+Math.sin(walkBob)*Math.min(.024,Math.hypot(strafe,forward)*.015),p.z);
-   camera.rotation.set(pitch,yaw,0);
+   camera.rotation.set(pitch,yaw,-Math.max(-.024,Math.min(.024,strafe*.013)));
+   const targetFov=sprint&&Math.abs(forward)+Math.abs(strafe)>.2?80:76;
+   camera.fov+=(targetFov-camera.fov)*Math.min(1,dt*7);
+   if(Math.abs(targetFov-camera.fov)>.08)camera.updateProjectionMatrix();
    sound.tick(clock,{walking:Math.abs(forward)+Math.abs(strafe)>.12,sprinting:sprint,alarm,zone:Math.max(0,Math.min(5,Math.floor((13-p.z)/14)))});
    const result=stalker?.update(dt,p,alarm,clock);
    $('#danger').style.opacity=String(result?Math.max(0,Math.min(.67,(12-result.distance)/17)):0);
    if(result?.caught){onCaught();return;}
    updateObjective(p);
+   environmentCue(motion?.update(dt,clock,p,{flashlight:flashOn,alarm}));
    fps.frames++;fps.second+=elapsed;adjustQuality(elapsed);
    if(fps.second>=1){$('#fps').textContent=`${Math.round(fps.frames/fps.second)} FPS`;fps.frames=0;fps.second=0;drawMap(p)}
   }else if(!started){
