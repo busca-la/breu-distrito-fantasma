@@ -16,6 +16,10 @@ return class BreuPhysics {
     for(const c of CEILINGS)this.addFixed(c.name,c.x,c.h+.13,c.z,c.w,.26,c.d);
     for(const prop of PROPS.filter(p=>p.blocking))this.addFixed(prop.name,prop.x,prop.h/2,prop.z,prop.w,prop.h,prop.d);
     this.exitBody=this.addFixed('sealed exit door',19.03,1.62,-51, .28,3.24,3.45);
+    // The security office initially has no electricity. Both its physical
+    // gate and the visible shutter rise when the auxiliary breaker is used.
+    this.securityGateBody=this.addFixed('powered security grille',11.45,1.53,-51.25,.24,3.04,3.38);
+    this.securityGateUnlocked=false;
     this.body=this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(WING.entrance.x,.84,WING.entrance.z).lockRotations().setLinearDamping(.4).setCcdEnabled(true));
     this.playerCollider=this.world.createCollider(RAPIER.ColliderDesc.capsule(.45,PLAYER_RADIUS).setFriction(0).setRestitution(0),this.body);
     this.timeStep=1/60;
@@ -42,6 +46,11 @@ return class BreuPhysics {
     this.world.timestep=this.timeStep;
     this.world.step();
     return this.body.translation();
+  }
+  unlockSecurityGate(){
+    if(this.securityGateUnlocked)return;
+    this.securityGateUnlocked=true;
+    this.world.removeRigidBody(this.securityGateBody);
   }
   unlockExit(){
     if(this.exitUnlocked)return;
