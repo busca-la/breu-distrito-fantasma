@@ -4,7 +4,7 @@ import {resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 const root=process.cwd();
 const file=p=>resolve(root,p);
-for(const test of ['tests/geometry.test.cjs','tests/playthrough.test.cjs','tests/enemy.test.cjs','tests/environment-motion.test.mjs']){
+for(const test of ['tests/geometry.test.cjs','tests/playthrough.test.cjs','tests/enemy.test.cjs','tests/environment-motion.test.mjs','tests/live-encounters.test.mjs','tests/physics-movement.test.mjs']){
  execFileSync(process.execPath,[file(test)],{cwd:root,stdio:'inherit',timeout:90000});
 }
 
