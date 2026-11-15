@@ -102,12 +102,12 @@ export function createStalker(scene){
   wasChasing=chasing;
   return {distance:now,chasing,caught,spotted,lost,visible,location:{...position}};
  }
- function reset(time=0){
+ function reset(time=0,{alarm=false}={}){
   position={...initial};route=[];pathTime=0;steps=0;
   lastKnown={...initial};huntUntil=-1;graceUntil=time+5;
   // On an alarm checkpoint, the siren has already sounded, so it must not
   // immediately reveal the checkpoint location to the creature.
-  alarmHeard=true;wasChasing=false;
+  alarmHeard=alarm;wasChasing=false;
   group.position.set(position.x,0,position.z);
  }
  group.position.set(position.x,0,position.z);
