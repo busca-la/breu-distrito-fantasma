@@ -299,11 +299,21 @@ export function createLevel(scene){
  const amb=new THREE.HemisphereLight('#9eafc1','#262727',.4);scene.add(amb);
  const emergency=new THREE.PointLight('#b7534e',0,13,2);emergency.position.set(13,2.7,-51);scene.add(emergency);
  const batching=batchStaticGeometry(scene,new Set([interactive.panel,interactive.exit]));
+ // A physical blast door has a visible raising sequence. The collider only
+ // unlocks after the lower edge is above the player's capsule height.
+ let doorOpeningAt=null,doorClearance=false;
  return {interactive,lights,emergency,box,batching,count:items.length+detail.count,update(time,alarm){
   detail.update(time,alarm);
   for(const l of lights){const strobe=l.flag?(Math.sin(time*11+l.seed)+Math.sin(time*37+l.seed*2))*.5:0;
    l.light.intensity=Math.max(.04,l.base*(l.flag&&strobe>.45?.12:1+strobe*.09));}
   emergency.intensity=alarm?(10+5*Math.sin(time*9)):0;
-  interactive.exit.position.y=alarm?5.4:1.61;
- },openExit(){interactive.exit.visible=false;}};
+  if(doorOpeningAt!==null){
+   const t=Math.max(0,Math.min(1,(time-doorOpeningAt)/2.4));
+   const eased=t*t*(3-2*t);
+   const lift=eased*3.8;
+   interactive.exit.position.y=1.61+lift;
+   doorClearance=lift>2.28;
+  }else interactive.exit.position.y=1.61;
+ },openExit(time){if(doorOpeningAt===null)doorOpeningAt=time;},
+ isExitPassable(){return doorClearance;}};
 }
