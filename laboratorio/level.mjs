@@ -361,11 +361,17 @@ export function createLevel(scene){
  const batching=batchStaticGeometry(scene,new Set([interactive.panel,interactive.exit,interactive.radio,interactive.relay,interactive.relayHandle,interactive.relayLamp,interactive.radioDial,doorBand]));
  // A physical blast door has a visible raising sequence. The collider only
  // unlocks after the lower edge is above the player's capsule height.
- let doorOpeningAt=null,doorClearance=false,securityGateAt=null,securityClear=false;
+ let doorOpeningAt=null,doorClearance=false,securityGateAt=null,securityClear=false,powerAt=null;
  return {interactive,lights,emergency,box,batching,count:items.length+detail.count,update(time,alarm){
   detail.update(time,alarm);
-  for(const l of lights){const strobe=l.flag?(Math.sin(time*11+l.seed)+Math.sin(time*37+l.seed*2))*.5:0;
-   l.light.intensity=Math.max(.04,l.base*(l.flag&&strobe>.45?.12:1+strobe*.09));}
+  const power=powerAt===null?0:Math.min(1,Math.max(0,(time-powerAt)/1.8));
+  for(const l of lights){
+   const strobe=l.flag?(Math.sin(time*11+l.seed)+Math.sin(time*37+l.seed*2))*.5:0;
+   // The service wing is on the emergency circuit: switching the DENKI
+   // breaker has an immediately visible effect on the entire far half.
+   const circuit=l.light.position.z< -15?(.46+power*.74):1;
+   l.light.intensity=Math.max(.04,l.base*circuit*(l.flag&&strobe>.45?.12:1+strobe*.09));
+  }
   emergency.intensity=alarm?(10+5*Math.sin(time*9)):0;
   if(securityGateAt!==null){
    const t=Math.max(0,Math.min(1,(time-securityGateAt)/2.25));
@@ -382,7 +388,12 @@ export function createLevel(scene){
    doorClearance=lift>2.28;
   }else{interactive.exit.position.y=1.61;doorBand.position.y=2.48;}
  },openExit(time){if(doorOpeningAt===null)doorOpeningAt=time;},
- restorePower(time){if(securityGateAt!==null)return;securityGateAt=time;relayLampMaterial.color.set('#80c8ae');interactive.relayHandle.rotation.x=-.48;},
+ restorePower(time){
+  if(securityGateAt!==null)return;
+  securityGateAt=time;powerAt=time;
+  relayLampMaterial.color.set('#80c8ae');
+  interactive.relayHandle.rotation.x=-.48;
+ },
  isSecurityPassable(){return securityClear;},
  isExitPassable(){return doorClearance;}};
 }
