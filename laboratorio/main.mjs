@@ -3,7 +3,7 @@ import {BreuPhysics} from './physics.mjs';
 import {createLevel} from './level.mjs';
 import {BreuSound} from './ambient-audio.mjs';
 import {createStalker} from './stalker.mjs';
-import {EscapeSequence} from './mission.mjs';
+import {EscapeSequence,BreuStory} from './mission.mjs';
 import {createEnvironmentMotion} from './environment-motion.mjs';
 import {createLiveEncounters} from './live-encounters.mjs';
 import {WING, WALLS, INTERACTION, STORE_SIGNS} from './layout.mjs';
@@ -17,7 +17,7 @@ const lowPowerDevice=touch||(navigator.hardwareConcurrency>0&&navigator.hardware
 const quality={ratio:1,min:touch?.62:.72,max:1,seconds:0,frames:0,goodWindows:0};
 let scene,renderer,camera,physics,stage,flashlight,stalker,motion,encounters;
 let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
-const escapeSequence=new EscapeSequence(12);let exitOpen=false;
+const escapeSequence=new EscapeSequence(12),story=new BreuStory();let exitOpen=false;
 let yaw=0,pitch=0,flashOn=true,interactHeld=false,requestJump=false;
 let joystick={x:0,y:0};
 const keys=new Set();
@@ -98,36 +98,54 @@ function onCaught(){
  $('#play').textContent='TENTAR NOVAMENTE';if(document.pointerLockElement)document.exitPointerLock();
 }
 function updateObjective(pos){
- if(alarm&&!exitOpen){
-  if(escapeSequence.update(clock)){
-   exitOpen=true;stage.openExit(clock);
-   $('#notice').textContent='PORTÃO DE INCÊNDIO SUBINDO';$('#notice').classList.add('show');
-   setTimeout(()=>$('#notice').classList.remove('show'),2300);
-  }else objective.textContent=`PORTÃO ABRE EM ${Math.ceil(escapeSequence.remaining(clock))} S`;
+ // The gate is powered by a different circuit from the final exit.
+ // Restoring that circuit allows entry into the real security office.
+ if(alarm&&!exitOpen&&escapeSequence.update(clock)){
+  exitOpen=true;stage.openExit(clock);
+  environmentCue({kind:'alarm',text:'TRAVA DE INCÊNDIO DESTRAVADA. O PORTÃO ESTÁ SUBINDO.'});
  }
- if(alarm&&exitOpen)objective.textContent=stage.isExitPassable()?'CORRA PARA A SAÍDA DE INCÊNDIO':'PORTÃO ABRINDO — PREPARE-SE';
- const dest=alarm?INTERACTION.exit:INTERACTION.panel;
- const d=Math.hypot(pos.x-dest.x,pos.z-dest.z);
- distanceValue.textContent=`${Math.round(d)} m`;
- const near=d<(alarm?INTERACTION.exit.r:INTERACTION.panel.r);
- hint.classList.toggle('hide',!near||(alarm&&!stage.isExitPassable()));
- if(near&&(!alarm||stage.isExitPassable())){hint.textContent=alarm?'PRESSIONE E / TOQUE EM SAIR':'PRESSIONE E / TOQUE EM ATIVAR';actionButton.classList.toggle('hide',!touch)}
- else actionButton.classList.add('hide');
- if(near&&interactHeld){interactHeld=false;if(!alarm){
+ const task=story.current;
+ objective.textContent=task.title;
+ const detail=$('#mission-detail');
+ if(detail)detail.textContent=task.detail;
+ const target=INTERACTION[task.target];
+ if(!target)return;
+ const distance=Math.hypot(pos.x-target.x,pos.z-target.z);
+ distanceValue.textContent=`${Math.round(distance)} m`;
+ const near=distance<target.r;
+ const openingSecurity=story.phase==='security'&&!stage.isSecurityPassable();
+ const openingExit=story.phase==='escape'&&!stage.isExitPassable();
+ if(alarm&&openingExit)objective.textContent=exitOpen?'PORTÃO ABRINDO — SOBREVIVA':'PORTÃO ABRE EM '+Math.ceil(escapeSequence.remaining(clock))+' S';
+ const canUse=near&&!openingSecurity&&!openingExit;
+ hint.classList.toggle('hide',!canUse);
+ actionButton.classList.toggle('hide',!canUse||!touch);
+ if(canUse)hint.textContent=(touch?'TOQUE EM INTERAGIR':'[E]')+' · '+task.action;
+ if(!interactHeld)return;
+ interactHeld=false;
+ if(!canUse){
+  if(near&&openingSecurity)environmentCue({kind:'metal',text:'A GRADE ESTÁ SUBINDO. AGUARDE A ABERTURA.'});
+  return;
+ }
+ if(story.phase==='radio'){
+  story.advance('radio');
+  environmentCue({kind:'pursuit',text:'RÁDIO: SEM ENERGIA. USE O DISJUNTOR AUXILIAR DA DENKI.'});
+ }else if(story.phase==='relay'){
+  story.advance('relay');
+  stage.restorePower(clock);
+  environmentCue({kind:'electric',text:'ENERGIA RESTABELECIDA. A GRADE DA SEGURANÇA ESTÁ ABRINDO.'});
+ }else if(story.phase==='security'){
+  story.advance('panel');
   alarm=true;escapeSequence.activate(clock);
-  objective.textContent='SOBREVIVA ATÉ O PORTÃO DESTRAVAR';
-  $('#notice').textContent='ALARME DISPARADO — NÃO FIQUE PARADO';$('#notice').classList.add('show');
-  setTimeout(()=>$('#notice').classList.remove('show'),2500);
- }
- else if(stage.isExitPassable()&&escapeSequence.finish()){
-  escaped=true;paused=true;sound.setPaused(true);intro.classList.remove('hide');hud.classList.add('hide');
+  environmentCue({kind:'alarm',text:'CENTRAL: ABERTURA DE EMERGÊNCIA INICIADA. A CRIATURA OUVIU.'});
+ }else if(story.phase==='escape'&&stage.isExitPassable()&&escapeSequence.finish()){
+  story.advance('exit');
+  escaped=true;paused=true;sound.setPaused(true);
+  intro.classList.remove('hide');hud.classList.add('hide');
   $('#intro-headline').textContent='VOCÊ ESCAPOU.';
-  $('#intro-copy').textContent=`Ala 03 atravessada em ${Math.round(clock)} segundos. O resto do shopping continua em silêncio.`;
-  $('#play').textContent='REINICIAR EXPEDIÇÃO';if(document.pointerLockElement)document.exitPointerLock();
- }}
- else interactHeld=false;
- const bearing=Math.atan2(-(dest.x-pos.x),-(dest.z-pos.z));const angle=((bearing-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;
- $('#needle').style.transform=`rotate(${-angle}rad)`;
+  $('#intro-copy').textContent=`O rádio, o disjuntor e a central funcionaram. Você escapou em ${Math.round(clock)} segundos.`;
+  $('#play').textContent='REINICIAR EXPEDIÇÃO';
+  if(document.pointerLockElement)document.exitPointerLock();
+ }
 }
 function drawMap(pos){
  const c=mapCtx,w=mapCanvas.width,h=mapCanvas.height;c.clearRect(0,0,w,h);c.fillStyle='rgba(5,10,12,.9)';c.fillRect(0,0,w,h);
@@ -135,7 +153,7 @@ function drawMap(pos){
  c.fillStyle='#202d31';c.fillRect(sx(-10.9),sy(-57.5),sx(21.6)-sx(0),sy(75.5)-sy(0));
  c.strokeStyle='#607276';c.lineWidth=2;c.beginPath();
  for(const o of WALLS)c.strokeRect(sx(o.x-o.w/2),sy(o.z-o.d/2),o.w*w/34,o.d*h/80);c.stroke();
- c.fillStyle=alarm?'#f1b2a3':'#c9d4cf';const target=alarm?INTERACTION.exit:INTERACTION.panel;c.beginPath();c.arc(sx(target.x),sy(target.z),4,0,Math.PI*2);c.fill();
+ c.fillStyle=alarm?'#f1b2a3':'#c9d4cf';const target=INTERACTION[story.target]||INTERACTION.exit;c.beginPath();c.arc(sx(target.x),sy(target.z),4,0,Math.PI*2);c.fill();
  c.fillStyle='#d9e9ee';c.beginPath();c.arc(sx(pos.x),sy(pos.z),3,0,Math.PI*2);c.fill();
 }
 function environmentCue(event){
@@ -199,6 +217,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
  flashlight.visible=flashOn;
  flashlight.position.copy(camera.position);const direction=vec(0,0,-1).applyEuler(camera.rotation);flashlight.target.position.copy(camera.position).add(direction.multiplyScalar(8));
  stage?.update(clock,alarm);
+ if(stage?.isSecurityPassable()&&!physics?.securityGateUnlocked)physics.unlockSecurityGate();
  if(exitOpen&&stage?.isExitPassable()&&!physics?.exitUnlocked)physics.unlockExit();
  renderer.render(scene,camera);
 }
