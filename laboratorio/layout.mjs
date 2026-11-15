@@ -70,8 +70,6 @@ export const PROPS = [
  {name:'restroom toilet cubicle 1',x:9.40,z:3.06,w:.65,d:.74,h:.51,blocking:true},
  {name:'restroom toilet cubicle 2',x:9.40,z:6.02,w:.65,d:.74,h:.51,blocking:true},
  {name:'restroom toilet cubicle 3',x:9.40,z:8.82,w:.65,d:.74,h:.51,blocking:true},
- {name:'sealed west renovation',x:-2.20,z:-18.6,w:2.70,d:1.65,h:2.85,blocking:true},
- {name:'sealed east renovation',x:2.20,z:-18.6,w:2.70,d:1.65,h:2.32,blocking:true},
  {name:'fallen rack',x:-1.70,z:-3.0,w:1.25,d:.55,h:.8,blocking:true},
  {name:'electric cabinet',x:2.70,z:-16.4,w:.6,d:1.1,h:1.8,blocking:true},
  {name:'collapsed kiosk',x:-1.9,z:-24.0,w:1.65,d:1.2,h:1.15,blocking:true},
