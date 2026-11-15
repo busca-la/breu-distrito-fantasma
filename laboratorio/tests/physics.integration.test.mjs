@@ -1,6 +1,6 @@
 // Uses REAL Rapier WASM; run from lab with npm install && npm run test:physics.
 import assert from 'node:assert/strict';
-import RAPIER from '@dimforge/rapier3d-compat';
+import * as RAPIER from '@dimforge/rapier3d-compat';
 import {createPhysicsClass} from '../physics-world.mjs';
 const Physics=createPhysicsClass(RAPIER),physics=await Physics.create();
 const sim=(n,move={forward:0,strafe:0,sprint:false},yaw=0,jump=false)=>{
