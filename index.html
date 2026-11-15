@@ -14,7 +14,7 @@
 </head>
 <body>
 <canvas id="scene"></canvas><div id="vignette"></div><div id="grain"></div><div id="hurt"></div>
-<section id="menu"><div class="glow"></div><div class="menuleft"><div class="brand"><div class="brandmark"><span>✣</span></div> SHOPPING 09 · TRANSMISSÃO PERDIDA</div><div class="eyebrow">PAVIMENTOS 01 — 02 <span style="margin:0 9px">/</span> 03:17 AM</div><h1>BREU<span>.</span></h1><div class="subheading">Dois andares. Uma única saída.</div><p class="lead">Um shopping japonês do futuro, esquecido sob a cidade. Corredores curvos, lojas devastadas, banheiros alagados, praça de alimentação vazia e escadas que levam ao mezanino. Entre com amigos, encontre a sala de segurança no térreo, dispare o alarme e escape pela doca antes que a criatura alcance vocês.</p><div class="actions"><button class="primary" id="startSolo">SOBREVIVER SOZINHO &nbsp; ↗</button><button class="secondary" id="makeRoom">CRIAR SALA</button><button class="secondary" id="joinRoom">ENTRAR COM AMIGOS</button></div><div id="roomPane"><label id="roomLabel">CÓDIGO DA SALA</label><input id="roomInput" maxlength="7" placeholder="EX.: NOITE7" autocomplete="off"><div id="roomActions"><button class="primary" id="roomConfirm">CONECTAR</button><button class="secondary" id="roomBack">VOLTAR</button><button class="secondary" id="copyRoom" style="display:none">COPIAR CÓDIGO</button></div><div id="roomStatus" class="smallStatus">O modo online usa conexão gratuita entre navegadores e requer internet.</div></div><p class="fineprint">PC: <span class="kbd">W A S D</span> mover &nbsp; <span class="kbd">SHIFT</span> correr &nbsp; <span class="kbd">ESPAÇO</span> pular &nbsp; <span class="kbd">F</span> lanterna &nbsp; <span class="kbd">E</span> interagir.<br>Celular: controles de toque. Som recomendado. <b>Sem sustos gráficos explícitos.</b></p></div><div id="menuSide">SHOPPING 09 / 03:17<br>TÉRREO · MEZANINO · SERVIÇO<br>···<br>LOCAL / COOPERATIVO</div></section>
+<section id="menu"><div class="glow"></div><div class="menuleft"><div class="brand"><div class="brandmark"><span>✣</span></div> SHOPPING 09 · TRANSMISSÃO PERDIDA</div><div class="eyebrow">PAVIMENTOS 01 — 02 <span style="margin:0 9px">/</span> 03:17 AM</div><h1>BREU<span>.</span></h1><div class="subheading">Dois andares. Uma única saída.</div><p class="lead">Um shopping japonês do futuro, esquecido sob a cidade. Galerias retas, cruzamentos coerentes, lojas devastadas, banheiros alagados, praça de alimentação vazia e escadas que levam ao mezanino. Explore alas ligadas por uma galeria central. Entre com amigos, encontre a sala de segurança no térreo, dispare o alarme e escape pela doca antes que a criatura alcance vocês.</p><div class="actions"><button class="primary" id="startSolo">SOBREVIVER SOZINHO &nbsp; ↗</button><button class="secondary" id="makeRoom">CRIAR SALA</button><button class="secondary" id="joinRoom">ENTRAR COM AMIGOS</button></div><div id="roomPane"><label id="roomLabel">CÓDIGO DA SALA</label><input id="roomInput" maxlength="7" placeholder="EX.: NOITE7" autocomplete="off"><div id="roomActions"><button class="primary" id="roomConfirm">CONECTAR</button><button class="secondary" id="roomBack">VOLTAR</button><button class="secondary" id="copyRoom" style="display:none">COPIAR CÓDIGO</button></div><div id="roomStatus" class="smallStatus">O modo online usa conexão gratuita entre navegadores e requer internet.</div></div><p class="fineprint">PC: <span class="kbd">W A S D</span> mover &nbsp; <span class="kbd">SHIFT</span> correr &nbsp; <span class="kbd">ESPAÇO</span> pular &nbsp; <span class="kbd">F</span> lanterna &nbsp; <span class="kbd">E</span> interagir.<br>Celular: controles de toque. Som recomendado. <b>Sem sustos gráficos explícitos.</b></p></div><div id="menuSide">SHOPPING 09 / 03:17<br>TÉRREO · MEZANINO · SERVIÇO<br>···<br>LOCAL / COOPERATIVO</div></section>
 <div id="hud"><div id="hudTop"><div class="hudLogo">BREU<small>03:17 AM · SHOPPING-09</small></div><div class="hudVertical"><div class="caption">SETOR</div><div class="hudValue" id="sectorText">RECEPÇÃO</div></div></div><div class="hudRight"><div class="chip" id="roomChip" style="display:none">SALA <span id="roomChipText">------</span></div><div class="chip">EQUIPE <span id="playersText">1/4</span></div><div class="chip">LUZ <span id="lightText">LIGADA</span></div></div><div id="reticle"></div><div id="interaction"></div><div id="message"></div><div id="enemyWarn">ELE ESTÁ PERTO · NÃO PARE</div><div id="objective"><div class="objectiveTitle">OBJETIVO — ESCAPAR VIVO</div><div class="objectiveMain" id="objectiveText">Encontre a sala de segurança</div><div id="alarmClock" style="display:none;font-size:13px;letter-spacing:.15em;color:#edaaa3;margin-top:10px">PORTÃO ABERTO · 02:30</div><div class="meterRow"><label>FÔLEGO</label><div class="meter"><div id="staminaFill"></div></div></div><div class="meterRow"><label>SAÚDE</label><div class="meter"><div id="healthFill"></div></div></div></div><div id="mapWrap"><canvas id="miniMap" width="300" height="300"></canvas><div id="mapLabel">TAB / M · MAPA</div></div></div>
 <div id="mobile"><div id="stickOuter"><div id="stickInner"></div></div><div id="lookLabel">ARRASTE PARA OLHAR ↔</div><div id="mobileButtons"><button id="btnLight">LUZ</button><button id="btnRun">CORRER</button><button id="btnAction">USAR</button><button id="btnJump">PULAR</button><button id="btnMap">MAPA</button></div></div>
 <div id="endScreen"><div><div class="spooky" id="endTag">EXPEDIÇÃO ENCERRADA</div><h2 id="endTitle">SEM SAÍDA.</h2><p id="endDesc">O distrito não deixa ninguém sair.</p><button class="primary" id="restart">TENTAR NOVAMENTE</button></div></div><div id="unsupported">Seu navegador não conseguiu iniciar o mundo 3D. Tente abrir no Chrome, Edge ou Safari atualizado.</div>
@@ -92,18 +92,32 @@ function perspective(fovy,aspect,near,far){let f=1/Math.tan(fovy/2);return new F
 function lookAt(eye,tar){const sub=(a,b)=>a.map((q,i)=>q-b[i]);const norm=a=>{let d=Math.hypot(...a)||1;return a.map(x=>x/d)};let z=norm(sub(eye,tar)), x=norm([z[2],0,-z[0]]), y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]];return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-(x[0]*eye[0]+x[1]*eye[1]+x[2]*eye[2]),-(y[0]*eye[0]+y[1]*eye[1]+y[2]*eye[2]),-(z[0]*eye[0]+z[1]*eye[1]+z[2]*eye[2]),1]);}
 function color(hex){let h=hex.replace('#','');return [parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255]}
 class Mesh{constructor(){this.v=[]}tri(a,b,c,col,emit=0){const u=b.map((n,i)=>n-a[i]),v=c.map((n,i)=>n-a[i]);let n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],k=Math.hypot(...n)||1;n=n.map(x=>x/k);for(const p of [a,b,c])this.v.push(...p,...n,...col,emit)}quad(a,b,c,d,col,e=0){this.tri(a,b,c,col,e);this.tri(a,c,d,col,e)}cube(x,y,z,w,h,d,c,e=0){let xa=x-w/2,xb=x+w/2,ya=y, yb=y+h,za=z-d/2,zb=z+d/2;let a=[xa,ya,za],b=[xb,ya,za],cc=[xb,yb,za],dd=[xa,yb,za],ee=[xa,ya,zb],f=[xb,ya,zb],g=[xb,yb,zb],hh=[xa,yb,zb];this.quad(ee,f,g,hh,c,e);this.quad(b,a,dd,cc,c,e);this.quad(a,ee,hh,dd,c,e);this.quad(f,b,cc,g,c,e);this.quad(hh,g,cc,dd,c,e);this.quad(a,b,f,ee,c,e)}cylinder(x,y,z,r0,r1,height,c,seg=8,e=0){for(let i=0;i<seg;i++){let a=i*Math.PI*2/seg,b=(i+1)*Math.PI*2/seg;let p=[x+Math.cos(a)*r0,y,z+Math.sin(a)*r0],q=[x+Math.cos(b)*r0,y,z+Math.sin(b)*r0],r=[x+Math.cos(b)*r1,y+height,z+Math.sin(b)*r1],s=[x+Math.cos(a)*r1,y+height,z+Math.sin(a)*r1];this.quad(p,q,r,s,c,e);this.tri([x,y+height,z],s,r,c,e);}}upload(){const vao=gl.createVertexArray();gl.bindVertexArray(vao);const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(this.v),gl.STATIC_DRAW);for(let i=0;i<4;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,i===3?1:3,gl.FLOAT,false,40,i===3?36:i*12)}gl.bindVertexArray(null);return {vao,count:this.v.length/10}}}
-// BREU 0.6 — mapa autoral: shopping deteriorado em dois pavimentos, galerias curvas.
-// Colisão geométrica por áreas exploráveis + obstáculos físicos, em vez de caixas visuais sem colisão.
+// BREU 0.7 — planta comercial legível: galeria central, alas transversais e corredores de serviço.
+// Desenho espacial: entrada norte -> galeria principal -> área de serviço sul.
+// As mudanças de direção são cruzamentos ou cotovelos de 90° com função real.
+// Nenhuma trilha ornamental em serpentina; cada eixo serve lojas e ambientes concretos.
 const pathDefs=[
- {level:0,width:4.65,pts:[[0,76],[0,61],[5,49],[5,40],[0,31],[-7,24],[-7,15],[4,3],[10,-8],[3,-18],[-12,-28],[-13,-41],[-22,-49],[-25,-55]],zone:0},
- {level:0,width:3.8,pts:[[-7,24],[-18,24],[-27,18],[-31,5],[-30,-12],[-20,-21],[-12,-28]],zone:1},
- {level:0,width:3.9,pts:[[5,40],[14,40],[23,39],[29,30],[27,19],[21,8],[10,-8]],zone:2},
- {level:0,width:4,pts:[[-13,-41],[-3,-41],[8,-45],[18,-51],[27,-59],[27,-71]],zone:3},
- {level:0,width:3.5,pts:[[10,-8],[22,-11],[28,-21],[28,-34],[20,-42],[8,-45]],zone:4},
- {level:0,width:3.1,pts:[[-18,24],[-22,37],[-15,44],[5,49]],zone:1},
- {level:1,width:3.7,pts:[[-24,-6],[-21,-14],[-12,-23],[-3,-26],[10,-25],[18,-17],[24,-6],[26,6]],zone:5},
- {level:1,width:3.4,pts:[[10,-25],[18,-29],[23,-38],[24,-44]],zone:5},
- {level:1,width:3.5,pts:[[-12,-23],[-18,-31],[-10,-42]],zone:6}
+ {name:'GALERIA DE ENTRADA',level:0,width:4.8,pts:[[0,76],[0,19]],zone:0},
+ {name:'ÁTRIO CENTRAL',level:0,width:7.0,pts:[[0,19],[0,-10]],zone:0},
+ {name:'GALERIA DE SERVIÇO',level:0,width:4.6,pts:[[0,-10],[0,-63]],zone:3},
+ {name:'ALA DE ALIMENTAÇÃO',level:0,width:3.9,pts:[[0,8],[-22,8]],zone:1},
+ {name:'PASSAGEM DOS BANHEIROS',level:0,width:2.7,pts:[[-26,8],[-26,-14]],zone:1},
+ {name:'ALA DE MODA',level:0,width:3.6,pts:[[0,37],[-26,37]],zone:1},
+ {name:'ALA DE JOGOS',level:0,width:3.7,pts:[[0,39],[23,39]],zone:2},
+ {name:'ACESSO À ESCADA ROLANTE',level:0,width:3.5,pts:[[0,24],[26,24]],zone:2},
+ {name:'ALOJAMENTO TÉCNICO',level:0,width:3.0,pts:[[0,-33],[28,-33]],zone:4},
+ {name:'GALERIA DE SEGURANÇA',level:0,width:3.2,pts:[[0,-54],[-25,-54]],zone:3},
+ {name:'CORREDOR DA DOCA',level:0,width:3.2,pts:[[0,-62],[27,-62],[27,-70]],zone:3},
+ {name:'GALERIA DO ARQUIVO',level:0,width:3.0,pts:[[0,-44],[9,-44]],zone:4},
+ {name:'BASE DA ESCADA DE SERVIÇO',level:0,width:3.0,pts:[[0,10],[-25,10]],zone:1},
+ {name:'BASE DA ESCADA DO DEPÓSITO',level:0,width:3.0,pts:[[0,-59],[24,-59]],zone:3},
+ {name:'MEZANINO PRINCIPAL',level:1,width:4.25,pts:[[0,6],[0,-44]],zone:5},
+ {name:'PONTE DA ESCADA ROLANTE',level:1,width:3.2,pts:[[0,6],[26,6]],zone:5},
+ {name:'PONTE DA ESCADA DE SERVIÇO',level:1,width:3.1,pts:[[0,-6],[-25,-6]],zone:5},
+ {name:'GALERIA DO CINEMA',level:1,width:3.3,pts:[[0,-27],[-20,-27]],zone:5},
+ {name:'GALERIA DO CAFÉ',level:1,width:3.3,pts:[[0,-39],[-10,-39]],zone:6},
+ {name:'ALA DE TECNOLOGIA',level:1,width:3.3,pts:[[0,-22],[16,-22]],zone:5},
+ {name:'DEPÓSITO SUPERIOR',level:1,width:3.2,pts:[[0,-44],[24,-44]],zone:6}
 ];
 const roomDefs=[
  {name:'ENTRADA / PORTARIA',x:0,z:71,w:14,d:18,level:0,zone:0,type:'lobby'},
@@ -150,13 +164,18 @@ function cable(a,b,hex='#33383a',em=0){const c=color(hex),dx=b[0]-a[0],dy=b[1]-a
  world.quad([prev[0]-.023,prev[1]-.023,prev[2]],[next[0]-.023,next[1]-.023,next[2]],[next[0]+.023,next[1]+.023,next[2]],[prev[0]+.023,prev[1]+.023,prev[2]],c,em);prev=next;}}
 function rectInside(x,z,r,margin=0){return Math.abs(x-r.x)<r.w/2-margin && Math.abs(z-r.z)<r.d/2-margin;}
 function distSeg(x,z,a,b){const vx=b[0]-a[0],vz=b[1]-a[1],d=vx*vx+vz*vz||1,t=Math.min(1,Math.max(0,((x-a[0])*vx+(z-a[1])*vz)/d));return Math.hypot(x-(a[0]+vx*t),z-(a[1]+vz*t));}
-function smoothTrack(points){const sampled=[];for(let i=0;i<points.length-1;i++){
- const a=points[Math.max(0,i-1)],b=points[i],c=points[i+1],d=points[Math.min(points.length-1,i+2)];
- const length=Math.hypot(c[0]-b[0],c[1]-b[1]),n=Math.max(4,Math.ceil(length/.82));
- for(let j=0;j<n;j++){const t=j/n,t2=t*t,t3=t2*t;
-  sampled.push([0,1].map(k=>.5*((2*b[k])+(-a[k]+c[k])*t+(2*a[k]-5*b[k]+4*c[k]-d[k])*t2+(-a[k]+3*b[k]-3*c[k]+d[k])*t3)));
- }}sampled.push(points.at(-1));return sampled;}
-for(const r of pathDefs){r.samples=smoothTrack(r.pts);r.bounds={minX:Math.min(...r.samples.map(a=>a[0]))-r.width/2,maxX:Math.max(...r.samples.map(a=>a[0]))+r.width/2,minZ:Math.min(...r.samples.map(a=>a[1]))-r.width/2,maxZ:Math.max(...r.samples.map(a=>a[1]))+r.width/2};}
+function architecturalTrack(points){
+ const sampled=[];
+ for(let i=0;i<points.length-1;i++){
+  const a=points[i],b=points[i+1],dx=b[0]-a[0],dz=b[1]-a[1];
+  // Any non-orthogonal segment is a mapping error; do not bend it arbitrarily.
+  if(Math.abs(dx)>0.001 && Math.abs(dz)>0.001)throw Error('Segmento diagonal não autorizado na planta: '+JSON.stringify([a,b]));
+  const length=Math.hypot(dx,dz),n=Math.max(1,Math.ceil(length/.76));
+  for(let j=0;j<n;j++){const t=j/n;sampled.push([a[0]+dx*t,a[1]+dz*t]);}
+ }
+ sampled.push(points[points.length-1]);return sampled;
+}
+for(const r of pathDefs){r.samples=architecturalTrack(r.pts);r.bounds={minX:Math.min(...r.samples.map(a=>a[0]))-r.width/2,maxX:Math.max(...r.samples.map(a=>a[0]))+r.width/2,minZ:Math.min(...r.samples.map(a=>a[1]))-r.width/2,maxZ:Math.max(...r.samples.map(a=>a[1]))+r.width/2};}
 function connectorAt(x,z){for(const c of connectors)if(Math.abs(x-c.x)<c.w/2 && z>=Math.min(c.z0,c.z1)-.3&&z<=Math.max(c.z0,c.z1)+.3)return c;return null;}
 function stairT(c,z){return Math.max(0,Math.min(1,(z-c.z0)/(c.z1-c.z0)));}
 function walkable(x,z,level,margin=0){if(x<bounds.minX||x>bounds.maxX||z<bounds.minZ||z>bounds.maxZ)return false;
@@ -177,7 +196,7 @@ function polygonFloor(vertices,y,c){for(let i=1;i<vertices.length-1;i++)world.tr
 function quadXZ(a,b,c,d,y,hex,emit=0){world.quad([a[0],y,a[1]],[b[0],y,b[1]],[c[0],y,c[1]],[d[0],y,d[1]],color(hex),emit);}
 function wallPanel(a,b,y,h,hex,trim,glass=false){const dx=b[0]-a[0],dz=b[1]-a[1];let len=Math.hypot(dx,dz);if(len<.1)return;
  const main=color(hex),accent=color(trim);
- // Paredes curvas: segmentos com inclinação real acompanhando o corredor (não caixas retas).
+ // Parede contínua acompanhando os eixos ortogonais e seus cruzamentos.
  world.quad([a[0],y,a[1]],[b[0],y,b[1]],[b[0],y+h,b[1]],[a[0],y+h,a[1]],main);
  if(glass){world.quad([a[0],y+.8,a[1]],[b[0],y+.8,b[1]],[b[0],y+1.65,b[1]],[a[0],y+1.65,a[1]],color('#415051'),.05);}
  if(rnd()<.28||glass){world.quad([a[0],y+h-.20,a[1]],[b[0],y+h-.20,b[1]],[b[0],y+h-.09,b[1]],[a[0],y+h-.09,a[1]],accent,.07);}
@@ -353,7 +372,7 @@ for(const room of roomDefs){const y=room.level?layerY:0,zone=zonePalette[room.zo
  for(let k=0;k<7;k++){const xx=room.x+rand(-room.w*.35,room.w*.35),zz=room.z+rand(-room.d*.35,room.d*.35);
   if(rnd()<.25)cable([xx,y+3.45,zz-1],[xx+.6,y+2.12,zz+1],'#606566');}
 }
-// Volumes que estreitam a passagem e forçam curvas, registrados em colisão real.
+// Entulho com sentido ambiental; os estreitamentos nunca criam serpentinas arbitrárias.
 for(const [x,z,l,w,d,hex] of [[0,55,0,1.7,1.4,'#494b48'],[-5,21,0,1.15,1.7,'#4f5854'],[26,14,0,1.22,1.3,'#4c5153'],[8,-11,0,.95,1.5,'#5a554e'],[-13,-40,0,1.2,1.3,'#555f60'],[-22,-19,1,1.1,1.45,'#58525a'],[18,-18,1,1.2,1.3,'#4e5962']]){
  const yy=l?layerY:0;addBlock(x,yy,z,w,1.28,d,hex,true);
  world.cube(x,yy+1.28,z,w+.14,.16,d+.12,color('#787d77'));
@@ -471,7 +490,7 @@ for(let i=0;i<roomDefs.length;i++){
  signPlane(r.x,y+2.45,z,Math.min(3.7,r.w*.68),.72,'z',idx,i===3?.92:.65);
  if(i%2===0)signPlane(r.x+r.w/2-.12,y+1.8,r.z+.8,2.3,.85,'x',idx,.49);
 }
-for(const [z,x,idx] of [[57,0,0],[25,-10,5],[34,23,4],[7,-26,1],[-15,-30,2],[-50,-23,3],[-69,26,8],[-32,10,11]]){
+for(const [z,x,idx] of [[57,0,0],[37,-19,5],[39,18,4],[8,-14,1],[-14,-29,2],[-54,-19,3],[-67,27,8],[-33,15,6]]){
  signPlane(x,2.55,z,3.1,.67,'z',idx,.83);
 }
 for(const c of connectors){
@@ -501,7 +520,7 @@ function drawSigns(eye,target){
 }
 
 const dir=(yaw,pitch=0)=>[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)];
-let p={x:0,z:73,level:0,yaw:0,pitch:-.02,stamina:100,health:100,flash:true,headbob:0,jumpY:0,vy:0};let monster={x:12,z:-9,level:0,heading:0,phase:0},alarmActive=false,escapeSeconds=210,state='menu',onlineMode='solo',isHost=false,peer=null,hostConn=null,clients=new Map(),friends=new Map(),roomCode='',peerReady=false,peerScriptError=false;
+let p={x:0,z:73,level:0,yaw:0,pitch:-.02,stamina:100,health:100,flash:true,headbob:0,jumpY:0,vy:0};let monster={x:0,z:-16,level:0,heading:0,phase:0},alarmActive=false,escapeSeconds=210,state='menu',onlineMode='solo',isHost=false,peer=null,hostConn=null,clients=new Map(),friends=new Map(),roomCode='',peerReady=false,peerScriptError=false;
 let last=performance.now(),time=0,win=false,dead=false,cooldown=0,hitFlash=0,stormFlash=0,stormNext=12,toastUntil=0,nearInteract=null,mapExpanded=false,lookDown=false;
 const keys=new Set();let joyX=0,joyY=0,mobileRun=false,touches=new Map(),lastMap=0;
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),lerp=(a,b,t)=>a+(b-a)*t;
@@ -517,24 +536,24 @@ function updateUI(){
  const room=roomDefs.find(r=>r.level===p.level&&rectInside(p.x,p.z,r,-.1));
  const stair=connectorAt(p.x,p.z);
  const route=pathDefs.filter(r=>r.level===p.level).map(r=>({r,dist:Math.min(...r.samples.map(q=>distance(q[0],q[1],p.x,p.z)))})).sort((a,b)=>a.dist-b.dist)[0];
- $('sectorText').textContent=(p.level?'02 / ':'01 / ')+(stair?stair.name:room?.name||(['GALERIA DE ENTRADA','ALA OESTE','ALA DO FLIPERAMA','CORREDOR DE FUGA','MANUTENÇÃO','MEZANINO','CAFÉ SUPERIOR'][route?.r.zone||0]));
+ $('sectorText').textContent=(p.level?'02 / ':'01 / ')+(stair?stair.name:room?.name||route?.r.name||'GALERIA');
 }
 function setGame(start='solo'){state='playing';$('menu').style.display='none';$('hud').style.display='block';if(mobile)$('mobile').style.display='block';$('endScreen').style.display='none';$('roomChip').style.display=onlineMode==='solo'?'none':'block';$('roomChipText').textContent=roomCode;
  toast(start==='solo'?'ENCONTRE A SALA DE SEGURANÇA. LIGUE O ALARME PARA ABRIR O PORTÃO.':'NÃO SE SEPAREM. A SALA DE SEGURANÇA ABRE A SAÍDA.',4600);initAudio();if(!mobile)canvas.requestPointerLock?.().catch(()=>{});}
-function resetWorld(){p={x:0,z:73,level:0,yaw:0,pitch:-.02,stamina:100,health:100,flash:true,headbob:0,jumpY:0,vy:0};monster={x:12,z:-9,level:0,heading:0,phase:0};alarmActive=false;escapeSeconds=210;cooldown=0;win=false;dead=false;state='menu';}
-function finish(success){if(state!=='playing')return;state='end';win=success;dead=!success;document.exitPointerLock?.();$('hud').style.display='none';$('mobile').style.display='none';$('endScreen').style.display='flex';$('endTag').textContent=success?'VOCÊ ESCAPOU DA CONTENÇÃO':'EXPEDIÇÃO ENCERRADA';$('endTitle').textContent=success?'VOCÊS SAÍRAM.':'O SHOPPING VENCEU.';$('endDesc').textContent=success?'O portão de incêndio se abriu no último instante. Algo ainda anda lá dentro...':'O alarme se calou e as portas voltaram a se fechar. Evite os becos comerciais sem saída.';sound(success?'victory':'death');}
+function resetWorld(){p={x:0,z:73,level:0,yaw:0,pitch:-.02,stamina:100,health:100,flash:true,headbob:0,jumpY:0,vy:0};monster={x:0,z:-16,level:0,heading:0,phase:0};alarmActive=false;escapeSeconds=210;cooldown=0;win=false;dead=false;state='menu';}
+function finish(success){if(state!=='playing')return;state='end';win=success;dead=!success;document.exitPointerLock?.();$('hud').style.display='none';$('mobile').style.display='none';$('endScreen').style.display='flex';$('endTag').textContent=success?'VOCÊ ESCAPOU DA CONTENÇÃO':'EXPEDIÇÃO ENCERRADA';$('endTitle').textContent=success?'VOCÊS SAÍRAM.':'O SHOPPING VENCEU.';$('endDesc').textContent=success?'O portão de incêndio se abriu no último instante. Algo ainda anda lá dentro...':'O alarme se calou e as portas voltaram a se fechar. Encontre os cruzamentos principais e as saídas de serviço.';sound(success?'victory':'death');}
 $('startSolo').onclick=()=>setGame('solo');$('restart').onclick=()=>{if(onlineMode!=='solo'){if(peer)try{peer.destroy()}catch{};peer=null;clients.clear();friends.clear();onlineMode='solo'}resetWorld();$('endScreen').style.display='none';$('menu').style.display='flex';$('roomPane').style.display='none';};
 function toggleFlash(){if(state!=='playing')return;p.flash=!p.flash;sound('toggle');updateUI()}
 function triggerAlarm(){if(alarmActive)return;alarmActive=true;escapeSeconds=210;stormFlash=1;
  toast('ALARME DISPARADO! PORTÃO DE INCÊNDIO DESTRAVADO. CORRA!',4800);sound('death');
- monster.x=-12;monster.z=-30;monster.level=0;monster.heading=0;
+ monster.x=0;monster.z=-30;monster.level=0;monster.heading=0;
  if(onlineMode==='host')broadcast({t:'alarm',seconds:escapeSeconds});updateUI();}
 function action(){if(state!=='playing')return;
  if(!alarmActive&&p.level===0&&distance(p.x,p.z,securityDesk.x,securityDesk.z)<3.4){
   if(onlineMode==='guest'&&hostConn?.open)hostConn.send({t:'activate'});else triggerAlarm();return;}
  if(alarmActive&&p.level===0&&distance(p.x,p.z,escapePanel.x,escapePanel.z)<4.4){
   if(onlineMode==='guest'&&hostConn?.open)hostConn.send({t:'win'});else{if(onlineMode==='host')broadcast({t:'win'});finish(true);}return;}
- toast(!alarmActive?'Procure a sala de segurança na GALERIA 404.':'A saída está na ala de emergência.',1600);
+ toast(!alarmActive?'Procure SEGURANÇA pela galeria sul e vire à esquerda.':'Siga pela galeria sul e vire à direita para a DOCA.',1600);
 }
 function toggleMap(){if(state!=='playing')return;mapExpanded=!mapExpanded;$('mapWrap').classList.toggle('expanded',mapExpanded);}
 window.addEventListener('keydown',e=>{if(e.target?.tagName==='INPUT')return;keys.add(e.code);if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.repeat)return;if(e.code==='Space')jump();if(e.code==='KeyF')toggleFlash();if(e.code==='KeyE')action();if(e.code==='Tab'||e.code==='KeyM')toggleMap();if(e.code==='Escape'&&mapExpanded)toggleMap()});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>keys.clear());
@@ -588,7 +607,7 @@ function movement(dt){let forward=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0)+
  if(p.jumpY<=0){p.jumpY=0;p.vy=0;}
  p.stamina=clamp(p.stamina+(running?-23:14)*dt,0,100);p.headbob+=m*speed*dt*1.6;
 }
-// Discrete navigation lattice following the actual curved corridors and three vertical connectors.
+// Malha de navegação seguindo os eixos retos, salas e três conexões verticais.
 const navGrid={step:1.45,minX:-43,minZ:-84,width:Math.ceil(86/1.45)+1,height:Math.ceil(169/1.45)+1,positions:[],index:new Map(),adj:[]};
 function nodeKey(level,i,j){return level+':'+i+':'+j;}
 function isNavFree(x,z,level){if(!walkable(x,z,level,.45))return false;
