@@ -64,11 +64,23 @@ void main(){
  float flicker=.16+.84*step(-.30,sin(uTime*(2.4+mod(abs(lampPos),3.)) +lampPos*1.31));
  float spot=exp(-nearestLane*nearestLane*.055-lampDZ*lampDZ*.046)*exp(-abs(vWorld.y-(vWorld.y>4.?7.8:3.0))*.18)*flicker;
  vec3 lampTint=vWorld.y>4.2?vec3(.68,.84,1.07):(vWorld.z>25.?vec3(.87,.90,.68):(vWorld.z> -19.?vec3(.53,.90,.75):(vWorld.z> -51.?vec3(.53,.72,1.09):vec3(1.20,.50,.42))));
- vec3 lit=vCol*grime*(vec3(ambient+flashlight*.93)+lampTint*spot*.68);
+ vec3 lit=vCol*grime*(vec3(ambient+flashlight*1.08)+lampTint*spot*.68);
  // Impact lights cast localized red/green pools over wet concrete.
  float redPool=exp(-pow(vWorld.z+54.,2.)*.018-nearestLane*nearestLane*.08)*exp(-abs(vWorld.y-2.3)*.20);
  float cyanPool=exp(-pow(vWorld.z-35.,2.)*.020-nearestLane*nearestLane*.08)*exp(-abs(vWorld.y-2.5)*.21);
  lit+=vCol*grime*(vec3(.76,.13,.10)*redPool*.88+vec3(.09,.51,.45)*cyanPool*.57);
+ // Weak faulty emergency lighting pools: geometry remains readable but not evenly illuminated.
+ vec3 artGlow=vec3(0.);
+ vec3 lp0=vec3(0.,2.8,64.);float dd0=length(vWorld-lp0);
+ vec3 lp1=vec3(-1.5,2.7,43.);float dd1=length(vWorld-lp1);
+ vec3 lp2=vec3(0.,2.8,12.);float dd2=length(vWorld-lp2);
+ vec3 lp3=vec3(0.,2.6,-28.);float dd3=length(vWorld-lp3);
+ artGlow+=vec3(.70,.57,.41)/(1.+dd0*dd0*.10)*(.42+.58*step(-.42,sin(uTime*3.1)));
+ artGlow+=vec3(.34,.61,.59)/(1.+dd1*dd1*.12)*(.12+.88*step(-.10,sin(uTime*5.7)));
+ artGlow+=vec3(.65,.45,.35)/(1.+dd2*dd2*.12)*(.48+.52*step(-.55,sin(uTime*2.9)));
+ artGlow+=vec3(.28,.44,.59)/(1.+dd3*dd3*.10)*(.4+.6*step(-.7,sin(uTime*4.8)));
+ lit+=vCol*grime*artGlow*1.9;
+
  float cheapFlicker=step(-.25,sin(uTime*4.3+vWorld.z*.42+vWorld.x*.3));
  float emission=vEmit>1.5?vEmit:vEmit*(.13+.76*cheapFlicker);
  lit+=vCol*emission*(1.08+uStorm*.2);
@@ -467,6 +479,156 @@ for(const r of roomDefs){const y=r.level?layerY:0,cc=zonePalette[r.zone];
   const xx=r.x+r.w/2*Math.cos(i*Math.PI/2),zz=r.z+r.d/2*Math.sin(i*Math.PI/2);
   world.cube(xx,y+3.65,zz,.68,.20,.65,color(cc.trim));
  }
+}
+
+
+// BREU: REVISAO ARTISTICA V1
+// Lojas próximas ao jogador não são clones: ferragens, vitrines, painéis de vidro,
+// shutters e letreiros com volumes diferentes. Nada é gerado sobre rotas das escadas.
+const artPalette={amber:'#9a7652',porcelain:'#92a8a0',rust:'#775e4a',steel:'#586566',screen:'#567a7b',oxide:'#3f5750',red:'#944e48'};
+function artCube(x,y,z,w,h,d,hex,e=0){world.cube(x,y,z,w,h,d,color(hex),e)}
+function artPipe(x,z,axis,len,y=3.18,hex='#4d5958',r=.08){
+ if(axis==='x'){artCube(x,y,z,len,r,r,hex);artCube(x,y-.12,z,len*.91,.028,.026,'#171f22');}
+ else{artCube(x,y,z,r,r,len,hex);artCube(x+.13,y-.11,z,.025,.04,len*.91,'#172125');}
+}
+function shutterFacade(side,z,span,style){
+ const x=side*2.36;
+ const metal=style===0?'#505b59':style===1?'#695d4c':'#4c535b';
+ const edge=style===0?'#8b9b95':style===1?'#ab8660':'#778b9b';
+ const shadow=style===2?'#172629':'#1d2222';
+ artCube(x, .30,z,.16,2.35,span,shadow);
+ artCube(x,2.56,z,.23,.26,span+.42,metal);
+ artCube(x,2.96,z,.29,.30,span+.65,edge);
+ for(let k=0;k<13;k++){
+  const yy=.35+k*.155;
+  if(style===0&&k>7&&k<10)continue;
+  artCube(x-side*.105,yy,z,.045,.09,span-.18, k%5===0?edge:metal);
+  artCube(x-side*.15,yy+.050,z,.024,.015,span-.15,'#1c2426');
+ }
+ for(const dz of [-span/2+.21,span/2-.21]){
+  artCube(x-side*.18,.02,z+dz,.23,3.15,.26,'#303d3e');
+  artCube(x-side*.24,1.55,z+dz,.06,2.7,.10,edge);
+ }
+ // Placa de loja irregular e pequena marquise para separar silhuetas.
+ artCube(x-side*.25,3.12,z,.38,.50,span*.92,style===2?'#283c4b':'#312b27');
+ artCube(x-side*.29,3.09,z,.06,.045,span*.86,edge,.13);
+ artCube(x-side*.23,2.82,z,.29,.075,span*.94,'#1e292b');
+}
+function displayFacade(side,z,span,style){
+ const x=side*(z>61?6.82:2.35),glow=style===0?'#7b9d9b':style===1?'#b19574':'#ba7271';
+ const metal=style===0?'#394d4e':style===1?'#4d4540':'#513f42';
+ // Duas vitrines com moldura dupla e recuo visual, com painéis rachados.
+ artCube(x,.11,z,.12,2.72,span,'#18272b');
+ artCube(x-side*.22,.32,z,.08,2.19,span*.94,metal);
+ artCube(x-side*.31,.36,z,.045,2.1,span*.84,'#263c41');
+ for(const dz of [-span*.28,span*.28]){
+  artCube(x-side*.39,.30,z+dz,.04,2.3,.07,'#85928e');
+  artCube(x-side*.42,.78,z+dz,.055,.06,span*.25,glow,.06);
+  for(let j=0;j<4;j++){
+   const by=.38+j*.41;
+   artCube(x-side*.42,by,z+dz,.023,.022,span*.37,j===3?'#849c9b':'#37484b');
+  }
+ }
+ artCube(x-side*.33,2.90,z,.29,.42,span+.20,style===2?'#633b39':metal);
+ artCube(x-side*.40,2.85,z,.06,.045,span*.89,glow,.22);
+ // Expositor de dentro da loja, atrás da vitrine, sem bloquear circulação.
+ for(const dz of [-span*.28,0,span*.28]){
+  artCube(x+side*.07,.30,z+dz,.19,.68,.60,'#404543');
+  artCube(x+side*.06,1.15,z+dz,.21,.28,.28,style===2?'#806369':'#727871');
+ }
+ // Vidros quebrados em lascas triangulares e sem transparência branca.
+ for(let i=0;i<5;i++){
+  const zz=z-span*.36+i*span*.18;
+  world.tri([x-side*.45,1.35,zz-.10],[x-side*.45,.48,zz+.11],[x-side*.45,1.05,zz+.21],color('#54686c'));
+ }
+}
+function floorDrain(x,z,w=2.8){
+ artCube(x,.008,z,w,.025,.41,'#1b2729');
+ for(let j=0;j<18;j++)artCube(x-w/2+.12+j*(w-.24)/18,.040,z,.036,.010,.35,j%6===0?'#5e6a66':'#414d4a');
+}
+function ceilingDuct(x,z,w=2.3){
+ artCube(x,3.44,z,w,.25,2.05,'#263235');
+ artCube(x,3.29,z,w-.16,.08,1.95,'#485858');
+ for(let j=0;j<10;j++)artCube(x-w*.43+j*w*.086,3.22,z,.025,.045,1.65,'#101a1d');
+ artPipe(x, z-1.18,'x',w,3.57,'#556260');
+}
+function brokenLamp(x,z,kind=0){
+ const frame=kind===0?'#637774':'#6a5e55',lit=kind===0?'#a8b7a4':'#dbb98c';
+ artCube(x,3.68,z,1.84,.14,.43,frame);
+ artCube(x,3.59,z,1.53,.025,.23,lit,kind===0?.75:.48);
+ artCube(x-.76,3.61,z,.08,.04,.45,'#171d20');
+ // Cabo elétrico com barriga, preso à luminária.
+ cable([x-.73,3.76,z],[x-1.5,2.93,z-.86],kind===0?'#52645f':'#6f6a5f');
+}
+function wallDuct(x,z,side){
+ artCube(side*2.19,2.44,z,.26,.62,2.1,'#354244');
+ for(let i=0;i<6;i++)artCube(side*2.18-side*.17,2.25,z-.80+i*.32,.022,.18,.08,'#8c9890');
+ artPipe(side*2.19,z,'z',2.55,2.99,'#6a756d');
+}
+function shoppingCart(x,z,ang=0){
+ const ca=Math.cos(ang),sa=Math.sin(ang);
+ const pos=(dx,dz)=>[x+dx*ca-dz*sa,z+dx*sa+dz*ca];
+ for(const [dx,dz] of [[-.48,-.30],[.48,-.30],[-.48,.30],[.48,.30]]){
+  const p=pos(dx,dz);world.cylinder(p[0],.04,p[1],.10,.10,.16,color('#293338'),8);
+ }
+ const p=pos(0,0);artCube(p[0],.47,p[1],1.18,.58,.72,'#4c5959');
+ for(let j=0;j<9;j++){
+  const pt=pos(-.51+j*.128,0);
+  artCube(pt[0],.52,pt[1],.023,.61,.75,j%3===0?'#798580':'#424f50');
+ }
+ const a=pos(-.61,-.36),b=pos(.61,-.36);
+ artPipe((a[0]+b[0])/2,(a[1]+b[1])/2,Math.abs(ang)<.3?'x':'z',1.38,1.14,'#71817a',.045);
+}
+function vendingMachine(x,z,side,style){
+ const body=style===0?'#21404a':style===1?'#503b36':'#363b40';
+ artCube(x,.02,z,.64,2.45,.99,body);
+ artCube(x-side*.39,.70,z,.032,1.45,.67,'#121f24');
+ artCube(x-side*.41,1.13,z,.020,.57,.48,style===0?'#68858c':'#957a65',.65);
+ for(let j=0;j<4;j++)artCube(x-side*.41,.75,z-.23+j*.15,.027,.08,.09,j%2?'#d0a18a':'#a1aba5',.35);
+ artCube(x-side*.42,.26,z,.03,.18,.56,'#7b8881');
+ artCube(x-side*.39,2.30,z,.10,.07,.70,'#a88669',.4);
+}
+// Setpiece: 60 metros de lojas fisicamente diferentes, sem ocupar o centro do corredor.
+for(const entry of [
+ [1,64,6.0,'display',0],[-1,57,7.0,'shutter',1],[1,49,6.2,'shutter',2],
+ [-1,43,6.2,'display',2],[-1,32,6.0,'shutter',0],[1,31,6.5,'display',1],
+ [1,-17,6.5,'shutter',1],[-1,-23,6.3,'display',0],
+ [1,-43,6.5,'shutter',2],[-1,-49,5.8,'display',2]]){
+ const [side,z,span,type,style]=entry;
+ if(type==='shutter')shutterFacade(side,z,span,style);else displayFacade(side,z,span,style);
+}
+for(const z of [68,56,43,31,8,-6,-19,-33,-45,-57]){
+ brokenLamp(0,z,Math.abs(z)%3===0?1:0);
+ if(z===68||z===31||z===-33)ceilingDuct(0,z+3);
+ if(z>18){floorDrain(0,z-2.2,2.6)}
+}
+for(const [x,z,side] of [[2.13,61,1],[-2.13,48,-1],[2.13,26,1],[-2.13,-15,-1],[2.13,-40,1]])wallDuct(x,z,side);
+for(let k=0;k<10;k++){
+ const z=69-k*11;
+ // Vigas transversais finas, ferrugem e placas de forro em desníveis variáveis.
+ artCube(0,3.72,z,4.45,.19,.19,k%3===0?'#635d51':'#4c5757');
+ artCube(-1.7,3.68,z,.09,.15,.75,'#7b7162');
+ artCube(1.65,3.68,z,.09,.15,.75,'#7b7162');
+ if(k%2===0)cable([-2.22,3.67,z-1],[2.1,3.05,z+1.9],'#53615c');
+}
+// Atrium: balcão de informações colapsado, duas máquinas, exaustores e grades.
+artCube(2.76,.04,5.0,.92,1.26,2.85,'#323c3f');
+artCube(2.76,1.29,5.0,1.0,.14,3.05,'#7c7063');
+artCube(2.76,1.56,4.42,.13,.44,.46,'#4f6563',.30);
+vendingMachine(-2.95,16,-1,0);
+vendingMachine(-2.95,-4,-1,1);
+colliders.push({x:-2.95,z:16,w:.65,d:1,y:0,h:2.5},{x:-2.95,z:-4,w:.65,d:1,y:0,h:2.5},{x:2.76,z:5,w:.92,d:2.85,y:0,h:1.65});
+shoppingCart(5.10,70,.17);
+colliders.push({x:5.1,z:70,w:1.25,d:.85,y:0,h:1.15});
+// Detalhes próprios para as salas com escala crível e contraste localizado.
+for(const [rx,rz,level,style] of [[-22,8,0,0],[23,39,0,1],[-31,-14,0,2],[16,-22,1,1],[-20,-27,1,0]]){
+ const base=level?layerY:0;
+ for(let i=0;i<4;i++){
+  const xx=rx-3.1+i*2.1;
+  artCube(xx,base+3.30,rz+1.2,1.15,.08,.30,style===2?'#82958b':style===1?'#a17668':'#8a9e9a',.52);
+ }
+ artCube(rx,base+2.83,rz-3.15,6.4,.10,.22,'#536364');
+ artCube(rx,base+3.02,rz-3.15,6.6,.10,.16,'#1a2225');
 }
 
 // v0.9 — Seal the VISUAL shell using the same walkable footprint as collisions.
