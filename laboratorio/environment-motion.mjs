@@ -41,12 +41,12 @@ export function createEnvironmentMotion(scene,{lowPower=false}={}){
  // A faulty ceiling inspection camera travels under the roof, tracks the
  // corridor and retreats on approach. It never blocks the player's capsule.
  const scanner=new THREE.Group();
- const scannerBody=new THREE.Mesh(new THREE.BoxGeometry(.63,.19,.42),metal);
- const scannerArm=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.36,6),metal);
+ const scannerBody=new THREE.Mesh(new THREE.BoxGeometry(1.12,.25,.5),metal);
+ const scannerArm=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.47,6),metal);
  scannerArm.position.y=.24;
- const scannerEye=new THREE.Mesh(new THREE.BoxGeometry(.095,.07,.08),
-  new THREE.MeshBasicMaterial({color:'#be5148'}));
- scannerEye.position.set(0,-.025,-.255);
+ const scannerEye=new THREE.Mesh(new THREE.BoxGeometry(.38,.11,.1),
+  new THREE.MeshBasicMaterial({color:'#cf827a'}));
+ scannerEye.position.set(0,-.06,-.29);
  scanner.add(scannerBody,scannerArm,scannerEye);
  scene.add(scanner);
  // A single draw call for suspended dust, recycled around the viewer.
@@ -80,16 +80,20 @@ export function createEnvironmentMotion(scene,{lowPower=false}={}){
   const elapsed=time-state.pulse,active=elapsed>=0&&elapsed<1.6;
   for(const f of fixtures){
    const near=Math.abs(player.z-f.z)<15;
-   f.pivot.rotation.z=near?Math.sin(time*1.38+f.phase)*.075+(active?Math.sin(elapsed*27)*.07*Math.max(0,1-elapsed):0):0;
+   f.pivot.rotation.z=near?Math.sin(time*1.38+f.phase)*.22+(active?Math.sin(elapsed*27)*.31*Math.max(0,1-elapsed):0):0;
    f.glow.visible=!near||Math.sin(time*8+f.phase)>.04;
   }
-  gate.rotation.z=(Math.abs(player.z+38.4)<13||alarm)?Math.sin(time*19)*.014:0;
+  const nearbyGate=Math.abs(player.z+38.4)<13;
+  gate.rotation.z=(nearbyGate||alarm)?Math.sin(time*11)*.07:0;
+  gate.position.y=2.75+(nearbyGate?.29*Math.abs(Math.sin(time*2.6)):0);
   // The security scanner is visible from the first corridor, but occupies
   // the ceiling volume: visual animation cannot create invisible obstacles.
-  const scanZ=6.0+Math.sin(time*.43)*3.3;
-  scanner.position.set(.9+Math.sin(time*.67)*1.1,3.53+Math.sin(time*2.4)*.045,scanZ);
-  scanner.rotation.y=Math.sin(time*.63)*.48;
-  scanner.visible=player.z> -9&&player.z<17;
+  // A ceiling crawler actively follows activity down the entire wing. It is
+  // intentionally ahead of the camera, so the player can SEE it moving.
+  const scanZ=Math.max(-52,Math.min(8,player.z-7.2+Math.sin(time*.57)*3));
+  scanner.position.set(.8+Math.sin(time*.67)*1.45,3.44+Math.sin(time*2.4)*.095,scanZ);
+  scanner.rotation.y=Math.sin(time*1.3)*.52;
+  scanner.visible=player.z> -51&&player.z<16;
   scannerEye.visible=alarm||Math.sin(time*7.9)>.22;
   dust.visible=flashlight;
   if(flashlight){
