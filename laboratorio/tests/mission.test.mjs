@@ -44,8 +44,14 @@ test('game HUD activates alarm, delays the physical exit and then finishes escap
   escapeSequence:new EscapeSequence(12),INTERACTION:{panel:{x:15.5,z:-51.4,r:1.75},exit:{x:21.05,z:-51,r:1.12}},
   touch:false,yaw:0,alarm:false,exitOpen:false,interactHeld:false,escaped:false,paused:false,clock:0
  };
- const app=vm.runInNewContext(fn+'\n;({run(pos,time,pressed=false){clock=time;interactHeld=pressed;updateObjective(pos)},state(){return {alarm,exitOpen,escaped}}})',env);
- app.run({x:15.5,z:-51.4},2,true);
+ const app=vm.runInNewContext(fn+'\n;({run(pos,time,pressed=false){clock=time;interactHeld=pressed;updateObjective(pos)},state(){return {alarm,exitOpen,escaped}},turn(radians){yaw=radians}})',env);
+ app.run({x:0,z:-51.4},0,false);
+ const eastAngle=parseFloat($('#needle').style.transform.match(/rotate\(([-.0-9]+)rad\)/)?.[1]);
+ assert(eastAngle>1.4&&eastAngle<1.7,'Compass should point east when looking north');
+ app.turn(-Math.PI/2);app.run({x:0,z:-51.4},0,false);
+ const ahead=parseFloat($('#needle').style.transform.match(/rotate\(([-.0-9]+)rad\)/)?.[1]);
+ assert(Math.abs(ahead)<.05,'Compass should point forward when facing objective');
+ app.turn(0);app.run({x:15.5,z:-51.4},2,true);
  assert.equal(app.state().alarm,true);assert.equal(physCalls,0);
  app.run({x:20,z:-51},13.99);
  assert.equal(physCalls,0);assert.equal(app.state().exitOpen,false);

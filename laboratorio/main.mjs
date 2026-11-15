@@ -117,7 +117,7 @@ function updateObjective(pos){
   $('#play').textContent='REINICIAR EXPEDIÇÃO';if(document.pointerLockElement)document.exitPointerLock();
  }}
  else interactHeld=false;
- const bearing=Math.atan2(dest.x-pos.x,-(dest.z-pos.z));const angle=((bearing-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;
+ const bearing=Math.atan2(-(dest.x-pos.x),-(dest.z-pos.z));const angle=((bearing-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;
  $('#needle').style.transform=`rotate(${-angle}rad)`;
 }
 function drawMap(pos){
