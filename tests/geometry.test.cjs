@@ -3,7 +3,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const html=fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8');
 function chunk(a,b){const i=html.indexOf(a),j=html.indexOf(b,i);assert(i>=0&&j>i);return html.slice(i,j)}
 const code="'use strict'; class Mesh{constructor(){this.cubes=[]} cube(x,y,z,w,h,d){this.cubes.push({x,y,z,w,h,d})} cylinder(){} quad(){} tri(){}} const color=x=>x;\n"+
- chunk('const pathDefs=[','const staticMesh=')+chunk('const BODY_FOOTPRINT=','let navDistances=')+
+ chunk('const pathDefs=[','const staticWorld=')+chunk('const BODY_FOOTPRINT=','let navDistances=')+
  ';({roomDefs,connectors,walkable,floorHeight,ceilingHeightAt,shaftRects,constructedSlabs,navGrid,nearestNode,securityDesk,escapePanel,world,seamRepair,colliders})';
 const g=vm.runInNewContext(code,{Math,Map,Int16Array},{timeout:30000});
 assert.equal(g.connectors.length,3);assert.equal(g.roomDefs.length,13);
