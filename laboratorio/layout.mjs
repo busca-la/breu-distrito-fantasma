@@ -9,21 +9,25 @@ export const WALLS = [
   wall('south seal',0,-57.2,21.6,.6),
   wall('north divider left',-3.65,7, .28,21.5,4.35,'tile'),
   wall('left shutter A',-3.65,-6.5,.32,5.0,4.35,'tile'),
-  wall('left divider B',-3.65,-18.7,.32,11.7,4.35,'tile'),
-  wall('left divider C',-3.65,-36.0,.32,22.3,4.35,'tile'),
+  wall('left divider B south',-3.65,-24.175,.32,.75,4.35,'tile'),
+  wall('left divider B north',-3.65,-16.525,.32,7.35,4.35,'tile'),
+  wall('left divider C south',-3.65,-41.775,.32,10.75,4.35,'tile'),
+  wall('left divider C north',-3.65,-28.825,.32,7.95,4.35,'tile'),
   wall('left room north',-7.3,-7.8,6.6,.28),
   wall('left room south',-7.3,-15.35,6.6,.28),
   wall('left arcade north',-7.3,-30.2,6.6,.28),
   wall('left arcade south',-7.3,-39.6,6.6,.28),
   wall('right divider A north of restroom',3.65,13.05,.32,9.9,4.35,'tile'),
-  wall('right divider A south of restroom',3.65,-5.8,.32,21.2,4.35,'tile'),
+  wall('right divider A south shop',3.65,-13.35,.32,6.1,4.35,'tile'),
+  wall('right divider A north shop',3.65,-.95,.32,11.5,4.35,'tile'),
   // Public restroom is an actual room behind a 3.3 m entrance on the east side.
   wall('restroom far wall',7.2,10.0,6.65,.25,4.35,'tile'),
   wall('restroom near wall',7.2,1.8,6.65,.25,4.35,'tile'),
   wall('restroom stall partition 1',9.22,4.38,2.52,.11,2.35,'tile'),
   wall('restroom stall partition 2',9.22,7.48,2.52,.11,2.35,'tile'),
   wall('right divider B',3.65,-22.1,.32,9.0,4.35,'tile'),
-  wall('right divider C',3.65,-38.1,.32,16.5,4.35,'tile'),
+  wall('right divider C south',3.65,-43.775,.32,5.15,4.35,'tile'),
+  wall('right divider C north',3.65,-33.725,.32,7.75,4.35,'tile'),
   wall('right room north',7.2,-23.55,6.8,.28),
   wall('right room south',7.2,-31.25,6.8,.28),
   // South-east service wing. No open horizon at the connection.
@@ -54,7 +58,12 @@ export const STORE_SIGNS=[
  {name:'STAFF ONLY',sub:'MAINTENANCE',type:'maintenance',side:-1,z:-47.5,accent:'#d4b77d',lit:false},
 ];
 export const RESTROOM=Object.freeze({door:{x:3.65,z:6.42},centre:{x:5.85,z:6.0},stallCount:3});
-export const INTERACTION={panel:{x:15.5,y:1.37,z:-51.4,r:1.75},exit:{x:21.05,y:1.45,z:-51.0,r:1.12}};
+export const INTERACTION={
+ radio:{x:-5.45,y:1.25,z:-10.4,r:2.0},
+ relay:{x:5.45,y:1.24,z:-27.3,r:2.0},
+ panel:{x:15.5,y:1.37,z:-51.4,r:1.75},
+ exit:{x:21.05,y:1.45,z:-51.0,r:1.12}
+};
 export const PROPS = [
  {name:'restroom sink bank',x:5.25,z:2.52,w:1.6,d:.64,h:.89,blocking:true},
  {name:'restroom supply trolley',x:5.3,z:8.75,w:.66,d:.68,h:1.25,blocking:true},
@@ -76,6 +85,10 @@ export const PROPS = [
 // The geometry and visual decoration read the same portal definitions.
 export const OPEN_PORTALS=[
  {name:'public restroom entrance',side:1,zMin:4.82,zMax:8.08},
+ {name:'camera shop entrance',side:1,zMin:-10.3,zMax:-6.7},
+ {name:'fashion shop entrance',side:-1,zMin:-23.8,zMax:-20.2},
+ {name:'arcade shop entrance',side:-1,zMin:-36.4,zMax:-32.8},
+ {name:'pharmacy shop entrance',side:1,zMin:-41.2,zMax:-37.6},
  {name:'ramen access',side:-1,zMin:-12.84,zMax:-9.02},
  {name:'electronics access',side:1,zMin:-29.84,zMax:-26.61},
  {name:'service junction',side:1,zMin:-55.0,zMax:-46.37},
