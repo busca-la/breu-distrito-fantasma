@@ -26,6 +26,7 @@ assert.equal(beat[0].kind,'metal');
 assert(Math.abs(encounters.rig.signRig.rotation.z)>.005,'Suspended sign should swing');
 beat=encounters.update(6.4,p);
 assert.equal(beat[0].kind,'electric');
+encounters.update(6.95,p);
 assert(encounters.rig.actor.root.position.x< -3.65,'Worker should pass through an actual doorway');
 assert.equal(encounters.update(7.6,p).length,0,'No repeated event');
 assert.equal(encounters.rig.actor.root.visible,false,'Actor should leave the visible level');
