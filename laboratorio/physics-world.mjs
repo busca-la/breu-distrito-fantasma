@@ -57,7 +57,10 @@ return class BreuPhysics {
     this.exitUnlocked=true;
     this.world.removeRigidBody(this.exitBody);
   }
-  reset(){this.body.setTranslation({x:WING.entrance.x,y:.85,z:WING.entrance.z},true);this.body.setLinvel({x:0,y:0,z:0},true);}
+  reset({x=WING.entrance.x,z=WING.entrance.z}={}){
+    this.body.setTranslation({x,y:.88,z},true);
+    this.body.setLinvel({x:0,y:0,z:0},true);
+  }
 }
 
 }
