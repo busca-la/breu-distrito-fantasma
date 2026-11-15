@@ -1,29 +1,28 @@
 # BREU — Distrito Fantasma
 
-Jogo experimental de terror 3D em navegador, ambientado em um shopping futurista japonês abandonado e claustrofóbico.
+Protótipo de terror 3D no navegador, ambientado em um shopping futurista abandonado.
 
 **Jogar:** https://breu-distrito-fantasma.vercel.app
 
-## v0.6 — reforma da arquitetura do mapa
+## Versão 0.7 — planta arquitetônica corrigida
 
-O cenário anterior de lojas repetidas foi substituído por **um mapa autoral de dois pavimentos**, composto por galerias sinuosas, bifurcações e ambientes diferentes.
+Reorganização dos corredores para parecerem uma planta comercial compreensível, não um labirinto serpenteando sem motivo.
 
-- **Térreo:** portaria, praça de alimentação, banheiros com cabines, sala de segurança, fliperama, loja de roupas, área técnica, arquivos e doca de descarga.
-- **Mezanino:** cinema fechado, café superior, laboratório de telefonia e depósito.
-- **Conexões verticais jogáveis:** escada de serviço, escada rolante e escada do depósito, com mudança física de altura entre andares.
-- Corredores projetados por curvas interpoladas (não apenas caixas padronizadas), salas com mobília própria, letreiros distintos, cabos, sujeira e iluminação por setor.
-- Colisão fundamentada na planta do edifício, separada por pavimento e com obstáculos sólidos. Pulo no PC (Espaço) e celular (PULAR).
-- Perseguição com navegação de criatura por malha discretizada, contemplando os dois andares.
-- Missão: encontrar a sala de segurança, disparar o alarme e fugir pelo portão de incêndio na doca. **Sem coleta de núcleos.**
+- Galeria principal norte–sul conectando entrada, átrio e acesso de serviço.
+- Alas transversais com destinos claros: moda, fliperama, praça de alimentação, banheiros, segurança, arquivo, manutenção e doca.
+- Cotovelos de 90° somente onde a arquitetura exige mudança de direção (ex.: acesso à doca).
+- Mezanino com circulação principal e ramificações para cinema, café, telefonia e depósito.
+- Três conexões reais entre os dois pavimentos: escada de serviço, escada rolante e escada do depósito.
+- HUD com nomes das galerias reais e sinalização ajustada aos novos cruzamentos.
+- Colisão e navegação do jogador e da criatura preservadas. Missão: acionar o alarme na segurança e fugir pela doca.
 
-## Plataforma e controles
+## Validação
 
-Tudo roda em `index.html` usando JavaScript, Canvas 2D para letreiros e WebGL2 para o mundo 3D. Não precisa instalar aplicativo. No PC use WASD, Shift para correr, Espaço para pular, F para lanterna, E para interagir e Tab/M para mapa. No celular use os controles na tela.
+- Sintaxe JavaScript: **aprovada**.
+- Grafo calculado com obstáculos físicos do cenário: **13 ambientes alcançáveis**, incluindo os quatro do mezanino.
+- **Três** acessos verticais, segurança e doca acessíveis no teste de navegação.
+- Renderização WebGL2 em dispositivo real e multiplayer entre celulares: **ainda não revalidados** nesta revisão. Navegador de testes local bloqueou a execução gráfica.
 
-## Testes e limitações
+## Tecnologia
 
-- **Confirmado:** verificação de sintaxe JavaScript; inicialização e lógica simulada em navegador; 13 ambientes alcançáveis pela malha de navegação; três subidas até o segundo andar; pulo, barreiras físicas externas, acionamento do alarme e conclusão da fuga.
-- **Pendente:** teste de **renderização WebGL2 real** neste ambiente (o navegador de teste não oferece contexto WebGL2; a lógica foi testada com contexto gráfico simulado), teste visual de FPS/qualidade em aparelhos reais e validação de multiplayer entre celulares.
-- A arte é procedural de baixo custo; ainda não é fotorrealista. O modo com amigos usa WebRTC/PeerJS e depende do serviço de sinalização e da rede.
-
-Repositório: [busca-la/breu-distrito-fantasma](https://github.com/busca-la/breu-distrito-fantasma).
+Projeto estático em um único `index.html` com JavaScript, WebGL2, HTML e CSS. Publicação automática pela Vercel ao atualizar a branch `main`.
