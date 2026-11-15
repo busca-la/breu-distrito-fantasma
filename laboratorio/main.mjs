@@ -72,7 +72,7 @@ function inputSetup(){
   if(e.code==='Escape'&&started&&!paused)pause();
  });
  window.addEventListener('keyup',e=>keys.delete(e.code));
- document.addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&!paused){yaw-=e.movementX*.00215;pitch=Math.max(-1.25,Math.min(1.25,pitch-e.movementY*.00195));}});
+ document.addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&!paused){yaw-=e.movementX*.004;pitch=Math.max(-1.25,Math.min(1.25,pitch-e.movementY*.0036));}});
  canvas.addEventListener('click',()=>{if(started&&!paused&&!touch&&document.pointerLockElement!==canvas)canvas.requestPointerLock()});
  $('#play').addEventListener('click',start);
  $('#pause').addEventListener('click',pause);
