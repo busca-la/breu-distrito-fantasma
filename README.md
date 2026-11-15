@@ -1,28 +1,27 @@
 # BREU — Distrito Fantasma
 
-Protótipo de terror 3D no navegador, ambientado em um shopping futurista abandonado.
+Jogo experimental de terror 3D, em WebGL2, ambientado dentro de um shopping abandonado. O projeto roda no navegador.
 
 **Jogar:** https://breu-distrito-fantasma.vercel.app
 
-## Versão 0.7 — planta arquitetônica corrigida
+## Correção estrutural — v0.8
 
-Reorganização dos corredores para parecerem uma planta comercial compreensível, não um labirinto serpenteando sem motivo.
+- **Vãos reais nas três escadas**: pisos superiores e forros inferiores são repartidos em painéis; os painéis que cobririam os acessos verticais não são gerados.
+- **Teto com colisão vertical**: a altura do jogador e o salto são limitados pela superfície física do pavimento, com pé-direito distinto nos banheiros e salas.
+- **Galerias com teto contínuo**: os antigos segmentos esporádicos de forro deixam de mostrar o vazio acima dos corredores.
+- **Fechamento de segurança do mapa**: paredes externas e cobertura secundária oculta impedem visão direta do espaço infinito através das falhas nas juntas.
+- **Navegação preservada**: todos os 13 ambientes, a sala de segurança, a doca e as três escadas continuam acessíveis.
 
-- Galeria principal norte–sul conectando entrada, átrio e acesso de serviço.
-- Alas transversais com destinos claros: moda, fliperama, praça de alimentação, banheiros, segurança, arquivo, manutenção e doca.
-- Cotovelos de 90° somente onde a arquitetura exige mudança de direção (ex.: acesso à doca).
-- Mezanino com circulação principal e ramificações para cinema, café, telefonia e depósito.
-- Três conexões reais entre os dois pavimentos: escada de serviço, escada rolante e escada do depósito.
-- HUD com nomes das galerias reais e sinalização ajustada aos novos cruzamentos.
-- Colisão e navegação do jogador e da criatura preservadas. Missão: acionar o alarme na segurança e fugir pela doca.
+## Testes
 
-## Validação
+Executar `node tests/geometry.test.cjs` para validar vãos das escadas, teto, limites e conectividade do mapa, sem dependências de build.
 
-- Sintaxe JavaScript: **aprovada**.
-- Grafo calculado com obstáculos físicos do cenário: **13 ambientes alcançáveis**, incluindo os quatro do mezanino.
-- **Três** acessos verticais, segurança e doca acessíveis no teste de navegação.
-- Renderização WebGL2 em dispositivo real e multiplayer entre celulares: **ainda não revalidados** nesta revisão. Navegador de testes local bloqueou a execução gráfica.
+Testes locais complementares com Chromium + WebGL2 de software cobriram início da partida, geração da geometria, as três subidas e descidas, colisão externa e interface móvel 390×844. O modo online entre celulares reais continua sem validação de ponta a ponta. O acabamento visual ainda é de protótipo, não fotorrealista.
 
-## Tecnologia
+## Controles
 
-Projeto estático em um único `index.html` com JavaScript, WebGL2, HTML e CSS. Publicação automática pela Vercel ao atualizar a branch `main`.
+No computador: WASD para andar, Shift para correr, Espaço para pular, E para interagir, F para lanterna, M para mapa. No celular: comandos na tela.
+
+## Publicação
+
+O Vercel está conectado à branch `main` deste repositório. Cada commit aceito faz novo deploy da versão estática.
