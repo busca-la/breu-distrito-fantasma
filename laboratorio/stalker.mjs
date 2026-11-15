@@ -39,7 +39,8 @@ export function createStalker(scene){
   const chasing=alarm||distance<detection;
   const target=chasing?player:{x:Math.sin(time*.14)*.65,z:-38+Math.sin(time*.21)*7};
   pathTime+=dt;if(pathTime>1.3||!route.length)recalc(target);
-  const speed=alarm?2.9:chasing?1.12:.48;
+  // Audible, visible pursuit: sprinting can still outrun him, standing still cannot.
+  const speed=alarm?(distance<9?3.85:3.48):chasing?(distance<8?2.9:2.2):.62;
   let movement=0;
   for(let attempts=0;attempts<2&&route.length;attempts++){
    const wp=route[0],dx=wp.x-position.x,dz=wp.z-position.z,d=Math.hypot(dx,dz);
@@ -51,9 +52,12 @@ export function createStalker(scene){
   }
   steps+=movement;
   group.position.set(position.x,0,position.z);
-  const stride=Math.sin(steps*8.5)*(movement?.29:.015);
-  armL.rotation.x=stride;armR.rotation.x=-stride;legL.rotation.x=-stride;legR.rotation.x=stride;
-  group.position.y=.035*Math.sin(time*1.25);
+  const stride=Math.sin(steps*(chasing?11.5:8.5))*(movement?(chasing?.42:.29):.015);
+  armL.rotation.x=stride+(chasing?-.19:0);armR.rotation.x=-stride+(chasing?-.19:0);
+  legL.rotation.x=-stride;legR.rotation.x=stride;
+  armL.rotation.z=chasing?-.25:-.1;armR.rotation.z=chasing?.25:.1;
+  group.position.y=.035*Math.sin(time*(chasing?3.3:1.25));
+  pale.color.setHex(chasing&&Math.sin(time*11)>-.15?0xe5aaa0:0x8b9e9c);
   const now=Math.hypot(player.x-position.x,player.z-position.z);
   const caught=now<.88;
   lastPos={...position};
