@@ -2,7 +2,7 @@
 // Added architectural layers are non-blocking surface details. Solid collision
 // remains declared exclusively in layout.mjs and instantiated in physics-world.mjs.
 // All original textures are generated locally, without external assets or subscriptions.
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+import * as THREE from 'three';
 import {STORE_SIGNS,facadePanelAllowed} from './layout.mjs';
 
 const ambient=(c,roughness=.87,metalness=0)=>new THREE.MeshStandardMaterial({color:c,roughness,metalness});

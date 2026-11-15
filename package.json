@@ -4,6 +4,14 @@
   "private": true,
   "description": "Jogo de terror 3D experimental no navegador",
   "scripts": {
-    "test": "node tests/geometry.test.cjs && node tests/playthrough.test.cjs && node tests/enemy.test.cjs"
+    "test": "node tests/geometry.test.cjs && node tests/playthrough.test.cjs && node tests/enemy.test.cjs",
+    "build": "node scripts/build.mjs"
+  },
+  "dependencies": {
+    "three": "0.180.0",
+    "@dimforge/rapier3d-compat": "0.21.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
   }
 }

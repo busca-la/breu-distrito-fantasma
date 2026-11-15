@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+import * as THREE from 'three';
 import {circleFits} from './layout.mjs';
 import {getNavigation} from './threat-nav.mjs';
 

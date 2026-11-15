@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+import * as THREE from 'three';
 import {BreuPhysics} from './physics.mjs';
 import {createLevel} from './level.mjs';
 import {BreuSound} from './ambient-audio.mjs';
@@ -166,6 +166,7 @@ async function boot(){
   const n=physics.staticBodies.length;
   status.textContent=`ALA 03 PRONTA · ${n} corpos físicos · Three.js + Rapier`;
   $('#play').disabled=false;
+  window.__breuReady=true;
  }catch(e){showError(e)}
 }
 window.addEventListener('blur',()=>{if(started&&!paused)pause();keys.clear();joystick.x=joystick.y=0});

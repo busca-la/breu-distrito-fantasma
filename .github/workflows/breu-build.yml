@@ -1,0 +1,26 @@
+name: BREU - testar bundle sem CDN
+on:
+  push:
+    paths:
+      - 'laboratorio/**'
+      - 'scripts/build.mjs'
+      - 'package.json'
+      - '.github/workflows/breu-build.yml'
+  pull_request:
+    paths:
+      - 'laboratorio/**'
+      - 'scripts/build.mjs'
+      - 'package.json'
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: test -s dist/laboratorio/game.js
+      - run: node -e "const fs=require('fs');const s=fs.readFileSync('dist/laboratorio/game.js','utf8');if(/from\\s*['\"]https?:\\/\\//.test(s))process.exit(1)"

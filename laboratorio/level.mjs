@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+import * as THREE from 'three';
 import {WALLS, CEILINGS, STORE_SIGNS, PROPS, WING, INTERACTION} from './layout.mjs';
 import {addArtPass} from './detail-pass.mjs';
 
