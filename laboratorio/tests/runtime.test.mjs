@@ -15,7 +15,7 @@ class Group{constructor(){this.children=[];this.position=new Vector3();this.posi
 class Texture{constructor(){this.repeat={set(){}}}}
 class Curve{constructor(points){this.points=points}}
 const THREE={Color,Mesh,Group,Vector3,CatmullRomCurve3:Curve,CanvasTexture:Texture,
- MeshStandardMaterial:Material,MeshPhysicalMaterial:Material,MeshBasicMaterial:Material,PlaneGeometry:G,BoxGeometry:G,CylinderGeometry:G,SphereGeometry:G,TubeGeometry:G,CircleGeometry:G,PointLight:Lamp,HemisphereLight:Lamp,
+ MeshStandardMaterial:Material,MeshPhysicalMaterial:Material,MeshBasicMaterial:Material,PlaneGeometry:G,BoxGeometry:G,CylinderGeometry:G,SphereGeometry:G,TorusGeometry:G,TubeGeometry:G,CircleGeometry:G,PointLight:Lamp,HemisphereLight:Lamp,
  SRGBColorSpace:'srgb',RepeatWrapping:1,DoubleSide:2};
 function canvas(){return {width:0,height:0,getContext(){return new Proxy({createRadialGradient(){return {addColorStop(){}}}}, {get(obj,key){return obj[key]??(()=>{})},set(obj,key,value){obj[key]=value;return true}})}}}
 const fakeDoc={createElement(){return canvas()}};
@@ -65,6 +65,8 @@ test('entire 3D scene constructs coherently and the alarm opens the visible exit
  assert(stage.interactive.panel && stage.interactive.exit);
  assert(scene.children.some(o=>o.name==='security desk'));
  assert(scene.children.some(o=>o.name==='ramen counter top'));
+ assert(scene.children.some(o=>o.name==='public restroom entrance indicator'));
+ assert(scene.children.filter(o=>o.name==='toilet rim').length===3);
  assert(scene.children.some(o=>o.name==='fluorescent translucent diffuser'));
  assert.doesNotThrow(()=>stage.update(16,false));
  assert.doesNotThrow(()=>stage.update(44,true));

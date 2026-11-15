@@ -15,7 +15,13 @@ export const WALLS = [
   wall('left room south',-7.3,-15.35,6.6,.28),
   wall('left arcade north',-7.3,-30.2,6.6,.28),
   wall('left arcade south',-7.3,-39.6,6.6,.28),
-  wall('right divider A',3.65,0.8,.32,34.4,4.35,'tile'),
+  wall('right divider A north of restroom',3.65,13.05,.32,9.9,4.35,'tile'),
+  wall('right divider A south of restroom',3.65,-5.8,.32,21.2,4.35,'tile'),
+  // Public restroom is an actual room behind a 3.3 m entrance on the east side.
+  wall('restroom far wall',7.2,10.0,6.65,.25,4.35,'tile'),
+  wall('restroom near wall',7.2,1.8,6.65,.25,4.35,'tile'),
+  wall('restroom stall partition 1',9.22,4.38,2.52,.11,2.35,'tile'),
+  wall('restroom stall partition 2',9.22,7.48,2.52,.11,2.35,'tile'),
   wall('right divider B',3.65,-22.1,.32,9.0,4.35,'tile'),
   wall('right divider C',3.65,-38.1,.32,16.5,4.35,'tile'),
   wall('right room north',7.2,-23.55,6.8,.28),
@@ -47,8 +53,14 @@ export const STORE_SIGNS=[
  {name:'GAME 99',sub:'ARCADE HALL',type:'arcade',side:-1,z:-34.6,accent:'#bd7c93',lit:true},
  {name:'STAFF ONLY',sub:'MAINTENANCE',type:'maintenance',side:-1,z:-47.5,accent:'#d4b77d',lit:false},
 ];
+export const RESTROOM=Object.freeze({door:{x:3.65,z:6.42},centre:{x:5.85,z:6.0},stallCount:3});
 export const INTERACTION={panel:{x:15.5,y:1.37,z:-51.4,r:1.75},exit:{x:21.05,y:1.45,z:-51.0,r:1.12}};
 export const PROPS = [
+ {name:'restroom sink bank',x:5.25,z:2.52,w:1.6,d:.64,h:.89,blocking:true},
+ {name:'restroom supply trolley',x:5.3,z:8.75,w:.66,d:.68,h:1.25,blocking:true},
+ {name:'restroom toilet cubicle 1',x:9.40,z:3.06,w:.65,d:.74,h:.51,blocking:true},
+ {name:'restroom toilet cubicle 2',x:9.40,z:6.02,w:.65,d:.74,h:.51,blocking:true},
+ {name:'restroom toilet cubicle 3',x:9.40,z:8.82,w:.65,d:.74,h:.51,blocking:true},
  {name:'sealed west renovation',x:-2.20,z:-18.6,w:2.70,d:1.65,h:2.85,blocking:true},
  {name:'sealed east renovation',x:2.20,z:-18.6,w:2.70,d:1.65,h:2.32,blocking:true},
  {name:'fallen rack',x:-1.70,z:-3.0,w:1.25,d:.55,h:.8,blocking:true},
@@ -63,6 +75,7 @@ export const PROPS = [
 // Openings on the inner corridor must stay clear of purely visual wall panels.
 // The geometry and visual decoration read the same portal definitions.
 export const OPEN_PORTALS=[
+ {name:'public restroom entrance',side:1,zMin:4.82,zMax:8.08},
  {name:'ramen access',side:-1,zMin:-12.84,zMax:-9.02},
  {name:'electronics access',side:1,zMin:-29.84,zMax:-26.61},
  {name:'service junction',side:1,zMin:-55.0,zMax:-46.37},

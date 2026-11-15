@@ -10,6 +10,8 @@ A versão do laboratório evoluiu de uma estrutura simples de lojas para um seto
 
 - **Identidade visual:** restaurante de lámen com cortina *noren* e exaustão, eletrônicos com monitores CRT, vitrines de moda deterioradas, fliperama, farmácia gradeada, máquinas de venda e escritório de segurança.
 - **Materiais e arquitetura:** revestimentos de parede por área, ferrugem e rachaduras geradas proceduralmente, luminárias falhando, fiação pendente, acabamento de teto, sinalização e danos localizados.
+- **Banheiros:** sala sanitária realmente explorável, com entrada larga, três cabines com divisórias físicas, lavatórios, espelho sujo e iluminação fria.
+- **Passagem claustrofóbica:** corredor de manutenção com isolamento de obra em ambos os lados, deixando um vão estreito e transitável.
 - **Conexão visual-física:** placas de sujeira e revestimento não cobrem passagens de lojas abertas; os sólidos continuam definidos exclusivamente no `layout.mjs` e são usados também pelo Rapier.
 - **Criatura:** vigia abandonado com modelo procedural original e perseguição por uma malha derivada das colisões reais. Pode alcançar e encerrar a partida; movimento mais rápido após o alarme.
 - **Ambientação sonora:** hum de ventilação, ruído elétrico, goteiras, passos e alarme sintetizados localmente pelo Web Audio. Sem gravações de terceiros, contas, custos ou serviços externos. Botão para desligar o som na pausa.

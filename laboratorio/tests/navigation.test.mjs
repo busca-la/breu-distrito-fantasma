@@ -17,7 +17,7 @@ test('monster can travel from storefronts to service area without walking throug
 });
 
 test('visual wall-cladding does not hide an accessible storefront',()=>{
- assert.equal(OPEN_PORTALS.length,3);
+ assert.equal(OPEN_PORTALS.length,4);
  for(const portal of OPEN_PORTALS){
   const middle=(portal.zMin+portal.zMax)/2;
   assert(!facadePanelAllowed(portal.side,middle,.3),`${portal.name} covered by wall panel`);
@@ -39,4 +39,13 @@ test('renovation choke creates a narrow but walkable passage rather than a decor
  assert(!circleFits(1.2,z,.33)&&!circleFits(-1.2,z,.33),'Renovation barriers should be solid');
  const route=nav.route({x:0,z:-13},{x:0,z:-24});
  assert(route.length>0,'Choke must not disconnect the main gallery');
+});
+
+
+test('restroom is a physically accessible room with separate solid stalls',()=>{
+ const path=nav.route({x:0,z:13},{x:5.9,z:6.1});
+ assert(path.length>0,'Restroom is disconnected from main aisle');
+ assert(circleFits(3.65,6.45,.40),'Restroom door is walled over');
+ assert(circleFits(6.15,6.3,.4),'Restroom interior is unreachable');
+ assert(!circleFits(9.22,4.38,.2),'Stall separator needs solid collision');
 });

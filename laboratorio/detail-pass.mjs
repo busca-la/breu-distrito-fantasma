@@ -152,6 +152,36 @@ export function addArtPass(scene,{mobile=false}={}){
   box('suspended noodle shop pendant',-7.9+i*.85,2.87,-11.2,.32,.35,.3,MATERIAL.rust);
   box('subtle amber light source',-7.9+i*.85,2.69,-11.2,.17,.025,.19,yellow);
  }
+ // Restroom: a separate, fully walkable room (shared collider shell in layout).
+ // Entry is preserved at x=3.65, z=4.82..8.08: no fictitious wall over it.
+ const glazed=new THREE.MeshPhysicalMaterial({color:'#8eaaaa',roughness:.23,metalness:.22,transparent:true,opacity:.62,side:THREE.DoubleSide});
+ box('bathroom ceramic floor overlay',7.14,.007,5.91,6.55,.014,8.02,tiles);
+ for(const zz of [1.96,9.83])plane('restroom ceramic wall',7.15,1.45,zz,6.28,2.83,tiles,zz===9.83?Math.PI:0);
+ const bathroomSign=new THREE.MeshStandardMaterial({map:graphicTexture('化粧室','RESTROOM / LAVATORY','#9bb1a7'),emissive:'#475b56',emissiveIntensity:.19,side:THREE.DoubleSide});
+ plane('public restroom entrance indicator',3.28,3.05,6.45,1.78,.66,bathroomSign,-Math.PI/2);
+ box('bathroom mirror frame',5.25,1.83,2.01,1.78,1.20,.09,MATERIAL.steel);
+ plane('foggy restroom mirror',5.25,1.83,2.07,1.61,1.03,glazed);
+ pipe('restroom mirror fractured edge',[[4.9,2.23,2.08],[5.1,1.9,2.08],[5.42,1.84,2.08],[5.63,1.56,2.08]],.007,MATERIAL.dark);
+ box('ceramic sink slab',5.25,.87,2.53,1.61,.11,.64,MATERIAL.ceramic);
+ for(const xx of [4.79,5.58]){
+  const basin=new THREE.Mesh(new THREE.CylinderGeometry(.29,.29,.07,14),MATERIAL.ceramic);
+  basin.name='porcelain basin';basin.position.set(xx,.93,2.53);scene.add(basin);objects.push(basin);
+  box('drain plug',xx,.963,2.52,.07,.015,.07,MATERIAL.dark);
+  pipe('water-stained faucet',[[xx,1.0,2.30],[xx,1.18,2.30],[xx,1.21,2.50]],.02,MATERIAL.brushed);
+ }
+ for(const zz of [3.06,6.02,8.82]){
+  const bowl=new THREE.Mesh(new THREE.TorusGeometry(.27,.065,6,13),MATERIAL.ceramic);
+  bowl.name='toilet rim';bowl.rotation.x=Math.PI/2;bowl.position.set(9.4,.54,zz);scene.add(bowl);objects.push(bowl);
+  box('toilet ceramic tank',9.4,.79,zz+.27,.53,.45,.23,MATERIAL.ceramic);
+  box('toilet flush lever',9.25,.99,zz+.27,.11,.04,.035,MATERIAL.brushed);
+ }
+ for(const zz of [4.38,7.48]){
+  box('stall partition steel trim',7.96,2.16,zz,.08,.07,.14,MATERIAL.brushed);
+  box('stall door hinge detail',8.02,1.44,zz+.15,.06,.18,.09,MATERIAL.rust);
+ }
+ box('restroom safety lighting casing',5.83,4.06,6.0,1.23,.14,.4,MATERIAL.brushed);
+ const restroomLight=new THREE.PointLight('#a8b7af',mobile?2.8:5.1,7,2.1);
+ restroomLight.position.set(6.0,3.30,5.95);scene.add(restroomLight);objects.push(restroomLight);
  // Electronics: actual CRT colored glass, tiny keyboards and old repair station.
  for(let j=0;j<3;j++)for(let k=0;k<3;k++){
   const z=-24.65-j*1.85,y=.66+k*.72;
