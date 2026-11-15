@@ -7,5 +7,5 @@
     "test": "node --test tests/layout.test.mjs",
     "test:physics": "node tests/physics.integration.test.mjs"
   },
-  "devDependencies": {"@dimforge/rapier3d-compat": "0.17.3"}
+  "devDependencies": {"@dimforge/rapier3d-compat": "0.21.0"}
 }
