@@ -21,4 +21,4 @@ jobs:
           node-version: '22'
       - run: npm install --no-audit --no-fund
       - run: npm test
-      - run: npm run test:physics
+      - name: Física Rapier WASM (logs resumidos)\n        run: |\n          npm run test:physics > /tmp/breu-physics.log 2>&1 || {\n            tail -c 2200 /tmp/breu-physics.log\n            exit 1\n          }\n          cat /tmp/breu-physics.log
