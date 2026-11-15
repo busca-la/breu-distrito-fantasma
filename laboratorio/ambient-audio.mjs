@@ -66,7 +66,11 @@ export class BreuSound {
  cue(kind){
   if(!this.ctx||!this.playing)return;
   const now=this.ctx.currentTime;
-  if(kind==='metal'){
+  if(kind==='radio'){
+   this.filteredNoise(.95,.12,2400,now);
+   this.tone(790,.17,.045,'square',now);
+   this.tone(540,.11,.025,'triangle',now+.29);
+  }else if(kind==='metal'){
    this.filteredNoise(.32,.16,780,now);
    this.tone(126,.34,.072,'sawtooth',now);
    this.tone(73,.55,.032,'triangle',now+.12);
@@ -83,13 +87,30 @@ export class BreuSound {
    this.tone(520,.32,.065,'triangle',now+.27);
   }
  }
- setPaused(paused){if(!this.ctx)return;this.playing=!paused&&this.enabled;
+ // Device-native speech is optional. Subtitles remain the source of truth
+ // where browsers do not expose Portuguese voices or block speech playback.
+ radioSpeech(){
+  if(!this.enabled||!this.playing)return false;
+  const synth=this.win.speechSynthesis,Constructor=this.win.SpeechSynthesisUtterance;
+  if(!synth||!Constructor)return false;
+  try{
+   const u=new Constructor('Portões travados. O disjuntor auxiliar fica na loja Denki. Não siga os uniformes. Não corra. Ele escuta.');
+   u.lang='pt-BR';u.rate=.94;u.pitch=.82;u.volume=.75;
+   const pt=synth.getVoices?.().find(v=>v.lang?.toLowerCase().startsWith('pt'));
+   if(pt)u.voice=pt;
+   synth.cancel();
+   synth.speak(u);
+   return true;
+  }catch{return false;}
+ }
+ setPaused(paused){if(paused)try{this.win.speechSynthesis?.cancel();}catch{}
+  if(!this.ctx)return;this.playing=!paused&&this.enabled;
   this.master.gain.setTargetAtTime(paused?.0001:.27,this.ctx.currentTime,.12);
  }
  async toggle(){
   this.enabled=!this.enabled;
   if(this.enabled){await this.start();this.setPaused(false)}
-  else if(this.ctx){this.playing=false;this.master.gain.setTargetAtTime(.0001,this.ctx.currentTime,.09)}
+  else if(this.ctx){this.playing=false;try{this.win.speechSynthesis?.cancel();}catch{}this.master.gain.setTargetAtTime(.0001,this.ctx.currentTime,.09)}
   return this.enabled;
  }
  destroy(){for(const o of this.oscillators)o.stop();this.ctx?.close();this.ctx=null;this.oscillators=[];this.playing=false}
