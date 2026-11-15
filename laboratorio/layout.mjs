@@ -11,7 +11,7 @@ export const WALLS = [
   wall('left shutter A',-3.65,-6.5,.32,5.0,4.35,'tile'),
   wall('left divider B south',-3.65,-24.175,.32,.75,4.35,'tile'),
   wall('left divider B north',-3.65,-16.525,.32,7.35,4.35,'tile'),
-  wall('left divider C south',-3.65,-41.775,.32,10.75,4.35,'tile'),
+  wall('left divider C south',-3.65,-41.075,.32,9.35,4.35,'tile'),
   wall('left divider C north',-3.65,-28.825,.32,7.95,4.35,'tile'),
   wall('left room north',-7.3,-7.8,6.6,.28),
   wall('left room south',-7.3,-15.35,6.6,.28),
@@ -90,6 +90,7 @@ export const OPEN_PORTALS=[
  {name:'ramen access',side:-1,zMin:-12.84,zMax:-9.02},
  {name:'electronics access',side:1,zMin:-29.84,zMax:-26.61},
  {name:'service junction',side:1,zMin:-55.0,zMax:-46.37},
+ {name:'maintenance room entrance',side:-1,zMin:-49.3,zMax:-45.7},
 ];
 export function facadePanelAllowed(side,z,halfLength=2.43){
  return !OPEN_PORTALS.some(p=>p.side===side&&z+halfLength>p.zMin&&z-halfLength<p.zMax);
