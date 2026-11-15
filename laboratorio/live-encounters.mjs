@@ -92,7 +92,7 @@ export function createLiveEncounters(scene){
   signRig.rotation.x=motion*.6;
   can.visible=t>2.8&&t<11;
   const travel=Math.max(0,Math.min(1,(t-2.8)/7.7));
-  can.position.set(-2.18+.38*Math.sin(t*.65),.15,-.5-7*travel);
+  can.position.set(-2.95+.18*Math.sin(t*.65),.15,-.5-7*travel);
   can.rotation.z=travel*16;
   can.rotation.x=travel*4;
   if(t>=1.2&&!fired.has('run')){
