@@ -39,7 +39,7 @@ float hash21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
 float fbm(vec2 p){float a=0.0;float k=.5;for(int i=0;i<3;i++){a+=hash21(floor(p))*k;p=p*2.13+vec2(9.1,3.7);k*=.5;}return a;}
 void main(){
  vec3 n=normalize(vNorm);vec3 to=vWorld-uEye;float d=length(to);vec3 viewDir=normalize(to);
- float above=abs(n.y);float floorMat=step(.82,above)*(1.-step(.3,vWorld.y));
+ float above=abs(n.y);float floorDistance=min(abs(vWorld.y),abs(vWorld.y-4.8));float floorMat=step(.82,above)*(1.-smoothstep(.18,.35,floorDistance));
  float noise=fbm(vWorld.xz*2.7+vWorld.y*.47);
  float stain=fbm(vec2(vWorld.x*.19+vWorld.z*.31,vWorld.y*.69));
  float scar=step(.82,noise)*.16;
@@ -101,7 +101,7 @@ const pathDefs=[
  {name:'ÁTRIO CENTRAL',level:0,width:7.0,pts:[[0,19],[0,-10]],zone:0},
  {name:'GALERIA DE SERVIÇO',level:0,width:4.6,pts:[[0,-10],[0,-63]],zone:3},
  {name:'ALA DE ALIMENTAÇÃO',level:0,width:3.9,pts:[[0,8],[-22,8]],zone:1},
- {name:'PASSAGEM DOS BANHEIROS',level:0,width:2.7,pts:[[-26,8],[-26,-14]],zone:1},
+ {name:'PASSAGEM DOS BANHEIROS',level:0,width:2.9,pts:[[-22,8],[-36,8],[-36,-14]],zone:1},
  {name:'ALA DE MODA',level:0,width:3.6,pts:[[0,37],[-26,37]],zone:1},
  {name:'ALA DE JOGOS',level:0,width:3.7,pts:[[0,39],[23,39]],zone:2},
  {name:'ACESSO À ESCADA ROLANTE',level:0,width:3.5,pts:[[0,24],[26,24]],zone:2},
@@ -143,10 +143,9 @@ const layerY=4.8, bounds={minX:-43,maxX:43,minZ:-84,maxZ:85};
 const laneX=[-24,0,26],crossZ=[-55,-28,-7,19,42];
 const securityDesk={x:-25,z:-54,level:0},escapePanel={x:27,z:-72,level:0};
 const tower={x:27,z:-77};
-const fuses=[];
 let seed=731249;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;}
 const rand=(a,b)=>a+(b-a)*rnd(),distance=(a,b,c,d)=>Math.hypot(a-c,b-d);
-const world=new Mesh(),trees=[],colliders=[],cityBlocks=[];
+const world=new Mesh(),colliders=[];
 const stone=color('#252a2a'),wet=color('#263036'),dust=color('#323535');
 const zonePalette=[
  {wall:'#454743',trim:'#77766a',floor:'#3b3e3a',sign:'#bea890',light:'#bca28c'},
@@ -191,8 +190,8 @@ function walkable(x,z,level,margin=0){if(x<bounds.minX||x>bounds.maxX||z<bounds.
   }
  }return false;}
 // Every stair has a clear vertical shaft. The cutout matches the generated steps.
-const shaftRects=connectors.map(c=>({name:c.name,minX:c.x-c.w/2-.24,maxX:c.x+c.w/2+.24,
- minZ:Math.min(c.z0,c.z1),maxZ:Math.max(c.z0,c.z1)}));
+const shaftRects=connectors.map(c=>({name:c.name,minX:c.x-c.w/2-.52,maxX:c.x+c.w/2+.52,
+ minZ:Math.min(c.z0,c.z1)-.48,maxZ:Math.max(c.z0,c.z1)+.48}));
 const constructedSlabs=[];
 // Split an axis-aligned slab at EVERY shaft boundary. No triangles or solid ceilings
 // are allowed to bridge a staircase — including overlapping upper shop floors.
@@ -217,7 +216,7 @@ function cutSlab(x,z,w,d,y,h,hex,kind){
 }
 function cutFloorQuad(ax,bx,az,bz,y,hex){
  slabCells(ax,bx,az,bz,(x0,x1,z0,z1)=>{
-  quadXZ([x0,z0],[x1,z0],[x1,z1],[x0,z1],y,hex);
+  quadXZ([x0,z0],[x0,z1],[x1,z1],[x1,z0],y,hex);
   constructedSlabs.push({ax:x0,bx:x1,az:z0,bz:z1,bottom:y,top:y,kind:'upper-floor'});
  });
 }
@@ -282,12 +281,13 @@ function routeBuild(r){const pts=r.samples,lev=r.level,base=lev?layerY:0,zone=zo
  }
 }
 function makeRoom(r){const lev=r.level,base=lev?layerY:0,zone=zonePalette[r.zone],w=r.w,d=r.d;
- if(lev===1)cutSlab(r.x,r.z,w,d,base-.07,.16,zone.floor,'upper-floor');
- else world.cube(r.x,base-.07,r.z,w,.16,d,color(zone.floor));
+ if(lev===1)cutSlab(r.x,r.z,w,d,base-.152,.16,zone.floor,'upper-floor');
+ else world.cube(r.x,base-.152,r.z,w,.16,d,color(zone.floor));
  // teto e vigas com alturas variáveis; salas técnicas mais baixas.
  const height=(r.type==='food'||r.type==='cinema'?4.05:r.type==='restroom'?2.92:3.52);
  if(lev===0)cutSlab(r.x,r.z,w,d,base+height,.19,'#1c2325','lower-ceiling');
- else world.cube(r.x,base+height,r.z,w,.19,d,color('#1c2325'));
+ else {world.cube(r.x,base+height,r.z,w,.19,d,color('#1c2325'));
+  constructedSlabs.push({ax:r.x-w/2,bx:r.x+w/2,az:r.z-d/2,bz:r.z+d/2,bottom:base+height,top:base+height+.19,kind:'upper-ceiling'});}
  const sides=[ [[r.x-w/2,r.z-d/2],[r.x+w/2,r.z-d/2]],[[r.x+w/2,r.z-d/2],[r.x+w/2,r.z+d/2]],[[r.x+w/2,r.z+d/2],[r.x-w/2,r.z+d/2]],[[r.x-w/2,r.z+d/2],[r.x-w/2,r.z-d/2]] ];
  for(const [a,b] of sides){const len=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(3,Math.ceil(len/.9)),ux=(b[0]-a[0])/n,uz=(b[1]-a[1])/n;
   for(let j=0;j<n;j++){
@@ -306,13 +306,16 @@ function makeRoom(r){const lev=r.level,base=lev?layerY:0,zone=zonePalette[r.zone
   const x=r.x+rand(-w*.46,w*.46),z=r.z+rand(-d*.46,d*.46);
   world.cube(x,base+.018,z,rand(.16,1.6),.023,rand(.13,.95),color(i%7===0?'#62665e':i%4===0?'#1e2b2d':zone.floor),.015);
  }
- cityBlocks.push({x:r.x,z:r.z,w:r.w,d:r.d,level:lev,name:r.name});
  decorateRoom(r,base,zone);
 }
-function prop(x,y,z,w,h,d,hex,solid=true){addBlock(x,y,z,w,h,d,hex,solid);}
-function chair(x,y,z,style='#554f4c'){prop(x,y,z,.53,.47,.55,style);world.cube(x,y+.48,z+.27,.52,.65,.07,color(style));}
-function table(x,y,z){prop(x,y,z,1.24,.73,.72,'#5f5b54');world.cube(x,y+.73,z,1.42,.11,.87,color('#77756d'));}
-function monitor(x,y,z){prop(x,y,z,.71,.68,.25,'#222e33');world.cube(x,y+.2,z-.15,.57,.35,.04,color('#658f90'),.72);}
+// Keep all 3 staircase shafts and their landings free of commercial furniture.
+function blocksStair(x,z,w,d){return connectors.some(c=>
+ Math.abs(x-c.x)<c.w/2+w/2+.48&&z+d/2>Math.min(c.z0,c.z1)-.70&&z-d/2<Math.max(c.z0,c.z1)+.70);
+}
+function prop(x,y,z,w,h,d,hex,solid=true){if(solid&&blocksStair(x,z,w,d))return false;addBlock(x,y,z,w,h,d,hex,solid);return true;}
+function chair(x,y,z,style='#554f4c'){if(!prop(x,y,z,.53,.47,.55,style))return;world.cube(x,y+.48,z+.27,.52,.65,.07,color(style));}
+function table(x,y,z){if(!prop(x,y,z,1.24,.73,.72,'#5f5b54'))return;world.cube(x,y+.73,z,1.42,.11,.87,color('#77756d'));}
+function monitor(x,y,z){if(!prop(x,y,z,.71,.68,.25,'#222e33'))return;world.cube(x,y+.2,z-.15,.57,.35,.04,color('#658f90'),.72);}
 function graffitiTag(x,y,z,word,rot=0){ // manchas com pigmento e tipografia fragmentada de leitura aproximada.
  for(let i=0;i<word.length*6;i++){
   const xx=x+rand(-.75,.75),zz=z+rand(-.75,.75),c=i%2?'#906a6a':'#6b8076';
@@ -393,7 +396,7 @@ function decorateRoom(r,y,zone){const {type,x,z,w,d}=r;
 }
 function connectorBuild(c){let tSteps=c.kind==='escalator'?34:20;
  const front=(c.z1-c.z0)/tSteps;for(let i=0;i<tSteps;i++){
-  const t=(i+.5)/tSteps,z=c.z0+(i+.5)*front,y=layerY*(i/tSteps);
+  const t=(i+.5)/tSteps,z=c.z0+(i+.5)*front,y=layerY*((i-.5)/tSteps);
   let h=layerY/tSteps,shade=c.kind==='escalator'?(i%2?'#485759':'#596568'):(i%2?'#67675f':'#454b4b');
   world.cube(c.x,y,z,c.w,h,Math.abs(front)+.025,color(shade));
   world.cube(c.x,y+h,z,c.w,.035,Math.abs(front)+.02,color(i%2?'#797b72':'#515a56'));
@@ -453,6 +456,7 @@ world.cube(escapePanel.x-1.4,1.75,escapePanel.z-.27,.40,.25,.09,color('#c38b70')
 // an enclosed dark service shaft, never the infinite empty world/sky.
 const shellBottom=-.5,shellHeight=11.6,bw=bounds.maxX-bounds.minX,bd=bounds.maxZ-bounds.minZ;
 world.cube((bounds.minX+bounds.maxX)/2,10.05,(bounds.minZ+bounds.maxZ)/2,bw+2,.5,bd+2,color('#101819'));
+world.cube((bounds.minX+bounds.maxX)/2,-1.1,(bounds.minZ+bounds.maxZ)/2,bw+2,.7,bd+2,color('#172022'));
 world.cube(bounds.minX-.45,shellBottom,(bounds.minZ+bounds.maxZ)/2,.90,shellHeight,bd+2,color('#161e20'));
 world.cube(bounds.maxX+.45,shellBottom,(bounds.minZ+bounds.maxZ)/2,.90,shellHeight,bd+2,color('#161e20'));
 world.cube((bounds.minX+bounds.maxX)/2,shellBottom,bounds.minZ-.45,bw+2,shellHeight,.90,color('#161e20'));
@@ -465,8 +469,71 @@ for(const r of roomDefs){const y=r.level?layerY:0,cc=zonePalette[r.zone];
  }
 }
 
+// v0.9 — Seal the VISUAL shell using the same walkable footprint as collisions.
+// Do not assume that the decorative store walls seal every T-junction.
+const seamRepair={roofTiles:[],walls:[]};
+function roofExists(x,z,level){
+ const kind=level===0?'lower-ceiling':'upper-ceiling';
+ return constructedSlabs.some(b=>b.kind===kind&&x>b.ax+.012&&x<b.bx-.012&&z>b.az+.012&&z<b.bz-.012);
+}
+const sealStep=.64;
+for(let level=0;level<=1;level++){
+ const base=level*layerY;
+ for(let x=bounds.minX+sealStep/2;x<bounds.maxX-sealStep/2;x+=sealStep)
+ for(let z=bounds.minZ+sealStep/2;z<bounds.maxZ-sealStep/2;z+=sealStep){
+  if(!walkable(x,z,level,.1))continue;
+  if(![[0,0],[-.37,-.37],[.37,-.37],[-.37,.37],[.37,.37]].some(([dx,dz])=>!roofExists(x+dx*sealStep,z+dz*sealStep,level)))continue;
+  // Split repair cells at the exact shaft edges. Never cover an access with a filler.
+  slabCells(x-sealStep/2-.018,x+sealStep/2+.018,z-sealStep/2-.018,z+sealStep/2+.018,(ax,bx,az,bz)=>{
+   const px=(ax+bx)/2,pz=(az+bz)/2;
+   if(!walkable(px,pz,level,.03)||roofExists(px,pz,level))return;
+   const ceiling=ceilingHeightAt(px,pz,level);
+   if(!Number.isFinite(ceiling))return;
+   world.cube(px,ceiling+.010,pz,bx-ax+.38,.12,bz-az+.38,color('#20282a'));
+   seamRepair.roofTiles.push({x:px,z:pz,level});
+   constructedSlabs.push({ax,bx,az,bz,bottom:ceiling+.010,top:ceiling+.13,kind:level===0?'lower-ceiling':'upper-ceiling'});
+  },true);
+ }
+}
+// This safety skin is thin and follows the footprint; it only covers gaps in
+// the procedural facade, never the space between two connected walkable rooms.
+const edgeStep=.75;
+for(let level=0;level<=1;level++){
+ const bottom=level*layerY;
+ const cols=Math.floor((bounds.maxX-bounds.minX)/edgeStep),rows=Math.floor((bounds.maxZ-bounds.minZ)/edgeStep);
+ const occupancy=new Uint8Array(cols*rows);
+ const idx=(i,j)=>j*cols+i;
+ for(let i=0;i<cols;i++)for(let j=0;j<rows;j++)
+  occupancy[idx(i,j)]=walkable(bounds.minX+(i+.5)*edgeStep,bounds.minZ+(j+.5)*edgeStep,level,.05)?1:0;
+ const inside=(i,j)=>i>=0&&j>=0&&i<cols&&j<rows&&occupancy[idx(i,j)]===1;
+ const wallColor=color(level?'#2e3238':'#293133');
+ function wallRun(x,z,w,d){
+  world.cube(x,bottom+.015,z,w,3.82,d,wallColor);
+  seamRepair.walls.push({x,z,w,d,level});
+ }
+ // Merge adjacent boundary tiles into solid wall sections, not 2000 tiny cubes.
+ // One panel per continuous span prevents visible joints and reduces mobile draw cost.
+ for(let i=0;i<cols;i++)for(const side of [-1,1]){
+  let j=0;
+  while(j<rows){const condition=(k)=>inside(i,k)&&!inside(i+side,k);
+   if(!condition(j)){j++;continue;}
+   const start=j;while(j<rows&&condition(j))j++;
+   const z=bounds.minZ+(start+j)*edgeStep/2;
+   wallRun(bounds.minX+(i+(side===1?1:0))*edgeStep,z,.075,(j-start)*edgeStep+.035);
+  }
+ }
+ for(let j=0;j<rows;j++)for(const side of [-1,1]){
+  let i=0;
+  while(i<cols){const condition=(k)=>inside(k,j)&&!inside(k,j+side);
+   if(!condition(i)){i++;continue;}
+   const start=i;while(i<cols&&condition(i))i++;
+   const x=bounds.minX+(start+i)*edgeStep/2;
+   wallRun(x,bounds.minZ+(j+(side===1?1:0))*edgeStep,(i-start)*edgeStep+.035,.075);
+  }
+ }
+}
+
 const staticMesh=world.upload();world.v.length=0;
-const pickupGeom=new Mesh();pickupGeom.cylinder(0,0,0,.66,.66,1.55,color('#83d5d0'),8,.75);pickupGeom.cube(0,1.4,0,.8,.25,.8,color('#d6fff0'),1.35);const pickupMesh=pickupGeom.upload();
 const monsterParts=[];function part(mesh,x,y,z,sx,sy,sz){monsterParts.push({mesh:mesh.upload(),x,y,z,sx,sy,sz});}
 let mes=new Mesh();mes.cylinder(0,0,0,.4,.22,2.7,color('#151f1e'),7);part(mes,0,0,0,.95,1,1);
 mes=new Mesh();mes.cylinder(0,0,0,.16,.13,1.6,color('#14211e'),7);part(mes,-.32,-1.5,0,1,1,1);part(mes,.32,-1.5,0,1,1,1);
@@ -585,8 +652,8 @@ function drawSigns(eye,target){
 
 const dir=(yaw,pitch=0)=>[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch)];
 let p={x:0,z:73,level:0,yaw:0,pitch:-.02,stamina:100,health:100,flash:true,headbob:0,jumpY:0,vy:0};let monster={x:0,z:-16,level:0,heading:0,phase:0},alarmActive=false,escapeSeconds=210,state='menu',onlineMode='solo',isHost=false,peer=null,hostConn=null,clients=new Map(),friends=new Map(),roomCode='',peerReady=false,peerScriptError=false;
-let last=performance.now(),time=0,win=false,dead=false,cooldown=0,hitFlash=0,stormFlash=0,stormNext=12,toastUntil=0,nearInteract=null,mapExpanded=false,lookDown=false;
-const keys=new Set();let joyX=0,joyY=0,mobileRun=false,touches=new Map(),lastMap=0;
+let last=performance.now(),lastFrameDt=.016,time=0,win=false,dead=false,cooldown=0,hitFlash=0,stormFlash=0,stormNext=12,toastUntil=0,nearInteract=null,mapExpanded=false,lookDown=false;
+const keys=new Set();let joyX=0,joyY=0,mobileRun=false,touches=new Map(),lastMap=0,hudElapsed=0,mapElapsed=0;
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),lerp=(a,b,t)=>a+(b-a)*t;
 const isMoving=()=>keys.has('KeyW')||keys.has('KeyS')||keys.has('KeyA')||keys.has('KeyD')||Math.abs(joyX)+Math.abs(joyY)>.12;
 function toast(s,ms=2800){$('message').textContent=s;$('message').style.opacity=1;toastUntil=performance.now()+ms}
@@ -631,24 +698,26 @@ $('btnLight').onclick=toggleFlash;$('btnAction').onclick=action;$('btnJump').add
 let actx=null,drone=null,wind=null,beepTime=0;function initAudio(){if(actx){actx.resume().catch(()=>{});return}try{actx=new (window.AudioContext||window.webkitAudioContext)();let osc=actx.createOscillator();osc.type='sine';osc.frequency.value=54;let gain=actx.createGain();gain.gain.value=.035;osc.connect(gain).connect(actx.destination);osc.start();drone={osc,gain};let len=actx.sampleRate*2,buff=actx.createBuffer(1,len,actx.sampleRate),a=buff.getChannelData(0);for(let i=0;i<len;i++)a[i]=(Math.random()*2-1)*.2;let src=actx.createBufferSource();src.buffer=buff;src.loop=true;let low=actx.createBiquadFilter();low.type='lowpass';low.frequency.value=165;let vol=actx.createGain();vol.gain.value=.11;src.connect(low).connect(vol).connect(actx.destination);src.start();wind=vol;}catch(err){console.warn('Áudio indisponível',err)}}
 function sound(kind){if(!actx)return;let o=actx.createOscillator(),g=actx.createGain(),n=actx.currentTime;let start=kind==='jump'?240:kind==='pickup'?630:kind==='death'?160:kind==='victory'?300:kind==='heartbeat'?85:340;let end=kind==='pickup'?1090:kind==='death'?34:kind==='victory'?660:kind==='heartbeat'?42:215;let duration=kind==='death'?1.5:kind==='victory'?.8:kind==='heartbeat'?.25:.13;o.type=kind==='pickup'||kind==='victory'?'sine':'triangle';o.frequency.setValueAtTime(start,n);o.frequency.exponentialRampToValueAtTime(end,n+duration);g.gain.setValueAtTime(kind==='heartbeat'?.08:.095,n);g.gain.exponentialRampToValueAtTime(.001,n+duration);o.connect(g).connect(actx.destination);o.start(n);o.stop(n+duration+.01)}
 // Player collision uses the actual shopping footprint and per-floor furniture.
-function checkCollision(x,z,foot=floorHeight(p.x,p.z,p.level),level=p.level){
- const radius=.39;
- // Sample the player's actual body footprint; walking through walls or into the void is impossible.
- for(const [ox,oz] of [[0,0],[radius,0],[-radius,0],[0,radius],[0,-radius],[radius*.65,radius*.65],[-radius*.65,radius*.65]]){
-  if(!walkable(x+ox,z+oz,level))return true;
- }
+// All actors use their OWN height and jump offsets; the monster must never inherit player physics.
+function collisionAt(x,z,foot,level,vertical=0,radius=.39,bodyHeight=PLAYER_HEIGHT){
  const ground=floorHeight(x,z,level);
- // Stop the player before their head crosses a slab (including while jumping).
- const clearance=ceilingHeightAt(x,z,level);
- if(ground+p.jumpY+PLAYER_HEIGHT>clearance-.025)return true;
- // A full floor difference is never climbable without a stair/escalator.
- if(Math.abs(ground-foot)>Math.max(.47,p.jumpY+.38))return true;
+ for(const [ox,oz] of BODY_FOOTPRINT){
+  const xx=x+ox*radius,zz=z+oz*radius;
+  if(!walkable(xx,zz,level))return true;
+  // A body partially outside the stair cut-out collides with the adjoining slab.
+  const ceiling=ceilingHeightAt(xx,zz,level);
+  if(ground+vertical+bodyHeight>ceiling-.025)return true;
+ }
+ if(Math.abs(ground-foot)>Math.max(.47,vertical+.38))return true;
  for(const b of colliders){
-  if(ground+p.jumpY > (b.y??0)+(b.h??9)+.04 || ground+1.65<(b.y??0))continue;
+  if(ground+vertical>(b.y??0)+(b.h??9)+.04||ground+vertical+bodyHeight<(b.y??0))continue;
   const dx=Math.max(Math.abs(x-b.x)-b.w/2,0),dz=Math.max(Math.abs(z-b.z)-b.d/2,0);
   if(dx*dx+dz*dz<radius*radius)return true;
  }
  return false;
+}
+function checkCollision(x,z,foot=floorHeight(p.x,p.z,p.level),level=p.level){
+ return collisionAt(x,z,foot,level,p.jumpY,.39,PLAYER_HEIGHT);
 }
 function jump(){if(state!=='playing'||p.jumpY>.04||Math.abs(p.vy)>.05)return false;
  p.vy=5.45;sound('jump');return true;}
@@ -677,13 +746,22 @@ function movement(dt){let forward=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0)+
  if(p.jumpY<=0){p.jumpY=0;p.vy=0;}
  p.stamina=clamp(p.stamina+(running?-23:14)*dt,0,100);p.headbob+=m*speed*dt*1.6;
 }
+const BODY_FOOTPRINT=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[.707,.707],[.707,-.707],[-.707,.707],[-.707,-.707]];
 // Malha de navegação seguindo os eixos retos, salas e três conexões verticais.
 const navGrid={step:1.45,minX:-43,minZ:-84,width:Math.ceil(86/1.45)+1,height:Math.ceil(169/1.45)+1,positions:[],index:new Map(),adj:[]};
 function nodeKey(level,i,j){return level+':'+i+':'+j;}
-function isNavFree(x,z,level){if(!walkable(x,z,level,.45))return false;
+function isNavFree(x,z,level){
+ const c=connectorAt(x,z);
+ // A stair is shared by two storeys only at its ends; no phantom level in between.
+ if(c){const t=stairT(c,z);if(level===0&&t>.94||level===1&&t<.06)return false;}
  const ground=floorHeight(x,z,level);
+ for(const [ox,oz] of BODY_FOOTPRINT){
+  const xx=x+ox*.40,zz=z+oz*.40;
+  if(!walkable(xx,zz,level))return false;
+  if(ground+1.79>ceilingHeightAt(xx,zz,level)-.025)return false;
+ }
  for(const b of colliders){if(ground>(b.y??0)+(b.h??9)+.05||ground+1.7<(b.y??0))continue;
-  if(Math.abs(x-b.x)<b.w/2+.35&&Math.abs(z-b.z)<b.d/2+.35)return false;
+  if(Math.abs(x-b.x)<b.w/2+.40&&Math.abs(z-b.z)<b.d/2+.40)return false;
  }return true;}
 for(let level=0;level<=1;level++)for(let j=0;j<navGrid.height;j++)for(let i=0;i<navGrid.width;i++){
  const x=navGrid.minX+i*navGrid.step,z=navGrid.minZ+j*navGrid.step;
@@ -691,11 +769,25 @@ for(let level=0;level<=1;level++)for(let j=0;j<navGrid.height;j++)for(let i=0;i<
  const id=navGrid.positions.length;
  navGrid.positions.push({x,z,level,i,j});navGrid.adj.push([]);navGrid.index.set(nodeKey(level,i,j),id);
 }
+// A navmesh edge must be traversable by the same collision footprint as a player.
+// Midpoint-only checks previously produced paths straight through display cases.
+function navLinkClear(a,b,level){
+ const steps=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/.18));
+ let prev=floorHeight(a.x,a.z,level);
+ for(let i=0;i<=steps;i++){
+  const t=i/steps,x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t;
+  if(!isNavFree(x,z,level))return false;
+  const h=floorHeight(x,z,level);
+  if(Math.abs(h-prev)>.38||ceilingHeightAt(x,z,level)-h<2.01)return false;
+  prev=h;
+ }
+ return true;
+}
 for(let id=0;id<navGrid.positions.length;id++){
  const v=navGrid.positions[id];
  for(const [di,dj] of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]){
   const nb=navGrid.index.get(nodeKey(v.level,v.i+di,v.j+dj));if(nb===undefined)continue;
-  const w=navGrid.positions[nb];if(!isNavFree((v.x+w.x)/2,(v.z+w.z)/2,v.level))continue;
+  const w=navGrid.positions[nb];if(!navLinkClear(v,w,v.level))continue;
   if(Math.abs(di)+Math.abs(dj)===2){if(!navGrid.index.has(nodeKey(v.level,v.i+di,v.j))||!navGrid.index.has(nodeKey(v.level,v.i,v.j+dj)))continue;}
   navGrid.adj[id].push(nb);
  }
@@ -742,7 +834,7 @@ function enemyStep(dt){if(onlineMode==='guest')return;
    for(let k=0;k<Math.ceil(step/.12);k++){
      const px=monster.x+vx/Math.ceil(step/.12),pz=monster.z+vz/Math.ceil(step/.12);
      const height=floorHeight(monster.x,monster.z,monster.level);
-     if(!checkCollision(px,pz,height,monster.level)){
+     if(!collisionAt(px,pz,height,monster.level,0,.34,2.5)){
        monster.x=px;monster.z=pz;
      }else break;
    }
@@ -755,7 +847,7 @@ function threats(dt){let dist=distance(p.x,p.z,monster.x,monster.z);
  let heightDiff=Math.abs(floorHeight(p.x,p.z,p.level)-floorHeight(monster.x,monster.z,monster.level));
  if(heightDiff>2.2)dist+=35;
  $('enemyWarn').style.display=dist<27?'block':'none';$('hurt').style.opacity=String(clamp((24-dist)/23,0,.30)+hitFlash);
- if(dist<2.5&&cooldown<=0){cooldown=2.4;hitFlash=.55;p.health=clamp(p.health-30,0,100);sound('death');toast('ELE CHEGOU PERTO DEMAIS! FUJA!',2000);if(p.health<=0){finish(false);return;}}
+ if(dist<2.5&&cooldown<=0&&monster.level===p.level&&canSeeStraight(monster.x,monster.z,p.x,p.z,p.level)){cooldown=2.4;hitFlash=.55;p.health=clamp(p.health-30,0,100);sound('death');toast('ELE CHEGOU PERTO DEMAIS! FUJA!',2000);if(p.health<=0){finish(false);return;}}
  cooldown-=dt;hitFlash=Math.max(0,hitFlash-dt*.48);
  if(dist<22&&time-beepTime>Math.max(.36,dist/40)){beepTime=time;sound('heartbeat')}
 }
@@ -766,10 +858,10 @@ let netTimer=0;function update(dt){time+=dt;
  stormFlash=Math.max(0,stormFlash-dt*2);
  if(state==='playing'){
   movement(dt);enemyStep(dt);threats(dt);nearInteract=null;
-  if(!alarmActive&&p.level===0&&distance(p.x,p.z,securityDesk.x,securityDesk.z)<3.4)nearInteract='[E] ATIVAR ALARME DA CENTRAL';
-  else if(alarmActive&&p.level===0&&distance(p.x,p.z,escapePanel.x,escapePanel.z)<4.4)nearInteract='[E] DESTRAVAR SAÍDA DE INCÊNDIO';
+  if(!alarmActive&&p.level===0&&distance(p.x,p.z,securityDesk.x,securityDesk.z)<3.4)nearInteract=(mobile?'TOQUE EM AÇÃO':'[E]')+' ATIVAR ALARME DA CENTRAL';
+  else if(alarmActive&&p.level===0&&distance(p.x,p.z,escapePanel.x,escapePanel.z)<4.4)nearInteract=(mobile?'TOQUE EM AÇÃO':'[E]')+' DESTRAVAR SAÍDA DE INCÊNDIO';
   $('interaction').style.display=nearInteract?'block':'none';if(nearInteract)$('interaction').textContent=nearInteract;
-  netTimer+=dt;if(netTimer>.11){netTimer=0;sendState()}updateUI();
+  netTimer+=dt;if(netTimer>.11){netTimer=0;sendState()}hudElapsed+=dt;if(hudElapsed>.14){hudElapsed=0;updateUI();}
  }if(toastUntil<performance.now())$('message').style.opacity=0;
 }
 function setupDraw(eye,target){let fov=mobile?1.05:.98;let pv=perspective(fov,canvas.width/canvas.height,.075,270);gl.uniformMatrix4fv(loc.vp,false,m4multiply(pv,lookAt(eye,target)));gl.uniform3f(loc.eye,...eye);let d=dir(p.yaw,p.pitch);gl.uniform3f(loc.torch,...d);gl.uniform3f(loc.fog,.035,.045,.049);gl.uniform1f(loc.flash,p.flash?1:0);gl.uniform1f(loc.storm,stormFlash);gl.uniform1f(loc.time,time);}
@@ -779,7 +871,7 @@ function render(){gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let moving=i
 
 let dist=distance(p.x,p.z,monster.x,monster.z);if(dist<170||state==='menu'){const baseX=monster.x,baseZ=monster.z,ang=monster.heading,bounce=Math.sin(monster.phase)*.17;for(let i=0;i<monsterParts.length;i++){let o=monsterParts[i],sz=i>=1&&i<=4?Math.sin(monster.phase+(i%2)*Math.PI)*.2:0;draw(o.mesh,matModel(baseX+Math.cos(ang)*o.x+Math.sin(ang)*o.z,o.y+floorHeight(monster.x,monster.z,monster.level)+2.05+bounce+sz,baseZ-Math.sin(ang)*o.x+Math.cos(ang)*o.z,o.sx,o.sy,o.sz,ang))}}
 for(const f of friends.values()){if(distance(p.x,p.z,f.x,f.z)>150)continue;draw(friendMesh,matModel(f.x,.86+floorHeight(f.x,f.z,f.level||0),f.z,.72,.62,.72,f.yaw||0));}
-drawSigns(eye,target);drawMap();}
+drawSigns(eye,target);mapElapsed+=lastFrameDt;if(mapElapsed>.09||mapExpanded){mapElapsed=0;drawMap();}}
 const mapCanvas=$('miniMap'),mctx=mapCanvas.getContext('2d');function drawMap(){
  const w=300,h=300,expanded=mapExpanded,sc=expanded?1.12:2.08;
  mctx.clearRect(0,0,w,h);mctx.fillStyle='#090f14';mctx.fillRect(0,0,w,h);
@@ -799,22 +891,22 @@ const mapCanvas=$('miniMap'),mctx=mapCanvas.getContext('2d');function drawMap(){
  mctx.strokeStyle='#f1f0e4';mctx.lineWidth=1;mctx.beginPath();mctx.moveTo(p.x,p.z);mctx.lineTo(p.x+Math.sin(p.yaw)*9,p.z-Math.cos(p.yaw)*9);mctx.stroke();
  mctx.restore();mctx.fillStyle='#dce5df';mctx.font='bold 14px monospace';mctx.textAlign='left';mctx.fillText(p.level?'02 / MEZANINO':'01 / TÉRREO',12,20);
 }
-function frame(now){let dt=Math.min(.14,(now-last)/1000);last=now;update(dt);render();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+function frame(now){let dt=Math.min(.14,(now-last)/1000);last=now;lastFrameDt=dt;update(dt);render();requestAnimationFrame(frame)}requestAnimationFrame(frame);
 // Multiplayer WebRTC usando sinalização pública PeerJS. O jogo solo funciona mesmo sem a rede.
-function loadPeerJS(){let s=document.createElement('script');s.src='https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js';s.async=true;s.onload=()=>{peerReady=true};s.onerror=()=>{peerScriptError=true};document.head.appendChild(s)}loadPeerJS();
-let roomAction='host',roomReady=false;function roomMessage(s){$('roomStatus').textContent=s;}function openRoomPane(host){roomReady=false;roomAction=host?'host':'guest';$('roomPane').style.display='block';$('roomLabel').textContent=host?'CÓDIGO DO SHOPPING PARA CONVITE':'CÓDIGO DA SALA DO SEU AMIGO';$('roomInput').value=host?Array.from({length:6},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''):'';$('roomInput').readOnly=host;$('copyRoom').style.display=host?'block':'none';$('roomConfirm').textContent=host?'CRIAR E JOGAR':'CONECTAR';roomMessage('Conexão gratuita por WebRTC. Cada jogador precisa abrir este mesmo jogo com internet.');}
+let peerLoading=false;function loadPeerJS(){if(peerLoading||window.Peer)return;peerLoading=true;let s=document.createElement('script');s.src='https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js';s.async=true;s.onload=()=>{peerReady=true};s.onerror=()=>{peerScriptError=true;peerLoading=false};document.head.appendChild(s)}
+let roomAction='host',roomReady=false;function roomMessage(s){$('roomStatus').textContent=s;}function openRoomPane(host){loadPeerJS();roomReady=false;roomAction=host?'host':'guest';$('roomPane').style.display='block';$('roomLabel').textContent=host?'CÓDIGO DO SHOPPING PARA CONVITE':'CÓDIGO DA SALA DO SEU AMIGO';$('roomInput').value=host?Array.from({length:6},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''):'';$('roomInput').readOnly=host;$('copyRoom').style.display=host?'block':'none';$('roomConfirm').textContent=host?'CRIAR E JOGAR':'CONECTAR';roomMessage('Conexão gratuita por WebRTC. Cada jogador precisa abrir este mesmo jogo com internet.');}
 $('copyRoom').onclick=async()=>{let code=$('roomInput').value;let invite=(location.protocol==='http:'||location.protocol==='https:')?location.href.split('#')[0].split('?')[0]+'?sala='+code:code;try{await navigator.clipboard.writeText(invite);roomMessage('Convite copiado! Envie ao seu amigo.')}catch{roomMessage('Código: '+code+' — selecione e copie para enviar ao seu amigo.');$('roomInput').select()}};
 $('makeRoom').onclick=()=>openRoomPane(true);$('joinRoom').onclick=()=>openRoomPane(false);$('roomBack').onclick=()=>{$('roomPane').style.display='none';};
 const inviteCode=new URLSearchParams(location.search).get('sala');if(inviteCode){openRoomPane(false);$('roomInput').value=inviteCode.toUpperCase().slice(0,7);roomMessage('Convite recebido. Clique em CONECTAR para entrar com seus amigos.');}
 $('roomConfirm').onclick=()=>{if(roomAction==='host'&&roomReady){setGame('host');return;}if(!window.Peer){roomMessage(peerScriptError?'Serviço online indisponível neste navegador. Jogue solo por enquanto.':'Carregando conexão online… Tente novamente em alguns segundos.');return;}let code=$('roomInput').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4){roomMessage('Use um código de pelo menos 4 caracteres.');return;}roomCode=code;roomMessage('Conectando ao servidor de salas…');if(roomAction==='host')hostRoom(code);else joinHost(code)};
 function hostRoom(code){onlineMode='host';isHost=true;try{peer=new Peer('breu-'+code,{debug:0});peer.on('open',()=>{roomReady=true;roomMessage(`Sala ${code} criada! Envie este código aos amigos. Eles devem abrir o jogo e selecionar ENTRAR COM AMIGOS.`);$('roomConfirm').textContent='INICIAR EXPEDIÇÃO';});peer.on('connection',conn=>{if(clients.size>=3){conn.on('open',()=>conn.send({t:'full'}));return;}bindClient(conn)});peer.on('error',err=>{roomMessage('Não foi possível criar a sala: '+(err.type==='unavailable-id'?'código já em uso. Tente outro.':err.type||err.message));});}catch(e){roomMessage('Falha ao criar sala: '+e.message)}}
 function joinHost(code){onlineMode='guest';isHost=false;try{peer=new Peer(undefined,{debug:0});peer.on('open',()=>{let conn=peer.connect('breu-'+code,{reliable:true});hostConn=conn;conn.on('open',()=>{roomMessage('Conectado! Entrando no shopping…');conn.send({t:'hello',name:'Explorador'});setGame('guest')});conn.on('data',msg=>receiveHost(msg));conn.on('close',()=>{toast('O anfitrião saiu. A sala foi encerrada.',5000);onlineMode='solo';hostConn=null;friends.clear()});conn.on('error',()=>roomMessage('Não foi possível entrar nesta sala.'));});peer.on('error',err=>roomMessage('Erro ao conectar: '+(err.type==='peer-unavailable'?'a sala não existe ou o anfitrião saiu.':err.type||err.message)));}catch(e){roomMessage('Falha ao conectar: '+e.message)}}
-function bindClient(conn){conn.on('open',()=>{clients.set(conn.peer,conn);friends.set(conn.peer,{x:0,z:73,yaw:0,level:0});conn.send({t:'sync',alarm:alarmActive,seconds:escapeSeconds,monster:{x:monster.x,z:monster.z},friends:[['host',{x:p.x,z:p.z,yaw:p.yaw,level:p.level}],...Array.from(friends.entries()).filter(([id])=>id!==conn.peer)],room:roomCode});broadcast({t:'friendJoined',id:conn.peer,x:0,z:69},conn.peer);updateUI()});conn.on('data',m=>{if(!m||typeof m!=='object')return;let remote=friends.get(conn.peer);if(m.t==='state'&&remote){const rx=Number(m.x),rz=Number(m.z);const rl=m.level===1?1:0;if(!Number.isFinite(rx)||!Number.isFinite(rz)||checkCollision(rx,rz,floorHeight(rx,rz,rl),rl))return;if(distance(rx,rz,remote.x,remote.z)>18)return;remote.x=rx;remote.z=rz;remote.yaw=Number(m.yaw)||0;remote.level=rl;broadcast({t:'friendState',id:conn.peer,x:remote.x,z:remote.z,yaw:remote.yaw,level:remote.level},conn.peer)}if(m.t==='activate'&&remote&&!alarmActive&&distance(remote.x,remote.z,securityDesk.x,securityDesk.z)<4.5)triggerAlarm();if(m.t==='win'&&remote&&alarmActive&&distance(remote.x,remote.z,escapePanel.x,escapePanel.z)<5.2){broadcast({t:'win'});finish(true)}});conn.on('close',()=>{clients.delete(conn.peer);friends.delete(conn.peer);broadcast({t:'friendLeft',id:conn.peer});updateUI()})}
+function bindClient(conn){conn.on('open',()=>{clients.set(conn.peer,conn);friends.set(conn.peer,{x:0,z:73,yaw:0,level:0});conn.send({t:'sync',alarm:alarmActive,seconds:escapeSeconds,monster:{x:monster.x,z:monster.z},friends:[['host',{x:p.x,z:p.z,yaw:p.yaw,level:p.level}],...Array.from(friends.entries()).filter(([id])=>id!==conn.peer)],room:roomCode});broadcast({t:'friendJoined',id:conn.peer,x:0,z:69},conn.peer);updateUI()});conn.on('data',m=>{if(!m||typeof m!=='object')return;let remote=friends.get(conn.peer);if(m.t==='state'&&remote){const rx=Number(m.x),rz=Number(m.z);const rl=m.level===1?1:0;if(!Number.isFinite(rx)||!Number.isFinite(rz)||collisionAt(rx,rz,floorHeight(rx,rz,rl),rl,0,.39,PLAYER_HEIGHT))return;if(distance(rx,rz,remote.x,remote.z)>18)return;remote.x=rx;remote.z=rz;remote.yaw=Number(m.yaw)||0;remote.level=rl;broadcast({t:'friendState',id:conn.peer,x:remote.x,z:remote.z,yaw:remote.yaw,level:remote.level},conn.peer)}if(m.t==='activate'&&remote&&!alarmActive&&distance(remote.x,remote.z,securityDesk.x,securityDesk.z)<4.5)triggerAlarm();if(m.t==='win'&&remote&&alarmActive&&distance(remote.x,remote.z,escapePanel.x,escapePanel.z)<5.2){broadcast({t:'win'});finish(true)}});conn.on('close',()=>{clients.delete(conn.peer);friends.delete(conn.peer);broadcast({t:'friendLeft',id:conn.peer});updateUI()})}
 function broadcast(msg,except){for(const [id,conn] of clients)if(id!==except&&conn.open)try{conn.send(msg)}catch{}}
 function receiveHost(msg){if(!msg||typeof msg!=='object')return;switch(msg.t){case 'sync':alarmActive=!!msg.alarm;escapeSeconds=Number(msg.seconds)||150;monster.x=msg.monster?.x||monster.x;monster.z=msg.monster?.z||monster.z;friends.clear();for(let [id,f] of msg.friends||[])friends.set(id,f);break;case 'stateWorld':if(msg.monster){monster.x=msg.monster.x;monster.z=msg.monster.z;monster.heading=msg.monster.heading||0;monster.phase+=.15;monster.level=msg.monster.level===1?1:0;}if(msg.alarm)alarmActive=true;if(Number.isFinite(msg.seconds))escapeSeconds=msg.seconds;break;case 'friendJoined':friends.set(msg.id,{x:msg.x,z:msg.z,yaw:0});toast('Outro explorador entrou no shopping.');break;case 'friendLeft':friends.delete(msg.id);toast('Um explorador saiu do shopping.');break;case 'friendState':friends.set(msg.id,{x:msg.x,z:msg.z,yaw:msg.yaw,level:msg.level===1?1:0});break;case 'alarm':alarmActive=true;escapeSeconds=Number(msg.seconds)||150;stormFlash=1;toast('ALARME ATIVADO! CORRAM PARA O PORTÃO DE INCÊNDIO!',4200);break;case 'lost':finish(false);break;case 'win':finish(true);break;case 'full':toast('Sala cheia (máximo de 4 jogadores).');break;}}
 function sendState(){if(onlineMode==='guest'&&hostConn?.open)hostConn.send({t:'state',x:p.x,z:p.z,yaw:p.yaw,level:p.level});if(onlineMode==='host'){broadcast({t:'stateWorld',monster:{x:monster.x,z:monster.z,heading:monster.heading,level:monster.level},seconds:escapeSeconds,alarm:alarmActive});broadcast({t:'friendState',id:'host',x:p.x,z:p.z,yaw:p.yaw,level:p.level});}}
 // Exposição mínima para testes de execução, sem afetar a interface.
-window.__BREU_TEST__={get state(){return state},get position(){return {x:p.x,z:p.z,y:floorHeight(p.x,p.z,p.level)+p.jumpY,level:p.level}},get alarm(){return alarmActive},get countdown(){return escapeSeconds},get online(){return onlineMode},get gl(){return !!gl},get geometryVertices(){return staticMesh.count},get slabs(){return constructedSlabs},get shafts(){return shaftRects.map(s=>({...s}))},get ceiling(){return ceilingHeightAt(p.x,p.z,p.level)},ceilingAt:ceilingHeightAt,get rooms(){return roomDefs.map(r=>({...r}))},get connectors(){return connectors.map(c=>({...c}))},canWalk:(x,z,l=0)=>walkable(x,z,l,.43),moveTo(x,z,l){p.x=x;p.z=z;if(l===0||l===1)p.level=l},face(yaw,pitch=0){p.yaw=yaw;p.pitch=pitch},moveAxis,collides:checkCollision,jump,collect:action,reset:resetWorld,navGrid,monster};
+window.__BREU_TEST__={get state(){return state},get position(){return {x:p.x,z:p.z,y:floorHeight(p.x,p.z,p.level)+p.jumpY,level:p.level}},get alarm(){return alarmActive},get countdown(){return escapeSeconds},get online(){return onlineMode},get gl(){return !!gl},get geometryVertices(){return staticMesh.count},get slabs(){return constructedSlabs},get shafts(){return shaftRects.map(s=>({...s}))},get seamRepair(){return {roofs:seamRepair.roofTiles.length,walls:seamRepair.walls.length}},get ceiling(){return ceilingHeightAt(p.x,p.z,p.level)},ceilingAt:ceilingHeightAt,get rooms(){return roomDefs.map(r=>({...r}))},get connectors(){return connectors.map(c=>({...c}))},canWalk:(x,z,l=0)=>walkable(x,z,l,.43),moveTo(x,z,l){p.x=x;p.z=z;if(l===0||l===1)p.level=l},face(yaw,pitch=0){p.yaw=yaw;p.pitch=pitch},moveAxis,collides:checkCollision,actorCollides:collisionAt,jump,collect:action,reset:resetWorld,navGrid,monster};
 })();
 </script>
 </body>
