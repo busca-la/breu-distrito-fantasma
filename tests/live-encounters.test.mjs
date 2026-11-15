@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {OPENING_STEPS,openingPosition,createLiveEncounters} from '../laboratorio/live-encounters.mjs';
+
+assert(OPENING_STEPS.length>=5);
+assert.deepEqual(openingPosition(0),{x:.2,z:6.8});
+assert(openingPosition(2).z<6.8,'Worker should flee visibly after spawn');
+assert(openingPosition(5.4).z< -7.9,'Worker should leave the entrance');
+assert(openingPosition(6.9).x< -3.65,'Worker should escape through the open ramen entrance');
+
+const scene=new THREE.Scene();
+const encounters=createLiveEncounters(scene);
+const p={x:0,z:13};
+const atStart=encounters.update(0,p);
+assert.equal(atStart.length,0);
+const init=encounters.rig.actor.root.position.clone();
+let beat=encounters.update(1.3,p);
+assert.equal(beat.length,1);
+assert.equal(beat[0].kind,'pursuit');
+encounters.update(2.5,p);
+const moved=encounters.rig.actor.root.position.clone();
+assert(moved.distanceTo(init)>3,'Full-size character failed to travel several metres');
+assert(Math.abs(encounters.rig.actor.legs[0].rotation.x)>.05,'Character limbs should move');
+beat=encounters.update(4.3,p);
+assert.equal(beat[0].kind,'metal');
+assert(Math.abs(encounters.rig.signRig.rotation.z)>.005,'Suspended sign should swing');
+beat=encounters.update(6.4,p);
+assert.equal(beat[0].kind,'electric');
+assert(encounters.rig.actor.root.position.x< -3.65,'Worker should pass through an actual doorway');
+assert.equal(encounters.update(7.6,p).length,0,'No repeated event');
+assert.equal(encounters.rig.actor.root.visible,false,'Actor should leave the visible level');
+console.log('PASS: full-size worker runs, animates limbs, exits through real doorway, sign swings, and 3 beats play once');
