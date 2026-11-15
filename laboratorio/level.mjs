@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import {WALLS, CEILINGS, STORE_SIGNS, PROPS, WING, INTERACTION} from './layout.mjs';
+import {addArtPass} from './detail-pass.mjs';
 
 const hex=s=>new THREE.Color(s);
 const mat=(color,roughness=.87,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
@@ -11,7 +12,7 @@ function rng(seed){let s=seed>>>0;return()=>((s=(s*1664525+1013904223)>>>0)/4294
 const rand=rng(21679);
 function texture(kind){
  const c=document.createElement('canvas');c.width=c.height=512;
- const g=c.getContext('2d'),base=kind==='floor'?'#474e4e':kind==='wall'?'#565e5d':kind==='ceiling'?'#414b4d':'#636a67';
+ const g=c.getContext('2d'),base=kind==='floor'?'#474e4e':kind==='wall'?'#565e5d':kind==='ceiling'?'#414b4d':kind==='service'?'#2c3639':kind==='entrance'?'#81827e':'#636a67';
  g.fillStyle=base;g.fillRect(0,0,512,512);
  const step=kind==='floor'?96:kind==='ceiling'?64:125;
  g.strokeStyle='rgba(10,15,18,.35)';g.lineWidth=2;
@@ -44,11 +45,45 @@ function inkGraphic(title,caption,color,mode='sign'){
  for(let i=0;i<60;i++) {g.fillStyle=rand()<.5?'#252b2d':'#07090c';g.fillRect(rand()*1024,rand()*280,rand()*30+2,rand()*4+1)}
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
 }
+// On phones, static box geometry of the same material is rendered as GPU
+// instances. The visible geometry and Rapier colliders stay exactly aligned.
+// Unique dynamic pieces (panel, exit door) and alpha windows are excluded.
+function batchStaticForMobile(scene,except){
+ const byMaterial=new Map();
+ for(const mesh of [...scene.children]){
+  if(!mesh.isMesh||mesh.geometry?.type!=='BoxGeometry'||except.has(mesh)||mesh.material?.transparent)continue;
+  const key=mesh.material.uuid;
+  if(!byMaterial.has(key))byMaterial.set(key,[]);
+  byMaterial.get(key).push(mesh);
+ }
+ let merged=0,instances=0;
+ for(const group of byMaterial.values()){
+  if(group.length<4)continue;
+  const instance=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),group[0].material,group.length);
+  instance.name='Static architectural batch';
+  instance.castShadow=false;instance.receiveShadow=true;instance.frustumCulled=false;
+  const tmp=new THREE.Object3D();
+  group.forEach((mesh,i)=>{
+   const {width=1,height=1,depth=1}=mesh.geometry.parameters||{};
+   tmp.position.copy(mesh.position);tmp.rotation.copy(mesh.rotation);
+   tmp.scale.set(width*mesh.scale.x,height*mesh.scale.y,depth*mesh.scale.z);
+   tmp.updateMatrix();instance.setMatrixAt(i,tmp.matrix);
+   scene.remove(mesh);mesh.geometry.dispose();
+  });
+  instance.instanceMatrix.needsUpdate=true;
+  scene.add(instance);instances+=group.length;merged++;
+ }
+ return {groups:merged,instances};
+}
 export function createLevel(scene){
+ const mobile=('ontouchstart' in window||navigator.maxTouchPoints>0);
  const items=[];const interactive={};const lights=[];
  const concreteTex=texture('wall'),floorTex=texture('floor'),roofTex=texture('ceiling');
  const concrete=new THREE.MeshStandardMaterial({map:concreteTex,color:0xffffff,roughness:.98});
  const floorMat=new THREE.MeshStandardMaterial({map:floorTex,roughness:.46,metalness:.08,color:'#c2caca'});
+ const entranceMat=new THREE.MeshStandardMaterial({map:texture('entrance'),roughness:.63,metalness:.04,color:'#a6aba5'});
+ const serviceMat=new THREE.MeshStandardMaterial({map:texture('service'),roughness:.87,metalness:.02,color:'#919a96'});
+ const arcadeFloorMat=new THREE.MeshStandardMaterial({map:texture('wall'),roughness:.52,metalness:.08,color:'#747d7f'});
  const ceilingMat=new THREE.MeshStandardMaterial({map:roofTex,roughness:.95,color:'#acb2af'});
  function box(name,x,y,z,w,h,d,material=palette.concrete,shadows=true){
   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
@@ -64,6 +99,13 @@ export function createLevel(scene){
  }
  const floor=(x,z,w,d)=>box('wet ceramic tile',x,-.07,z,w,.14,d,floorMat,false);
  floor(0,-19.5,21.5,75.2);floor(11.65,-51.6,15.7,10.5);floor(20.75,-51,3.6,4.55);
+ // Transitions between construction epochs: pale entry, deteriorated retail and
+ // raw service flooring. These overlays do NOT alter the physical collision shell.
+ box('entrance worn porcelain floor',0,.015,6,7.15,.03,22.0,entranceMat,false);
+ box('central blackened retail floor',0,.015,-22.4,7.15,.03,34.6,arcadeFloorMat,false);
+ box('service stained bare concrete floor',0,.015,-47.25,7.15,.03,15.1,serviceMat,false);
+ box('emergency service dark floor',12.2,.015,-51.6,14.1,.03,8.4,serviceMat,false);
+ for(const z of [-5.2,-39.65])box('ceramic-to-service threshold',0,.041,z,7.15,.012,.065,palette.frame,false);
  for(const ceiling of CEILINGS)box('sealed acoustic ceiling',ceiling.x,ceiling.h+.1,ceiling.z,ceiling.w,.20,ceiling.d,ceilingMat,false);
  box('vestibule ceiling',20.75,4.45,-51,3.6,.26,4.55,ceilingMat,false);
  for(const w of WALLS){
@@ -101,8 +143,33 @@ export function createLevel(scene){
   }
   const open=s.type==='ramen'||s.type==='electronics';
   if(!open){
-   box('corrugated steel shutter',x-s.side*.03,1.43,s.z,.1,2.65,3.7,palette.shutter);
-   for(let j=0;j<16;j++)box('shutter rib',x-s.side*.11,.18+j*.151,s.z,.065,.024,3.72,j%5===0?palette.rust:palette.board,false);
+   // Each shop type has its own construction and material language. All of
+   // these closures correspond to physically sealed divider walls in layout.mjs.
+   const front=x-s.side*.11;
+   if(s.type==='camera'||s.type==='fashion'){
+    box('abandoned mirrored shop front',front,1.43,s.z,.08,2.68,3.75,palette.glass);
+    for(let dz=-1.3;dz<=1.3;dz+=1.3)box('dark glazing mullion',front-s.side*.06,1.38,s.z+dz,.08,2.77,.085,palette.frame);
+    if(s.type==='camera'){
+     for(let j=0;j<3;j++)box('crossed anti-looting plank',front-s.side*.12,.60+j*.74,s.z,.09,.13,3.75,j===1?palette.wood:palette.rust);
+    }else{
+     box('fashion display black backing',front-s.side*.06,1.65,s.z,.055,2.12,3.28,palette.black);
+     for(let j=0;j<3;j++)box('high-fashion steel frame',front-s.side*.13,.66+j*.56,s.z,.065,.055,3.33,palette.frame);
+    }
+   }else if(s.type==='pharmacy'){
+    box('pharmacy frosted glass',front,1.43,s.z,.1,2.68,3.70,palette.tile);
+    for(let j=0;j<10;j++)box('pharmacy security grille vertical',front-s.side*.13,1.38,s.z-1.78+j*.39,.09,2.68,.037,palette.board,false);
+    for(let j=0;j<4;j++)box('pharmacy security grille horizontal',front-s.side*.15,.47+j*.64,s.z,.09,.041,3.70,palette.rust,false);
+   }else if(s.type==='arcade'){
+    box('arcade welded inner screen',front,1.43,s.z,.11,2.68,3.65,palette.black);
+    for(let j=0;j<12;j++)box('arcade half-slotted gate',front-s.side*.11,.25+j*.205,s.z,.055,.075,3.6,j%5===0?palette.rust:palette.shutter,false);
+   }else if(s.type==='maintenance'){
+    box('maintenance bulkhead door',front,1.43,s.z,.24,2.72,3.55,palette.rust);
+    for(const sideZ of [-1.48,1.48])box('security hinge column',front-s.side*.15,1.41,s.z+sideZ,.12,2.67,.16,palette.frame);
+    box('maintenance metal crash bar',front-s.side*.19,1.0,s.z,.06,.11,2.4,palette.board);
+   }else{
+    box('corrugated steel shutter',front,1.43,s.z,.10,2.65,3.7,palette.shutter);
+    for(let j=0;j<16;j++)box('shutter rib',front-s.side*.06,.18+j*.151,s.z,.065,.024,3.72,j%5===0?palette.rust:palette.board,false);
+   }
   }else{
    box('retracted rolling shutter',x-s.side*.1,2.75,s.z,.32,.5,3.85,palette.shutter);
    for(let j=0;j<5;j++)box('rolled shutter blades',x-s.side*.27,2.66+j*.075,s.z,.08,.037,3.85,palette.rust,false);
@@ -159,6 +226,17 @@ export function createLevel(scene){
  interactive.exit=door;
  // Each solid collision prop gets a visual volume aligned with the physics collider.
  for(const p of PROPS){
+  if(p.name.startsWith('sealed ')){
+   box('temporary evacuation hoarding',p.x,p.h/2,p.z,p.w,p.h,p.d,palette.rust);
+   // The visual hoarding is the same precise volume as the Rapier collider.
+   for(const dx of [-p.w/2+.18,p.w/2-.18]){
+    box('corrugated reinforcement',p.x+dx,p.h/2,p.z+.015,.08,p.h,.12,palette.shutter,false);
+   }
+   for(let i=0;i<3;i++){
+    box('faded chevron hazard strip',p.x,p.h*.20+i*p.h*.29,p.z+p.d/2+.015,p.w-.12,.08,.03,palette.board,false);
+   }
+   continue;
+  }
   const material=p.name.includes('crate')?palette.wood:p.name.includes('cabinet')?palette.rust:p.name.includes('trolley')?palette.board:palette.frame;
   box(p.name,p.x,p.h/2,p.z,p.w,p.h,p.d,material);
   if(p.name==='fallen rack'){
@@ -194,6 +272,7 @@ export function createLevel(scene){
   {z:-54,color:'#7c8d8e',power:.55},
  ];
  for(let i=0;i<zones.length;i++){
+  if(mobile&&i%2===1)continue;
   const zone=zones[i];
   box('fluorescent housing',0,4.02,zone.z,1.6,.23,.34,palette.frame,false);
   const glowMat=new THREE.MeshBasicMaterial({color:zone.color});
@@ -211,9 +290,12 @@ export function createLevel(scene){
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(2.25,.61),material);mesh.position.set(0,3.05,s.z);mesh.rotation.x=-.11;scene.add(mesh);items.push(mesh);
   for(const dx of [-.85,.85])box('ceiling sign mount',dx,3.62,s.z,.035,1.1,.04,palette.frame,false);
  }
+ const detail=addArtPass(scene,{mobile});
  const amb=new THREE.HemisphereLight('#9eafc1','#262727',.4);scene.add(amb);
  const emergency=new THREE.PointLight('#b7534e',0,13,2);emergency.position.set(13,2.7,-51);scene.add(emergency);
- return {interactive,lights,emergency,box,count:items.length,update(time,alarm){
+ const batching=mobile?batchStaticForMobile(scene,new Set([interactive.panel,interactive.exit])):{groups:0,instances:0};
+ return {interactive,lights,emergency,box,batching,count:items.length+detail.count,update(time,alarm){
+  detail.update(time,alarm);
   for(const l of lights){const strobe=l.flag?(Math.sin(time*11+l.seed)+Math.sin(time*37+l.seed*2))*.5:0;
    l.light.intensity=Math.max(.04,l.base*(l.flag&&strobe>.45?.12:1+strobe*.09));}
   emergency.intensity=alarm?(10+5*Math.sin(time*9)):0;

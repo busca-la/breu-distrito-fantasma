@@ -23,3 +23,16 @@ physics.body.setTranslation({x:0,y:1,z:-53},true);physics.body.setLinvel({x:0,y:
 p=sim(600,{forward:1,strafe:0,sprint:true},0);
 assert(p.z>-56.8,'Player left world from southern boundary '+p.z);
 console.log('PASS: Rapier WASM floor, jump, landing, wall, locked/unlocked door, sealed boundary');
+// New authored restroom remains physically aligned with the decorative model.
+physics.body.setTranslation({x:0,y:.82,z:6.45},true);physics.body.setLinvel({x:0,y:0,z:0},true);sim(45);
+p=sim(108,{forward:1,strafe:0,sprint:false},-Math.PI/2);
+assert(p.x>5.2,'Restroom physical entry incorrectly sealed: '+p.x);
+physics.body.setTranslation({x:8.85,y:.82,z:5.75},true);physics.body.setLinvel({x:0,y:0,z:0},true);sim(45);
+p=sim(80,{forward:1,strafe:0,sprint:false},Math.PI);
+assert(p.z<7.18,'Stall partition missing collider: '+p.z);
+// Prevent ceiling bypass through artificially high vertical momentum.
+physics.body.setTranslation({x:0,y:3.10,z:5},true);
+physics.body.setLinvel({x:0,y:9,z:0},true);
+p=sim(40);
+assert(p.y<3.62,'Player passed through roof: '+p.y);
+console.log('PASS: restroom entrance, stall dividers and upper ceiling collision');
