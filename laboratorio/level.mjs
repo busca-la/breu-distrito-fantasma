@@ -215,6 +215,31 @@ export function createLevel(scene){
   box('arcade bevel display',-5.766,1.5,z,.035,.67,.65,palette.red,false);
   box('arcade controls',-5.75,.94,z,.12,.15,.65,palette.frame);
  }
+ // Public shops are now explorable. Distinct interiors sit well behind each
+ // doorway, leaving the central 3.6-metre opening free for the player.
+ // These fittings are decorative and do not create invisible collision walls.
+ // Camera shop: used lenses and a repair workstation on the far wall.
+ box('camera trade-in counter',8.8,.77,-8.7,1.8,.12,.75,palette.wood,false);
+ for(let i=0;i<3;i++){
+  box('camera lens stock',8.85,1.02,-9.28+i*.55,.30,.24,.24,palette.plastic,false);
+  box('camera display glass',8.85,1.14,-9.28+i*.55,.31,.055,.25,palette.glass,false);
+ }
+ // Fashion shop: back-wall display and hangers, with no fake board over the door.
+ box('fashion rear wall rail',-9.2,2.0,-22,1.4,.09,2.45,palette.frame,false);
+ for(let i=0;i<4;i++){
+  box('abandoned coat',-8.95,1.46,-23.05+i*.66,.44,.9,.25,i%2?palette.black:palette.wood,false);
+ }
+ // Pharmacy: shelves and distinct medicine boxes on the far side of the shop.
+ box('pharmacy back shelf',8.9,1.22,-39.7,1.05,2.22,3.1,palette.white,false);
+ for(let j=0;j<3;j++)for(let k=0;k<3;k++){
+  box('pharmacy sealed carton',8.30+j*.07,.72+k*.62,-40.7+j*.92,.29,.28,.46,k===1?palette.board:palette.plastic,false);
+ }
+ // Arcade: add screens and controls well inside the room, not across its opening.
+ for(let j=0;j<2;j++){
+  const zz=-35.8+j*2.2;
+  box('interior arcade cabinet',-8.7,1.05,zz,.72,1.78,.83,palette.black,false);
+  box('arcade phosphor screen',-8.3,1.5,zz,.02,.60,.62,palette.red,false);
+ }
  // Low-ceiling service transition with reinforcing lintel.
  box('service lintel',8.4,3.3,-46.8,8.0,.35,.7,palette.rust);
  for(let x=4.2;x<19;x+=1.8){box('service pipe',x,3.87,-47.2,.12,.12,8.5,palette.copper,false)}
@@ -256,7 +281,7 @@ export function createLevel(scene){
  interactive.panel=panel;
  // Exterior egress door is a 3D panel and a matching Rapier rigid collider.
  const door=box('fire exit solid door',19.02,1.61,-51,.3,3.22,3.43,palette.rust);
- box('fire exit white band',18.83,2.48,-51,.05,.17,2.8,palette.board,false);
+ const doorBand=box('fire exit white band',18.83,2.48,-51,.05,.17,2.8,palette.board,false);
  interactive.exit=door;
  // Each solid collision prop gets a visual volume aligned with the physics collider.
  for(const p of PROPS){
@@ -327,7 +352,7 @@ export function createLevel(scene){
  const detail=addArtPass(scene,{mobile});
  const amb=new THREE.HemisphereLight('#9eafc1','#262727',.4);scene.add(amb);
  const emergency=new THREE.PointLight('#b7534e',0,13,2);emergency.position.set(13,2.7,-51);scene.add(emergency);
- const batching=batchStaticGeometry(scene,new Set([interactive.panel,interactive.exit,interactive.radio,interactive.relay,interactive.relayHandle,interactive.relayLamp,interactive.radioDial]));
+ const batching=batchStaticGeometry(scene,new Set([interactive.panel,interactive.exit,interactive.radio,interactive.relay,interactive.relayHandle,interactive.relayLamp,interactive.radioDial,doorBand]));
  // A physical blast door has a visible raising sequence. The collider only
  // unlocks after the lower edge is above the player's capsule height.
  let doorOpeningAt=null,doorClearance=false,securityGateAt=null,securityClear=false;
@@ -347,8 +372,9 @@ export function createLevel(scene){
    const eased=t*t*(3-2*t);
    const lift=eased*3.8;
    interactive.exit.position.y=1.61+lift;
+   doorBand.position.y=2.48+lift;
    doorClearance=lift>2.28;
-  }else interactive.exit.position.y=1.61;
+  }else{interactive.exit.position.y=1.61;doorBand.position.y=2.48;}
  },openExit(time){if(doorOpeningAt===null)doorOpeningAt=time;},
  restorePower(time){if(securityGateAt!==null)return;securityGateAt=time;relayLampMaterial.color.set('#80c8ae');interactive.relayHandle.rotation.x=-.48;},
  isSecurityPassable(){return securityClear;},
