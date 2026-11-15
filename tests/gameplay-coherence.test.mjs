@@ -28,8 +28,10 @@ assert.equal(canHear({distance:8,sprinting:false,walking:true}),false,'Walking c
 const ramen={x:-5.45,z:-10.9},hallway={x:0,z:-10.9};
 assert(hasLineOfSight(hallway,ramen),'The ramen shop must be visibly reachable through its open door');
 assert(!hasLineOfSight({x:0,z:-16},{x:-6,z:-16}),'Closed wall must block creature line of sight');
-assert(circleFits(INTERACTION.radio.x,INTERACTION.radio.z,.1),'Radio should be physically reachable');
-assert(circleFits(INTERACTION.relay.x,INTERACTION.relay.z,.1),'Relay should be physically reachable');
+assert(circleFits(-4.35,-10.4,.31),'Radio cabinet must have reachable floor space');
+assert(Math.hypot(-4.35-INTERACTION.radio.x,-10.4-INTERACTION.radio.z)<INTERACTION.radio.r);
+assert(circleFits(5.45,-26.1,.31),'DENKI breaker cabinet must have reachable floor space');
+assert(Math.hypot(5.45-INTERACTION.relay.x,-26.1-INTERACTION.relay.z)<INTERACTION.relay.r);
 assert(STORE_SIGNS.some(s=>s.type==='ramen'));
 assert(STORE_SIGNS.some(s=>s.type==='electronics'));
 
