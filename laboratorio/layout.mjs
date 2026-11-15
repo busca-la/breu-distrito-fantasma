@@ -65,6 +65,9 @@ export const INTERACTION={
  exit:{x:21.05,y:1.45,z:-51.0,r:1.12}
 };
 export const PROPS = [
+ // Physical furniture beneath mission equipment (not ghost interactables).
+ {name:'radio support cabinet',x:-5.45,z:-10.4,w:1.1,d:.72,h:.76,blocking:true},
+ {name:'DENKI breaker cabinet',x:5.45,z:-27.7,w:.9,d:.65,h:1.70,blocking:true},
  {name:'restroom sink bank',x:5.25,z:2.52,w:1.6,d:.64,h:.89,blocking:true},
  {name:'restroom supply trolley',x:5.3,z:8.75,w:.66,d:.68,h:1.25,blocking:true},
  {name:'restroom toilet cubicle 1',x:9.40,z:3.06,w:.65,d:.74,h:.51,blocking:true},
