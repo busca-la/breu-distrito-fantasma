@@ -105,7 +105,7 @@ function onCaught(){
  defeated=true;paused=true;sound.setPaused(true);
  intro.classList.remove('hide');hud.classList.add('hide');
  $('#intro-headline').textContent='ELE TE ENCONTROU.';
- $('#intro-copy').textContent='Você fez barulho ou ficou na luz. Use F para apagar a lanterna e evite correr perto da criatura. Seu progresso foi preservado.';
+ $('#intro-copy').textContent='A criatura alcançou você. Apagar a lanterna e não correr perto dela ajuda a despistá-la. Seu progresso foi preservado.';
  $('#play').textContent='RETOMAR DO ÚLTIMO PONTO';
  if(document.pointerLockElement)document.exitPointerLock();
 }
@@ -127,6 +127,8 @@ function updateObjective(pos){
   environmentCue({kind:'alarm',text:'PORTÃO DE INCÊNDIO: MECANISMO ACIONADO. AGUENTE MAIS UM POUCO.'},4200);
  }
  const task=story.current;
+ const progress=$('#story-progress');
+ if(progress)progress.textContent='ETAPA '+({radio:1,relay:2,security:3,escape:4,done:4}[story.phase])+' / 4';
  objective.textContent=task.title;
  const detail=$('#mission-detail');
  if(detail)detail.textContent=task.detail;
@@ -155,7 +157,7 @@ function updateObjective(pos){
    }else if(canUse){
     if(story.phase==='radio'){
      story.advance('radio');
-     environmentCue({kind:'pursuit',text:STORY_RADIO},6800);
+     environmentCue({kind:'radio',text:STORY_RADIO},6800);
     }else if(story.phase==='relay'){
      story.advance('relay');
      stage.restorePower(clock);
@@ -186,7 +188,7 @@ function environmentCue(event,duration=2400){
  sound.cue(event.kind);
  // Keep the cinematic message short and never block player input.
  const label=$('#notice');
- label.textContent=event.text;label.classList.add('show');
+ label.textContent=event.text;label.classList.toggle('danger',event.kind==='alarm'||event.kind==='pursuit');label.classList.add('show');
  clearTimeout(environmentCue.timeout);
  environmentCue.timeout=setTimeout(()=>label.classList.remove('show'),duration);
 }
@@ -234,7 +236,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
     securityOpen:physics.securityGateUnlocked,exitOpen:physics.exitUnlocked
    });
    const threat=$('#threat-state'),noise=$('#noise-state');
-   if(threat)threat.textContent=result?.chasing?'PERIGO: SENDO CAÇADO':'AMEAÇA: PROCURANDO';
+   if(threat)threat.textContent=result?.chasing?'DETECTADO · DESPISTE-O':result?.distance<16?'ALGUÉM ESTÁ PERTO':'AMEAÇA NÃO DETECTADA';
    if(noise)noise.textContent=actuallySprinting?'RUÍDO ALTO · CORRENDO':walking?'RUÍDO BAIXO · ANDANDO':'SILENCIOSO';
    if(result?.spotted)environmentCue({kind:'pursuit',text:'ELE OUVIU OU VIU VOCÊ. QUEBRE A LINHA DE VISÃO!'},3000);
    if(result?.lost)environmentCue({kind:'metal',text:'VOCÊ DESPISTOU A CRIATURA. USE AS LOJAS PARA SE ESCONDER.'},3000);
