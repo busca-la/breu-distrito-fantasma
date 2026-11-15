@@ -1,8 +1,13 @@
 import {build} from 'esbuild';
 import {readFile,writeFile,copyFile,mkdir,rm,stat} from 'node:fs/promises';
 import {resolve} from 'node:path';
+import {execFileSync} from 'node:child_process';
 const root=process.cwd();
 const file=p=>resolve(root,p);
+for(const test of ['tests/geometry.test.cjs','tests/playthrough.test.cjs','tests/enemy.test.cjs','tests/environment-motion.test.mjs']){
+ execFileSync(process.execPath,[file(test)],{cwd:root,stdio:'inherit',timeout:90000});
+}
+
 await rm(file('dist'),{recursive:true,force:true});
 await mkdir(file('dist/laboratorio'),{recursive:true});
 await copyFile(file('index.html'),file('dist/index.html'));
