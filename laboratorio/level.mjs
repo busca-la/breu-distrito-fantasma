@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import {WALLS, CEILINGS, STORE_SIGNS, PROPS, WING, INTERACTION} from './layout.mjs';
+import {addArtPass} from './detail-pass.mjs';
 
 const hex=s=>new THREE.Color(s);
 const mat=(color,roughness=.87,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
@@ -45,6 +46,7 @@ function inkGraphic(title,caption,color,mode='sign'){
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
 }
 export function createLevel(scene){
+ const mobile=('ontouchstart' in window||navigator.maxTouchPoints>0);
  const items=[];const interactive={};const lights=[];
  const concreteTex=texture('wall'),floorTex=texture('floor'),roofTex=texture('ceiling');
  const concrete=new THREE.MeshStandardMaterial({map:concreteTex,color:0xffffff,roughness:.98});
@@ -194,6 +196,7 @@ export function createLevel(scene){
   {z:-54,color:'#7c8d8e',power:.55},
  ];
  for(let i=0;i<zones.length;i++){
+  if(mobile&&i%2===1)continue;
   const zone=zones[i];
   box('fluorescent housing',0,4.02,zone.z,1.6,.23,.34,palette.frame,false);
   const glowMat=new THREE.MeshBasicMaterial({color:zone.color});
@@ -211,9 +214,11 @@ export function createLevel(scene){
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(2.25,.61),material);mesh.position.set(0,3.05,s.z);mesh.rotation.x=-.11;scene.add(mesh);items.push(mesh);
   for(const dx of [-.85,.85])box('ceiling sign mount',dx,3.62,s.z,.035,1.1,.04,palette.frame,false);
  }
+ const detail=addArtPass(scene,{mobile});
  const amb=new THREE.HemisphereLight('#9eafc1','#262727',.4);scene.add(amb);
  const emergency=new THREE.PointLight('#b7534e',0,13,2);emergency.position.set(13,2.7,-51);scene.add(emergency);
- return {interactive,lights,emergency,box,count:items.length,update(time,alarm){
+ return {interactive,lights,emergency,box,count:items.length+detail.count,update(time,alarm){
+  detail.update(time,alarm);
   for(const l of lights){const strobe=l.flag?(Math.sin(time*11+l.seed)+Math.sin(time*37+l.seed*2))*.5:0;
    l.light.intensity=Math.max(.04,l.base*(l.flag&&strobe>.45?.12:1+strobe*.09));}
   emergency.intensity=alarm?(10+5*Math.sin(time*9)):0;

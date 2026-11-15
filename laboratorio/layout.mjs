@@ -58,6 +58,16 @@ export const PROPS = [
  {name:'electronics counter',x:7,z:-29.0,w:3,d:.85,h:1.2,blocking:true},
  {name:'security desk',x:16.2,z:-53.6,w:2.15,d:.6,h:1.04,blocking:true}
 ];
+// Openings on the inner corridor must stay clear of purely visual wall panels.
+// The geometry and visual decoration read the same portal definitions.
+export const OPEN_PORTALS=[
+ {name:'ramen access',side:-1,zMin:-12.84,zMax:-9.02},
+ {name:'electronics access',side:1,zMin:-29.84,zMax:-26.61},
+ {name:'service junction',side:1,zMin:-55.0,zMax:-46.37},
+];
+export function facadePanelAllowed(side,z,halfLength=2.43){
+ return !OPEN_PORTALS.some(p=>p.side===side&&z+halfLength>p.zMin&&z-halfLength<p.zMax);
+}
 export const PLAYER_RADIUS=.33;
 export function solidAt(x,z,r=PLAYER_RADIUS, items=WALLS){return items.some(o=>Math.abs(x-o.x)<o.w/2+r&&Math.abs(z-o.z)<o.d/2+r);}
 export function circleFits(x,z,r=PLAYER_RADIUS){return !solidAt(x,z,r) && !PROPS.filter(p=>p.blocking).some(o=>Math.abs(x-o.x)<o.w/2+r&&Math.abs(z-o.z)<o.d/2+r);}

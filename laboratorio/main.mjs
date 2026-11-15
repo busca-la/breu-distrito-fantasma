@@ -1,6 +1,8 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 import {BreuPhysics} from './physics.mjs';
 import {createLevel} from './level.mjs';
+import {BreuSound} from './ambient-audio.mjs';
+import {createStalker} from './stalker.mjs';
 import {WING, WALLS, INTERACTION, STORE_SIGNS} from './layout.mjs';
 
 const $=s=>document.querySelector(s);
@@ -8,11 +10,12 @@ const canvas=$('#world'),status=$('#loading-status'),intro=$('#intro'),hud=$('#h
 const objective=$('#objective'),distance=$('#distance'),hint=$('#hint'),actionButton=$('#action-btn');
 const mapCanvas=$('#map'),mapCtx=mapCanvas.getContext('2d');
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
-let scene,renderer,camera,physics,stage,flashlight;
-let started=false,paused=true,alarm=false,escaped=false,clock=0,walkBob=0;
+let scene,renderer,camera,physics,stage,flashlight,stalker;
+let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
 let yaw=0,pitch=0,flashOn=true,interactHeld=false,requestJump=false;
 let joystick={x:0,y:0};
 const keys=new Set();
+const sound=new BreuSound();
 const vec=(x,y,z)=>new THREE.Vector3(x,y,z);
 function showError(err){console.error(err);status.textContent='Falha ao iniciar o motor: '+String(err?.message||err);status.style.color='#ff9a90';$('#play').disabled=false;}
 function renderSetup(){
@@ -29,9 +32,10 @@ function renderSetup(){
  scene=new THREE.Scene();scene.background=new THREE.Color('#0b1014');scene.fog=new THREE.FogExp2('#091015',.034);
  camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.035,125);
  camera.rotation.order='YXZ';
- stage=createLevel(scene);
+ stage=createLevel(scene);stalker=createStalker(scene);
  const light=new THREE.SpotLight('#e7ddd1',25,19,Math.PI/7,.78,1.6);
  flashlight=light;scene.add(light);scene.add(light.target);
+ light.castShadow=!touch;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
  const fill=new THREE.SpotLight('#d0d5ce',2,9,Math.PI/2,.8,2);
  fill.position.set(0,1.6,12);fill.target.position.set(0,1,-1);scene.add(fill,fill.target);
  camera.position.set(0,1.62,13);scene.add(camera);
@@ -39,13 +43,14 @@ function renderSetup(){
 }
 function start(){
  if(!physics)return;
- if(escaped){alarm=false;escaped=false;stage.openExit&&location.reload();return;}
+ if(escaped||defeated){location.reload();return;}
  started=true;paused=false;intro.classList.add('hide');hud.classList.remove('hide');
+ void sound.start().catch(e=>console.warn('Audio unavailable:',e));
  $('#mobile-controls').classList.toggle('hide',!touch);
  $('#pause').textContent='II';
  if(!touch&&canvas.requestPointerLock)canvas.requestPointerLock();
 }
-function pause(){if(!started)return;paused=!paused;$('#pause').textContent=paused?'▶':'II';$('#pause-screen').classList.toggle('hide',!paused);if(paused&&document.pointerLockElement)document.exitPointerLock();}
+function pause(){if(!started)return;paused=!paused;sound.setPaused(paused);$('#pause').textContent=paused?'▶':'II';$('#pause-screen').classList.toggle('hide',!paused);if(paused&&document.pointerLockElement)document.exitPointerLock();}
 function inputSetup(){
  window.addEventListener('keydown',e=>{
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault();
@@ -62,6 +67,7 @@ function inputSetup(){
  $('#pause').addEventListener('click',pause);
  $('#resume').addEventListener('click',()=>{pause();if(!touch)canvas.requestPointerLock()});
  $('#flash-btn').addEventListener('click',()=>flashOn=!flashOn);
+ $('#sound-btn').addEventListener('click',async()=>{const on=await sound.toggle();$('#sound-btn').textContent=on?'SOM: LIGADO':'SOM: DESLIGADO'});
  $('#jump-btn').addEventListener('pointerdown',e=>{e.preventDefault();requestJump=true});
  actionButton.addEventListener('pointerdown',e=>{e.preventDefault();interactHeld=true});
  const joy=$('#joystick'),knob=$('#joystick-knob');let joystickId=null;
@@ -75,6 +81,11 @@ function inputSetup(){
  look.addEventListener('pointermove',e=>{if(e.pointerId!==lookId||paused)return;yaw-=(e.clientX-lx)*.0042;pitch=Math.max(-1.15,Math.min(1.15,pitch-(e.clientY-ly)*.0038));lx=e.clientX;ly=e.clientY});
  const clear=()=>{lookId=null;lx=null;ly=null};look.addEventListener('pointerup',clear);look.addEventListener('pointercancel',clear);
 }
+function onCaught(){
+ defeated=true;paused=true;sound.setPaused(true);intro.classList.remove('hide');hud.classList.add('hide');
+ $('#intro-headline').textContent='ELE TE VIU.';$('#intro-copy').textContent='O corredor ficou em silêncio. Você demorou demais entre as vitrines.';
+ $('#play').textContent='TENTAR NOVAMENTE';if(document.pointerLockElement)document.exitPointerLock();
+}
 function updateObjective(pos){
  const dest=alarm?INTERACTION.exit:INTERACTION.panel;
  const d=Math.hypot(pos.x-dest.x,pos.z-dest.z);
@@ -84,7 +95,7 @@ function updateObjective(pos){
  if(near){hint.textContent=alarm?'PRESSIONE E / TOQUE EM ABRIR':'PRESSIONE E / TOQUE EM ATIVAR';actionButton.classList.toggle('hide',!touch)}
  else actionButton.classList.add('hide');
  if(near&&interactHeld){interactHeld=false;if(!alarm){alarm=true;objective.textContent='ALCANCE A SAÍDA DE INCÊNDIO';stage.openExit();physics.unlockExit();$('#notice').textContent='ALARME ACIONADO • PORTA DE EMERGÊNCIA ABERTA';$('#notice').classList.add('show');setTimeout(()=>$('#notice').classList.remove('show'),2500);}
- else{escaped=true;paused=true;intro.classList.remove('hide');hud.classList.add('hide');$('#intro-headline').textContent='VOCÊ ESCAPOU.';$('#intro-copy').textContent=`Ala 03 atravessada em ${Math.round(clock)} segundos. O resto do shopping continua em silêncio.`;$('#play').textContent='REINICIAR EXPEDIÇÃO';if(document.pointerLockElement)document.exitPointerLock();}}
+ else{escaped=true;paused=true;sound.setPaused(true);intro.classList.remove('hide');hud.classList.add('hide');$('#intro-headline').textContent='VOCÊ ESCAPOU.';$('#intro-copy').textContent=`Ala 03 atravessada em ${Math.round(clock)} segundos. O resto do shopping continua em silêncio.`;$('#play').textContent='REINICIAR EXPEDIÇÃO';if(document.pointerLockElement)document.exitPointerLock();}}
  else interactHeld=false;
  const bearing=Math.atan2(dest.x-pos.x,-(dest.z-pos.z));const angle=((bearing-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;
  $('#needle').style.transform=`rotate(${-angle}rad)`;
@@ -112,6 +123,10 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
    walkBob+=(Math.abs(forward)+Math.abs(strafe))*.035;
    camera.position.set(p.x,p.y+.64+Math.sin(walkBob)*Math.min(.024,Math.hypot(strafe,forward)*.015),p.z);
    camera.rotation.set(pitch,yaw,0);
+   sound.tick(clock,{walking:Math.abs(forward)+Math.abs(strafe)>.12,sprinting:sprint,alarm,zone:Math.max(0,Math.min(5,Math.floor((13-p.z)/14)))});
+   const result=stalker?.update(dt,p,alarm,clock);
+   $('#danger').style.opacity=String(result?Math.max(0,Math.min(.67,(12-result.distance)/17)):0);
+   if(result?.caught){onCaught();return;}
    updateObjective(p);
    fps.frames++;fps.second+=dt;
    if(fps.second>=1){$('#fps').textContent=`${Math.round(fps.frames/fps.second)} FPS`;fps.frames=0;fps.second=0;drawMap(p)}
@@ -133,4 +148,5 @@ async function boot(){
   $('#play').disabled=false;
  }catch(e){showError(e)}
 }
+window.addEventListener('blur',()=>{if(started&&!paused)pause();keys.clear();joystick.x=joystick.y=0});
 boot();

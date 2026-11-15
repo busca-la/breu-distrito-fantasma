@@ -1,45 +1,55 @@
-# BREU — Ala 03 / novo motor 3D
+# BREU — Ala 03 | motor 3D experimental
 
-**Prévia isolada** do jogo BREU, no mesmo repositório. A versão principal na raiz não é substituída por esta experiência.
+Uma ala **separada** do BREU, mantida em `/laboratorio/` no repositório existente. A página principal em `/` não é alterada por este laboratório.
 
-## Acessar
+**Jogue:** https://breu-distrito-fantasma.vercel.app/laboratorio/
 
-Após deploy: `https://breu-distrito-fantasma.vercel.app/laboratorio/`
+## Ala 03 — revisão artística, som e perseguição
 
-## O que existe nesta entrega
+A versão do laboratório evoluiu de uma estrutura simples de lojas para um setor mais elaborado, mantendo a mesma planta usada pelas colisões Rapier.
 
-- Um único setor de shopping inspirado em galerias japonesas de serviços, com corredor, bifurcação e escritório de segurança.
-- Sete fachadas comerciais diferentes, duas lojas acessíveis, piso cerâmico danificado, teto acústico, fios, dutos, letreiros e objetos distribuídos por função.
-- Three.js (WebGL2) com fog, materiais PBR, luzes localizadas e texturas procedurais geradas em Canvas.
-- Física Rapier WASM em 60 Hz, personagem com cápsula dinâmica, gravidade, salto, paredes e objetos físicos, com detecção contínua de colisão.
-- Missão: entrar na sala de segurança, ativar o alarme e atravessar a porta de saída de incêndio para escapar.
-- Controles no computador (WASD, mouse, Shift, Espaço, E, F) e no celular (joystick, câmera por toque, pulo, interação).
+- **Identidade visual:** restaurante de lámen com cortina *noren* e exaustão, eletrônicos com monitores CRT, vitrines de moda deterioradas, fliperama, farmácia gradeada, máquinas de venda e escritório de segurança.
+- **Materiais e arquitetura:** revestimentos de parede por área, ferrugem e rachaduras geradas proceduralmente, luminárias falhando, fiação pendente, acabamento de teto, sinalização e danos localizados.
+- **Conexão visual-física:** placas de sujeira e revestimento não cobrem passagens de lojas abertas; os sólidos continuam definidos exclusivamente no `layout.mjs` e são usados também pelo Rapier.
+- **Criatura:** vigia abandonado com modelo procedural original e perseguição por uma malha derivada das colisões reais. Pode alcançar e encerrar a partida; movimento mais rápido após o alarme.
+- **Ambientação sonora:** hum de ventilação, ruído elétrico, goteiras, passos e alarme sintetizados localmente pelo Web Audio. Sem gravações de terceiros, contas, custos ou serviços externos. Botão para desligar o som na pausa.
+- **Desempenho:** simplificação do art pass e redução de luzes ativas nos aparelhos de toque; sombras da lanterna no desktop.
+- **Objetivo preservado:** achar a segurança, ativar o alarme e atravessar a saída de serviço aberta.
 
-## Rodar testes
+## Controles
 
-Na pasta `laboratorio/`:
+- Computador: WASD / setas, mouse, Shift para correr, Espaço para pular, E para interagir, F para a lanterna, Esc para pausar.
+- Celular: joystick, arrastar para olhar, PULAR, INTERAGIR e LANTERNA.
+
+## Desenvolvimento e testes
 
 ```bash
+cd laboratorio
 npm install --no-audit --no-fund
+npm run check
 npm test
 npm run test:physics
 ```
 
-`npm test` examina a arquitetura e geometria sem rede. `npm run test:physics` executa a simulação **real** de Rapier com WebAssembly (exige instalar a dependência gratuita). O GitHub Actions também executa as verificações de instalação e física.
+- `npm run check`: análise sintática de todos os módulos JS.
+- `npm test`: planta, paredes, telhados, conexões de lojas, rotas reais de navegação, runtime do cenário em ambiente simulado, criatura e Web Audio.
+- `npm run test:physics`: integração **real com Rapier WASM**, incluindo pulo, solo, portas e limites. Depende de `npm install` ou GitHub Actions.
 
-## Limitações verificadas e pendentes
+## Limitações honestas
 
-- **Aprovado localmente:** sintaxe JS, planta, vedação, cobertura, diversidade de lojas, rota principal e pontos de interação.
-- **Pendente neste ambiente:** renderização/controles em navegador real com carregamento de bibliotecas externas (acesso externo bloqueado no Chromium usado); a publicação será um protótipo a validar em celular e PC.
-- **Multiplayer:** esta ala é individual. O multiplayer do BREU antigo não foi migrado, não deve ser apresentado como funcional na nova versão.
-- **Assets:** geometria e materiais gerados em Three.js. Nenhum modelo foi produzido ou exportado pelo Blender nesta etapa.
+- A renderização real no celular físico, WebGL com bibliotecas CDN e FPS ainda precisam ser avaliados em dispositivos reais; os testes de runtime em Node usam objetos gráficos simulados, não fazem screenshots do WebGL.
+- O inimigo usa pathfinding sobre geometria sólida, mas ainda é um personagem procedural simples, não um modelo esculpido em Blender.
+- Esta ala é **solo experimental**. Multiplayer com amigos não foi migrado para o novo motor.
+- O desempenho pode variar com CPU/GPU e com o navegador. O projeto não tem assets externos nem infraestrutura paga própria, mas depende do CDN de Three.js e do pacote WASM Rapier para carregar.
 
-## Arquitetura
+## Estrutura
 
-- `layout.mjs`: planta única, colisores e itens físicos declarados.
-- `level.mjs`: rendering dos mesmos elementos, fachadas e texturas procedurais.
-- `physics-world.mjs`: lógica Rapier independente da origem do pacote, testável em Node e navegador.
-- `physics.mjs`: loader do pacote WASM para navegadores.
-- `main.mjs`: controles, interface, câmera, objetivo e loop fixo.
+- `layout.mjs` — planta, paredes, obstáculos, portas e portais.
+- `physics-world.mjs` — colisões Rapier.
+- `level.mjs` — construção 3D da ala.
+- `detail-pass.mjs` — fachadas, materiais e detalhes distintos.
+- `stalker.mjs` / `threat-nav.mjs` — criatura e malha de navegação.
+- `ambient-audio.mjs` — trilha procedural de ambiente (original).
+- `main.mjs` — câmera, controles, fluxo de fuga, HUD e integração.
 
-Os arquivos do BREU tradicional no projeto raiz permanecem intocados.
+O jogo tradicional permanece publicado na raiz. Não foi alterado nesta versão.
