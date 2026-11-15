@@ -109,7 +109,7 @@ export function addArtPass(scene,{mobile=false}={}){
  };
  for(const s of STORE_SIGNS){
   const x=s.side*3.30,face=s.side<0?Math.PI/2:-Math.PI/2;
-  const corroded= s.type==='maintenance'||s.type==='pharmacy';
+  const corroded=s.type==='maintenance';
   box(s.type+' rusted overdoor',x,2.79,s.z,.18,.23,4.4,corroded?surfaceRust:MATERIAL.brushed);
   for(const q of [-1,1]){
    box('store vertical glazed aluminum mullion',x,1.52,s.z+q*2.10,.19,2.9,.095,MATERIAL.brushed);
@@ -117,14 +117,15 @@ export function addArtPass(scene,{mobile=false}={}){
   }
   const sign=special[s.type]||{s:'CLOSED',sub:'NO SERVICE'};
   const signFace=new THREE.MeshStandardMaterial({map:graphicTexture(sign.s,sign.sub,s.accent),roughness:.59,emissive:s.lit?'#655957':'#141719',emissiveIntensity:s.lit?.19:.02,side:THREE.DoubleSide});
-  plane('shop identity poster '+s.type,x-s.side*.16,1.8,s.z+1.16,1.25,.7,signFace,face);
+  plane('shop identity poster '+s.type,x-s.side*.16,2.64,s.z+1.16,1.25,.43,signFace,face);
   if(corroded){
    for(let j=0;j<4;j++)box('welded protective bar',x-s.side*.11,.6+j*.55,s.z,.075,.042,3.5,MATERIAL.rust);
    plane('warning sheet',x-s.side*.2,1.4,s.z-1.15,.78,.86,poster,face);
   }
   if(s.type==='fashion'){
-   plane('retro fashion display',x-s.side*.19,1.6,s.z-.9,1.55,1.95,poster,face);
-   for(let i=0;i<5;i++)box('fashion shutter broken blade',x-s.side*.12,.45+i*.28,s.z+.4,.05,.075,3.5,i%3?MATERIAL.brushed:MATERIAL.rust);
+   // Interior display, not a false wall across the accessible doorway.
+   plane('retro fashion display',-9.7,1.7,s.z-.9,1.65,1.65,poster,Math.PI/2);
+   for(let i=0;i<5;i++)box('fashion hanging shelf',-8.1,.55+i*.29,s.z+1.0,.11,.04,1.5,i%3?MATERIAL.brushed:MATERIAL.rust);
   }
   if(s.type==='arcade'){
    // The arcade advert is dark except for one LED section.
@@ -221,7 +222,7 @@ export function addArtPass(scene,{mobile=false}={}){
  for(let i=0;i<(mobile?22:66);i++){
   const z=12-r()*62;const side=r()>.5?1:-1;const x=side*3.31;
   const w=.15+r()*.47,h=.2+r()*1.1;
-  plane('corridor water damage',x,h*.5+.16,z,w,h,flaked,side===-1?Math.PI/2:-Math.PI/2);
+  if(facadePanelAllowed(side,z,w*.5))plane('corridor water damage',x,h*.5+.16,z,w,h,flaked,side===-1?Math.PI/2:-Math.PI/2);
  }
  // Practical emergency lit exit sign, not a neon strip of uniform intensity.
  const egressTex=graphicTexture('出口','FIRE EXIT / SERVICE','#be8c7b');
