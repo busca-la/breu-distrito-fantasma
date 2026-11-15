@@ -98,18 +98,18 @@ function onCaught(){
 function updateObjective(pos){
  if(alarm&&!exitOpen){
   if(escapeSequence.update(clock)){
-   exitOpen=true;stage.openExit();physics.unlockExit();
-   $('#notice').textContent='PORTÃO DE INCÊNDIO LIBERADO';$('#notice').classList.add('show');
+   exitOpen=true;stage.openExit(clock);
+   $('#notice').textContent='PORTÃO DE INCÊNDIO SUBINDO';$('#notice').classList.add('show');
    setTimeout(()=>$('#notice').classList.remove('show'),2300);
   }else objective.textContent=`PORTÃO ABRE EM ${Math.ceil(escapeSequence.remaining(clock))} S`;
  }
- if(alarm&&exitOpen)objective.textContent='CORRA PARA A SAÍDA DE INCÊNDIO';
+ if(alarm&&exitOpen)objective.textContent=stage.isExitPassable()?'CORRA PARA A SAÍDA DE INCÊNDIO':'PORTÃO ABRINDO — PREPARE-SE';
  const dest=alarm?INTERACTION.exit:INTERACTION.panel;
  const d=Math.hypot(pos.x-dest.x,pos.z-dest.z);
  distanceValue.textContent=`${Math.round(d)} m`;
  const near=d<(alarm?INTERACTION.exit.r:INTERACTION.panel.r);
- hint.classList.toggle('hide',!near||(alarm&&!exitOpen));
- if(near&&(!alarm||exitOpen)){hint.textContent=alarm?'PRESSIONE E / TOQUE EM ABRIR':'PRESSIONE E / TOQUE EM ATIVAR';actionButton.classList.toggle('hide',!touch)}
+ hint.classList.toggle('hide',!near||(alarm&&!stage.isExitPassable()));
+ if(near&&(!alarm||stage.isExitPassable())){hint.textContent=alarm?'PRESSIONE E / TOQUE EM SAIR':'PRESSIONE E / TOQUE EM ATIVAR';actionButton.classList.toggle('hide',!touch)}
  else actionButton.classList.add('hide');
  if(near&&interactHeld){interactHeld=false;if(!alarm){
   alarm=true;escapeSequence.activate(clock);
@@ -117,7 +117,7 @@ function updateObjective(pos){
   $('#notice').textContent='ALARME DISPARADO — NÃO FIQUE PARADO';$('#notice').classList.add('show');
   setTimeout(()=>$('#notice').classList.remove('show'),2500);
  }
- else if(exitOpen&&escapeSequence.finish()){
+ else if(stage.isExitPassable()&&escapeSequence.finish()){
   escaped=true;paused=true;sound.setPaused(true);intro.classList.remove('hide');hud.classList.add('hide');
   $('#intro-headline').textContent='VOCÊ ESCAPOU.';
   $('#intro-copy').textContent=`Ala 03 atravessada em ${Math.round(clock)} segundos. O resto do shopping continua em silêncio.`;
@@ -195,7 +195,8 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
  }
  flashlight.visible=flashOn;
  flashlight.position.copy(camera.position);const direction=vec(0,0,-1).applyEuler(camera.rotation);flashlight.target.position.copy(camera.position).add(direction.multiplyScalar(8));
- stage?.update(t/1000,alarm);
+ stage?.update(clock,alarm);
+ if(exitOpen&&stage?.isExitPassable()&&!physics?.exitUnlocked)physics.unlockExit();
  renderer.render(scene,camera);
 }
 async function boot(){
