@@ -48,22 +48,25 @@ function inkGraphic(title,caption,color,mode='sign'){
 // On phones, static box geometry of the same material is rendered as GPU
 // instances. The visible geometry and Rapier colliders stay exactly aligned.
 // Unique dynamic pieces (panel, exit door) and alpha windows are excluded.
-function batchStaticForMobile(scene,except){
+// One batch per material and 16-metre sector on every device. Keeping batches
+// local lets Three.js frustum-cull distant shop details without changing the map.
+function batchStaticGeometry(scene,except){
  const byMaterial=new Map();
  for(const mesh of [...scene.children]){
   if(!mesh.isMesh||mesh.geometry?.type!=='BoxGeometry'||except.has(mesh)||mesh.material?.transparent)continue;
-  const key=mesh.material.uuid;
+  const key=mesh.material.uuid+':'+Math.floor((mesh.position.z+64)/16);
   if(!byMaterial.has(key))byMaterial.set(key,[]);
   byMaterial.get(key).push(mesh);
  }
- let merged=0,instances=0;
- for(const group of byMaterial.values()){
-  if(group.length<4)continue;
-  const instance=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),group[0].material,group.length);
+ let groups=0,instances=0;
+ for(const entries of byMaterial.values()){
+  if(entries.length<3)continue;
+  const instance=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),entries[0].material,entries.length);
   instance.name='Static architectural batch';
-  instance.castShadow=false;instance.receiveShadow=true;instance.frustumCulled=false;
+  instance.castShadow=entries.some(mesh=>mesh.castShadow);
+  instance.receiveShadow=entries.some(mesh=>mesh.receiveShadow);
   const tmp=new THREE.Object3D();
-  group.forEach((mesh,i)=>{
+  entries.forEach((mesh,i)=>{
    const {width=1,height=1,depth=1}=mesh.geometry.parameters||{};
    tmp.position.copy(mesh.position);tmp.rotation.copy(mesh.rotation);
    tmp.scale.set(width*mesh.scale.x,height*mesh.scale.y,depth*mesh.scale.z);
@@ -71,9 +74,11 @@ function batchStaticForMobile(scene,except){
    scene.remove(mesh);mesh.geometry.dispose();
   });
   instance.instanceMatrix.needsUpdate=true;
-  scene.add(instance);instances+=group.length;merged++;
+  instance.computeBoundingSphere();
+  instance.frustumCulled=true;
+  scene.add(instance);instances+=entries.length;groups++;
  }
- return {groups:merged,instances};
+ return {groups,instances};
 }
 export function createLevel(scene){
  const mobile=('ontouchstart' in window||navigator.maxTouchPoints>0);
@@ -293,7 +298,7 @@ export function createLevel(scene){
  const detail=addArtPass(scene,{mobile});
  const amb=new THREE.HemisphereLight('#9eafc1','#262727',.4);scene.add(amb);
  const emergency=new THREE.PointLight('#b7534e',0,13,2);emergency.position.set(13,2.7,-51);scene.add(emergency);
- const batching=mobile?batchStaticForMobile(scene,new Set([interactive.panel,interactive.exit])):{groups:0,instances:0};
+ const batching=batchStaticGeometry(scene,new Set([interactive.panel,interactive.exit]));
  return {interactive,lights,emergency,box,batching,count:items.length+detail.count,update(time,alarm){
   detail.update(time,alarm);
   for(const l of lights){const strobe=l.flag?(Math.sin(time*11+l.seed)+Math.sin(time*37+l.seed*2))*.5:0;
