@@ -28,6 +28,7 @@ Um shopping futurista japonês que foi abandonado após uma pane de infraestrutu
 - Pelo menos uma captura frontal e uma lateral de cada loja, entrada e saída do banheiro, corredor estreito, segurança e doca.
 - Conferir visual de dia/noite **dentro do motor** e no celular real. Não aprovar com base apenas em testes de lógica ou mock de renderização.
 - Testar a rota completa, incluindo saltos, contatos e alarme, com física Rapier real.
+- Validar que o alarme **não** destrava imediatamente a saída, que o cronômetro não avança durante pausa e que a criatura consegue se aproximar antes da fuga.
 - Revisar FPS e consumo de memória em aparelho real. Se cair demais, reduzir geometria e luzes, nunca eliminar o desenho do cenário.
 - Testar multiplayer em aparelhos reais **antes** de anunciá-lo como disponível neste motor.
 

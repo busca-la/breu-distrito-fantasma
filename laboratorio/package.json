@@ -4,9 +4,9 @@
   "type": "module",
   "description": "Ala experimental do novo motor BREU: Three.js + Rapier. Não altera o jogo principal.",
   "scripts": {
-    "test": "node --test tests/layout.test.mjs tests/navigation.test.mjs tests/sound.test.mjs tests/runtime.test.mjs",
+    "test": "node --test tests/layout.test.mjs tests/navigation.test.mjs tests/sound.test.mjs tests/mission.test.mjs tests/runtime.test.mjs",
     "test:physics": "node tests/physics.integration.test.mjs",
-    "check": "node --check layout.mjs && node --check level.mjs && node --check detail-pass.mjs && node --check ambient-audio.mjs && node --check threat-nav.mjs && node --check stalker.mjs && node --check physics-world.mjs && node --check physics.mjs && node --check main.mjs"
+    "check": "node --check layout.mjs && node --check level.mjs && node --check detail-pass.mjs && node --check ambient-audio.mjs && node --check threat-nav.mjs && node --check stalker.mjs && node --check physics-world.mjs && node --check physics.mjs && node --check main.mjs && node --check mission.mjs"
   },
   "devDependencies": {
     "@dimforge/rapier3d-compat": "0.21.0"

@@ -18,7 +18,7 @@ A versão do laboratório evoluiu de uma estrutura simples de lojas para um seto
 - **Desempenho:** instanciamento GPU de caixas repetidas e redução das luzes/detalhes nos aparelhos de toque; sombras da lanterna no desktop.
 - **Pisos por setor:** entrada de porcelanato, galeria escurecida e doca de concreto desgastado, mantendo a mesma base de colisão.
 - **Interface:** menu narrativo, modo paisagem e retrato com controles touch proporcionais.
-- **Objetivo preservado:** achar a segurança, ativar o alarme e atravessar a saída de serviço aberta.
+- **Objetivo melhorado:** achar a segurança, disparar o alarme, sobreviver por 12 segundos enquanto o portão destrava e escapar da criatura. Sem caça a núcleos.
 
 ## Controles
 
@@ -54,6 +54,7 @@ npm run test:physics
 - `detail-pass.mjs` — fachadas, materiais e detalhes distintos.
 - `stalker.mjs` / `threat-nav.mjs` — criatura e malha de navegação.
 - `ambient-audio.mjs` — trilha procedural de ambiente (original).
+- `mission.mjs` — máquina de estados testada de alarme, destravamento temporizado e fuga.
 - `main.mjs` — câmera, controles, fluxo de fuga, HUD e integração.
 - `docs/art-direction.md` — critérios objetivos de acabamento, legibilidade e integração.
 
