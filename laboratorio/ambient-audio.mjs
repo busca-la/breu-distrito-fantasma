@@ -62,6 +62,27 @@ export class BreuSound {
    this.lastAlarm=time;this.tone(620,.45,.045,'triangle',now);this.tone(420,.65,.04,'triangle',now+.5);
   }
  }
+ // Short spatially implied cues: one-shot synthesis, never a looping sound file.
+ cue(kind){
+  if(!this.ctx||!this.playing)return;
+  const now=this.ctx.currentTime;
+  if(kind==='metal'){
+   this.filteredNoise(.32,.16,780,now);
+   this.tone(126,.34,.072,'sawtooth',now);
+   this.tone(73,.55,.032,'triangle',now+.12);
+  }else if(kind==='electric'){
+   this.filteredNoise(.27,.11,2500,now);
+   this.tone(1200,.12,.08,'square',now);
+   this.tone(920,.08,.042,'sawtooth',now+.21);
+  }else if(kind==='pursuit'){
+   this.tone(55,.62,.12,'sine',now);
+   this.tone(67,.48,.085,'triangle',now+.24);
+   this.filteredNoise(.45,.06,270,now+.19);
+  }else if(kind==='alarm'){
+   this.tone(830,.24,.072,'triangle',now);
+   this.tone(520,.32,.065,'triangle',now+.27);
+  }
+ }
  setPaused(paused){if(!this.ctx)return;this.playing=!paused&&this.enabled;
   this.master.gain.setTargetAtTime(paused?.0001:.27,this.ctx.currentTime,.12);
  }
