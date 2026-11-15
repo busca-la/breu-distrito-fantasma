@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {circleFits} from './layout.mjs';
 import {getNavigation} from './threat-nav.mjs';
+import {hasLineOfSight,canSee,canHear,intersectsBarrier,SIGHT_BLOCKERS} from './perception.mjs';
+import {INTERACTION} from './layout.mjs';
 
 // The maintenance worker is a low-poly, original procedural silhouette.
 // This is an autonomous enemy with real pathfinding; the model is intentionally
@@ -30,39 +32,84 @@ export function createStalker(scene){
  for(const x of [-.47,.47])part('hanging glove',new THREE.SphereGeometry(.13,6,6),skin,x,.79,-.06);
  scene.add(group);
  const navigation=getNavigation();
- let position={x:.35,z:-37.8},route=[],pathTime=0,steps=0;
- let lastPos={...position};const detection=16;
- function recalc(target){route=navigation.route(position,target);if(route.length>1)route.shift();pathTime=0}
- function update(dt,player,alarm,time){
-  if(!player)return {distance:999,chasing:false,caught:false};
+ const initial={x:.35,z:-40.4};
+ const securityGate={x:11.45,z:-51.25,w:.24,d:3.38};
+ const exitGate={x:19.03,z:-51,w:.28,d:3.45};
+ let position={...initial},route=[],pathTime=0,steps=0;
+ let lastKnown={...initial},huntUntil=-1,graceUntil=0,alarmHeard=false,wasChasing=false;
+ function recalc(target){
+  route=navigation.route(position,target);
+  if(route.length>1)route.shift();
+  pathTime=0;
+ }
+ function update(dt,player,alarm,time,{sprinting=false,walking=false,flashOn=true,securityOpen=false,exitOpen=false}={}){
+  if(!player)return {distance:999,chasing:false,caught:false,spotted:false,lost:false};
   const distance=Math.hypot(player.x-position.x,player.z-position.z);
-  const chasing=alarm||distance<detection;
-  const target=chasing?player:{x:Math.sin(time*.14)*.65,z:-38+Math.sin(time*.21)*7};
-  pathTime+=dt;if(pathTime>1.3||!route.length)recalc(target);
-  // Audible, visible pursuit: sprinting can still outrun him, standing still cannot.
-  const speed=alarm?(distance<9?3.85:3.48):chasing?(distance<8?2.9:2.2):.62;
+  const gates=[];
+  if(!securityOpen)gates.push(securityGate);
+  if(!exitOpen)gates.push(exitGate);
+  const visible=hasLineOfSight(position,player,[...SIGHT_BLOCKERS,...gates]);
+  const detected=time>=graceUntil&&(
+   canSee({distance,visible,flashlight:flashOn,sprinting})||
+   canHear({distance,sprinting,walking})
+  );
+  if(alarm&&!alarmHeard){
+   // The alarm reveals only its location, not the player's live position.
+   alarmHeard=true;
+   lastKnown={x:INTERACTION.panel.x,z:INTERACTION.panel.z};
+   huntUntil=time+13;
+  }
+  if(detected){
+   lastKnown={x:player.x,z:player.z};
+   huntUntil=Math.max(huntUntil,time+(alarm?7:5));
+  }
+  let chasing=time<huntUntil;
+  const roaming={x:Math.sin(time*.17)*.75,z:-40+Math.sin(time*.22)*5};
+  const target=chasing?lastKnown:roaming;
+  // The creature actually searches the last known spot instead of magically
+  // knowing where the player is behind an opaque wall.
+  if(chasing&&!detected&&Math.hypot(position.x-lastKnown.x,position.z-lastKnown.z)<1){
+   huntUntil=Math.min(huntUntil,time+1.1);
+  }
+  pathTime+=dt;
+  if(pathTime>1.15||!route.length)recalc(target);
+  const speed=chasing?(alarm?3.55:2.65):.72;
   let movement=0;
   for(let attempts=0;attempts<2&&route.length;attempts++){
    const wp=route[0],dx=wp.x-position.x,dz=wp.z-position.z,d=Math.hypot(dx,dz);
-   if(d<.16){route.shift();continue}
+   if(d<.16){route.shift();continue;}
    const step=Math.min(speed*dt,d),nx=position.x+dx/d*step,nz=position.z+dz/d*step;
-   if(circleFits(nx,nz,.40)){position.x=nx;position.z=nz;movement=step;group.rotation.y=Math.atan2(-dx,-dz);}
-   else{route=[];pathTime=100;}
+   const blocked=gates.some(g=>intersectsBarrier(position,{x:nx,z:nz},g));
+   if(!blocked&&circleFits(nx,nz,.40)){
+    position.x=nx;position.z=nz;movement=step;
+    group.rotation.y=Math.atan2(-dx,-dz);
+   }else{route=[];pathTime=100;}
    break;
   }
   steps+=movement;
   group.position.set(position.x,0,position.z);
   const stride=Math.sin(steps*(chasing?11.5:8.5))*(movement?(chasing?.42:.29):.015);
-  armL.rotation.x=stride+(chasing?-.19:0);armR.rotation.x=-stride+(chasing?-.19:0);
+  armL.rotation.x=stride+(chasing?-.19:0);
+  armR.rotation.x=-stride+(chasing?-.19:0);
   legL.rotation.x=-stride;legR.rotation.x=stride;
   armL.rotation.z=chasing?-.25:-.1;armR.rotation.z=chasing?.25:.1;
   group.position.y=.035*Math.sin(time*(chasing?3.3:1.25));
   pale.color.setHex(chasing&&Math.sin(time*11)>-.15?0xe5aaa0:0x8b9e9c);
   const now=Math.hypot(player.x-position.x,player.z-position.z);
-  const caught=now<.88;
-  lastPos={...position};
-  return {distance:now,chasing,caught,location:{...position}};
+  const caught=time>=graceUntil&&now<.88&&hasLineOfSight(position,player,[...SIGHT_BLOCKERS,...gates]);
+  const spotted=chasing&&!wasChasing;
+  const lost=!chasing&&wasChasing;
+  wasChasing=chasing;
+  return {distance:now,chasing,caught,spotted,lost,visible,location:{...position}};
+ }
+ function reset(time=0){
+  position={...initial};route=[];pathTime=0;steps=0;
+  lastKnown={...initial};huntUntil=-1;graceUntil=time+5;
+  // On an alarm checkpoint, the siren has already sounded, so it must not
+  // immediately reveal the checkpoint location to the creature.
+  alarmHeard=true;wasChasing=false;
+  group.position.set(position.x,0,position.z);
  }
  group.position.set(position.x,0,position.z);
- return {group,update,position:()=>({...position}),navigation};
+ return {group,update,reset,position:()=>({...position}),navigation};
 }
