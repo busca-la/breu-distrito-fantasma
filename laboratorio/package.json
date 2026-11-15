@@ -1,0 +1,11 @@
+{
+  "name": "breu-ala-03-engine",
+  "private": true,
+  "type": "module",
+  "description": "Ala experimental do novo motor BREU: Three.js + Rapier. Não altera o jogo principal.",
+  "scripts": {
+    "test": "node --test tests/layout.test.mjs",
+    "test:physics": "node tests/physics.integration.test.mjs"
+  },
+  "devDependencies": {"@dimforge/rapier3d-compat": "0.17.3"}
+}
