@@ -1,0 +1,9 @@
+{
+  "name": "breu-distrito-fantasma",
+  "version": "0.9.0",
+  "private": true,
+  "description": "Jogo de terror 3D experimental no navegador",
+  "scripts": {
+    "test": "node tests/geometry.test.cjs && node tests/playthrough.test.cjs && node tests/enemy.test.cjs"
+  }
+}
