@@ -61,7 +61,7 @@ function start(){
  if(defeated){
   defeated=false;
   physics.reset(story.checkpoint);
-  stalker.reset(clock);
+  stalker.reset(clock,{alarm});
   keys.clear();interactHeld=false;requestJump=false;joystick.x=joystick.y=0;
  }
  started=true;paused=false;intro.classList.add('hide');hud.classList.remove('hide');
