@@ -157,6 +157,7 @@ function updateObjective(pos){
    }else if(canUse){
     if(story.phase==='radio'){
      story.advance('radio');
+     sound.radioSpeech();
      environmentCue({kind:'radio',text:STORY_RADIO},6800);
     }else if(story.phase==='relay'){
      story.advance('relay');
