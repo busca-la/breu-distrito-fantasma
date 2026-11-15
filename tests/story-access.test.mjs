@@ -19,7 +19,7 @@ assert.equal(steps.advance('exit'),false,'Only one successful escape');
 
 const shops=[
  ['camera',1,-8.5],['fashion',-1,-22],['arcade',-1,-34.6],
- ['pharmacy',1,-39.4],['ramen',-1,-10.9],['electronics',1,-27.3],
+ ['pharmacy',1,-39.4],['ramen',-1,-10.9],['electronics',1,-27.3],['maintenance',-1,-47.5],
 ];
 for(const [type,side,z] of shops){
  assert(STORE_SIGNS.some(s=>s.type===type));
@@ -52,4 +52,4 @@ assert(lockedExit<19.1,'Walked through closed emergency exit');
 physics.unlockExit();
 const openExit=approach(17.4,-51.0,1.35);
 assert(openExit>20.2,'Could not escape through raised emergency door');
-console.log('PASS: story progression, six shop portals, radio and relay reachability, physical powered gate and exit');
+console.log('PASS: story progression, seven shop portals, radio and relay reachability, physical powered gate and exit');
