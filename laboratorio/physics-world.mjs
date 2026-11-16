@@ -35,7 +35,7 @@ return class BreuPhysics {
   velocity(){return this.body.linvel();}
   step(move, yaw, jump){
     const velocity=this.body.linvel();
-    const speed=move.sprint?5.6:3.35;
+    const speed=(move.sprint?5.6:3.35)*Math.max(1,Math.min(1.22,move.boost||1));
     // Forward in local camera yaw is (-sin(yaw), 0, -cos(yaw)).
     const dx=move.strafe*Math.cos(yaw)-move.forward*Math.sin(yaw);
     const dz=-move.strafe*Math.sin(yaw)-move.forward*Math.cos(yaw);

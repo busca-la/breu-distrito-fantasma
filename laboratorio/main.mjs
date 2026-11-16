@@ -15,6 +15,7 @@ import {createCinematicDirector} from './cinematics.mjs';
 import {createAtmosphere} from './atmosphere.mjs';
 import {createFlashlightRig} from './flashlight-rig.mjs';
 import {AdaptivePerformance} from './adaptive-performance.mjs';
+import {EngagementDirector} from './engagement-director.mjs';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#world'),status=$('#loading-status'),intro=$('#intro'),hud=$('#hud');
@@ -32,6 +33,7 @@ let flashlightBaseIntensity=55,flashlightOutput=1;
 let joystick={x:0,y:0};
 const keys=new Set();
 const sound=new BreuSound();
+const engagement=new EngagementDirector();
 const vec=(x,y,z)=>new THREE.Vector3(x,y,z);
 function savedBrightness(){
  try{const raw=localStorage.getItem('breu.brightness.v1');return normalizeBrightness(raw);}catch{return DEFAULT_BRIGHTNESS;}
@@ -300,7 +302,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
    const strafe=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0)+joystick.x;
    const sprint=keys.has('ShiftLeft')||keys.has('ShiftRight')||Math.hypot(joystick.x,joystick.y)>.92;
    fps.acc=Math.min(fps.acc+dt,.13);
-   while(fps.acc>=1/60){physics.step({forward,strafe,sprint},yaw,requestJump);requestJump=false;fps.acc-=1/60}
+   while(fps.acc>=1/60){physics.step({forward,strafe,sprint,boost:engagement.speedMultiplier(clock)},yaw,requestJump);requestJump=false;fps.acc-=1/60}
    const p=physics.position();
    walkBob+=(Math.abs(forward)+Math.abs(strafe))*.035;
    camera.position.set(p.x,p.y+.64+Math.sin(walkBob)*Math.min(.024,Math.hypot(strafe,forward)*.015),p.z);
@@ -346,6 +348,11 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
     }[cue];
     environmentCue({kind:cue,text},cue==='flashlight-repair'?2100:1300);
    }
+   const engagementEvents=engagement.update(clock,{room:roomScenes?.roomAt(p),phase:story.phase,threat:result,flashState:lamp?.state});
+   for(const event of engagementEvents)environmentCue(event,event.kind==='reward-full'?2800:1900);
+   const reward=engagement.snapshot(clock),resolveFill=$('#resolve-fill'),resolveText=$('#resolve-text');
+   if(resolveFill)resolveFill.style.width=reward.resolve+'%';
+   if(resolveText)resolveText.textContent=reward.boosting?`FÔLEGO · ${reward.boostRemaining.toFixed(1)} S`:`CORAGEM · ${reward.resolve}%`;
    missionGuide?.update(p,story.target,clock);
    for(const event of encounters?.update(clock,p)||[])environmentCue(event);
    fps.frames++;fps.second+=elapsed;adjustQuality(elapsed);

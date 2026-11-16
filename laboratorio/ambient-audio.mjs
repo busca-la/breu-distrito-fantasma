@@ -124,6 +124,12 @@ export class BreuSound {
    this.filteredNoise(.38,.15,840,now);
    this.tone(64,.57,.15,'sine',now);
    this.tone(116,.15,.06,'sawtooth',now+.17);
+  }else if(kind==='discovery'||kind==='objective-reward'){
+   this.tone(330,.10,.025,'sine',now);this.tone(495,.16,.032,'triangle',now+.09);
+   this.tone(660,.22,.021,'sine',now+.21);
+  }else if(kind==='near-miss'||kind==='reward-full'){
+   this.tone(92,.30,.08,'sine',now);this.tone(440,.12,.035,'triangle',now+.08);
+   this.tone(660,.18,.038,'triangle',now+.18);this.tone(880,.26,.026,'sine',now+.31);
   }else if(kind==='radio'){
    this.filteredNoise(.95,.12,2400,now);
    this.tone(790,.17,.045,'square',now);
