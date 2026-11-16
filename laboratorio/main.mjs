@@ -9,6 +9,7 @@ import {hasLineOfSight,reachedExit} from './perception.mjs';
 import {createEnvironmentMotion} from './environment-motion.mjs';
 import {createLiveEncounters} from './live-encounters.mjs';
 import {WING, WALLS, INTERACTION, STORE_SIGNS} from './layout.mjs';
+import {DEFAULT_BRIGHTNESS,normalizeBrightness,getVisibilityPreset} from './visibility.mjs';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#world'),status=$('#loading-status'),intro=$('#intro'),hud=$('#hud');
@@ -25,6 +26,23 @@ let joystick={x:0,y:0};
 const keys=new Set();
 const sound=new BreuSound();
 const vec=(x,y,z)=>new THREE.Vector3(x,y,z);
+function savedBrightness(){
+ try{const raw=localStorage.getItem('breu.brightness.v1');return normalizeBrightness(raw);}catch{return DEFAULT_BRIGHTNESS;}
+}
+let brightnessLevel=savedBrightness();
+function setBrightness(value){
+ brightnessLevel=normalizeBrightness(value);
+ const preset=getVisibilityPreset(brightnessLevel);
+ if(renderer)renderer.toneMappingExposure=preset.exposure;
+ if(scene?.fog)scene.fog.density=preset.fog;
+ if(flashlight)flashlight.intensity=preset.flashlight;
+ stage?.setVisibility(preset);
+ document.documentElement.style.setProperty('--vignette-edge',String(preset.vignette));
+ const slider=$('#brightness-slider'),caption=$('#brightness-value');
+ if(slider)slider.value=String(brightnessLevel);
+ if(caption)caption.textContent=preset.name;
+ try{localStorage.setItem('breu.brightness.v1',String(brightnessLevel));}catch{}
+}
 function showError(err){console.error(err);status.textContent='Falha ao iniciar o motor: '+String(err?.message||err);status.style.color='#ff9a90';$('#play').disabled=false;$('#play').textContent='RECARREGAR E TENTAR NOVAMENTE';}
 function renderSetup(){
  const gl=canvas.getContext('webgl2',{antialias:!lowPowerDevice,alpha:false,powerPreference:'high-performance'});
@@ -32,7 +50,7 @@ function renderSetup(){
  renderer=new THREE.WebGLRenderer({canvas,context:gl,antialias:!lowPowerDevice,powerPreference:'high-performance'});
  renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.toneMapping=THREE.ACESFilmicToneMapping;
- renderer.toneMappingExposure=1.06;
+ renderer.toneMappingExposure=1.38;
  quality.max=Math.min(devicePixelRatio||1,touch?1.15:lowPowerDevice?1.3:1.55);
  quality.min=Math.min(quality.max,quality.min);
  quality.ratio=Math.min(quality.max,touch?.95:lowPowerDevice?1.10:1.32);
@@ -40,18 +58,19 @@ function renderSetup(){
  renderer.setSize(innerWidth,innerHeight,false);
  renderer.shadowMap.enabled=!lowPowerDevice;
  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
- scene=new THREE.Scene();scene.background=new THREE.Color('#0b1014');scene.fog=new THREE.FogExp2('#091015',.034);
+ scene=new THREE.Scene();scene.background=new THREE.Color('#151e21');scene.fog=new THREE.FogExp2('#141b1e',.019);
  camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.035,125);
  camera.rotation.order='YXZ';
  stage=createLevel(scene);stalker=createStalker(scene);
  motion=createEnvironmentMotion(scene,{lowPower:lowPowerDevice});
  encounters=createLiveEncounters(scene);
  missionGuide=createMissionGuide(scene);
- const light=new THREE.SpotLight('#e7ddd1',25,19,Math.PI/7,.78,1.6);
+ const light=new THREE.SpotLight('#f0e8db',43,28,Math.PI/5,.70,1.6);
  flashlight=light;scene.add(light);scene.add(light.target);
  light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
  const fill=new THREE.SpotLight('#d0d5ce',2,9,Math.PI/2,.8,2);
  fill.position.set(0,1.6,12);fill.target.position.set(0,1,-1);scene.add(fill,fill.target);
+ setBrightness(brightnessLevel);
  camera.position.set(0,1.62,13);scene.add(camera);
  window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 }
@@ -88,6 +107,7 @@ function inputSetup(){
  $('#resume').addEventListener('click',()=>{pause();if(!touch)canvas.requestPointerLock()});
  $('#flash-btn').addEventListener('click',()=>flashOn=!flashOn);
  $('#sound-btn').addEventListener('click',async()=>{const on=await sound.toggle();if(paused)sound.setPaused(true);$('#sound-btn').textContent=on?'SOM: LIGADO':'SOM: DESLIGADO'});
+ $('#brightness-slider').addEventListener('input',e=>setBrightness(e.target.value));
  $('#jump-btn').addEventListener('pointerdown',e=>{e.preventDefault();requestJump=true});
  actionButton.addEventListener('pointerdown',e=>{e.preventDefault();interactHeld=true});
  const joy=$('#joystick'),knob=$('#joystick-knob');let joystickId=null;
