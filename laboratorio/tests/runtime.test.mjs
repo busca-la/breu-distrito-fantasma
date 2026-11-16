@@ -4,27 +4,29 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {STORE_SIGNS,facadePanelAllowed,circleFits,WALLS,CEILINGS,PROPS,WING,INTERACTION} from '../layout.mjs';
 import {getNavigation} from '../threat-nav.mjs';
+import {roomAt} from '../room-scenes.mjs';
+import {canHear,canSee,hasLineOfSight,intersectsBarrier,SIGHT_BLOCKERS} from '../perception.mjs';
 
-class Color{constructor(value){this.value=value}set(value){this.value=value;return this}}
+class Color{constructor(value){this.value=value}set(value){this.value=value;return this}setHex(value){this.value=value;return this}}
 let nextMaterialId=0;class Material{constructor(opts={}){Object.assign(this,opts);this.color=new Color(opts.color);this.uuid='mock-'+(++nextMaterialId)}clone(){return new Material({...this,color:this.color.value})}}
 class Vector3{constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z}copy(v){this.x=v.x;this.y=v.y;this.z=v.z;return this}}
 class G{constructor(...v){this.v=v;this.parameters={}}dispose(){}}
 class BoxGeom extends G{constructor(w=1,h=1,d=1){super(w,h,d);this.type='BoxGeometry';this.parameters={width:w,height:h,depth:d}}}
-class Mesh{constructor(geometry,material){this.geometry=geometry;this.material=material;this.isMesh=true;this.position=new Vector3();this.position.set=(x,y,z)=>{this.position.x=x;this.position.y=y;this.position.z=z};this.rotation={x:0,y:0,z:0,set(x,y,z){this.x=x;this.y=y;this.z=z},copy(v){this.x=v.x;this.y=v.y;this.z=v.z}};this.scale={x:1,y:1,z:1,set(x,y,z){this.x=x;this.y=y;this.z=z}};this.name=''}}
+class Mesh{constructor(geometry,material){this.geometry=geometry;this.material=material;this.isMesh=true;this.visible=true;this.position=new Vector3();this.position.set=(x,y,z)=>{this.position.x=x;this.position.y=y;this.position.z=z};this.rotation={x:0,y:0,z:0,set(x,y,z){this.x=x;this.y=y;this.z=z},copy(v){this.x=v.x;this.y=v.y;this.z=v.z}};this.scale={x:1,y:1,z:1,set(x,y,z){this.x=x;this.y=y;this.z=z}};this.name=''}}
 class Lamp{constructor(color,intensity){this.color=color;this.intensity=intensity;this.position=new Vector3();this.position.set=(x,y,z)=>{this.position.x=x;this.position.y=y;this.position.z=z}}}
 class Object3D{constructor(){this.position=new Vector3();this.rotation={x:0,y:0,z:0,copy(v){this.x=v.x;this.y=v.y;this.z=v.z}};this.scale={set(){}};this.matrix={}}updateMatrix(){}}
-class InstancedMesh extends Mesh{constructor(geometry,material,count){super(geometry,material);this.count=count;this.isInstancedMesh=true;this.instanceMatrix={needsUpdate:false}}setMatrixAt(){}}
+class InstancedMesh extends Mesh{constructor(geometry,material,count){super(geometry,material);this.count=count;this.isInstancedMesh=true;this.instanceMatrix={needsUpdate:false}}setMatrixAt(){}computeBoundingSphere(){}}
 class Group{constructor(){this.children=[];this.position=new Vector3();this.position.set=(x,y,z)=>{this.position.x=x;this.position.y=y;this.position.z=z};this.rotation={y:0}}add(x){this.children.push(x)}}
 class Texture{constructor(){this.repeat={set(){}}}}
 class Curve{constructor(points){this.points=points}}
 const THREE={Color,Mesh,InstancedMesh,Object3D,Group,Vector3,CatmullRomCurve3:Curve,CanvasTexture:Texture,
- MeshStandardMaterial:Material,MeshPhysicalMaterial:Material,MeshBasicMaterial:Material,PlaneGeometry:G,BoxGeometry:BoxGeom,CylinderGeometry:G,SphereGeometry:G,TorusGeometry:G,TubeGeometry:G,CircleGeometry:G,PointLight:Lamp,HemisphereLight:Lamp,
+ MeshStandardMaterial:Material,MeshPhysicalMaterial:Material,MeshBasicMaterial:Material,PlaneGeometry:G,BoxGeometry:BoxGeom,CylinderGeometry:G,ConeGeometry:G,SphereGeometry:G,TorusGeometry:G,TubeGeometry:G,CircleGeometry:G,PointLight:Lamp,HemisphereLight:Lamp,
  SRGBColorSpace:'srgb',RepeatWrapping:1,DoubleSide:2};
 function canvas(){return {width:0,height:0,getContext(){return new Proxy({createRadialGradient(){return {addColorStop(){}}}}, {get(obj,key){return obj[key]??(()=>{})},set(obj,key,value){obj[key]=value;return true}})}}}
 const fakeDoc={createElement(){return canvas()}};
 function evaluate(file,api,vars={}){
  const src=fs.readFileSync(new URL('../'+file,import.meta.url),'utf8').replace(/^import .*?;\s*$/gm,'').replace(/^export /gm,'');
- return vm.runInNewContext(src+'\n;({'+api+'})',{THREE,document:fakeDoc,window:{navigator:{maxTouchPoints:0}},navigator:{maxTouchPoints:0},STORE_SIGNS,facadePanelAllowed,WALLS,CEILINGS,PROPS,WING,INTERACTION,getNavigation,circleFits,Math,Map,Int32Array,...vars},{timeout:12000});
+ return vm.runInNewContext(src+'\n;({'+api+'})',{THREE,document:fakeDoc,window:{navigator:{maxTouchPoints:0}},navigator:{maxTouchPoints:0},STORE_SIGNS,facadePanelAllowed,WALLS,CEILINGS,PROPS,WING,INTERACTION,getNavigation,circleFits,roomAt,canHear,canSee,hasLineOfSight,intersectsBarrier,SIGHT_BLOCKERS,Math,Map,Int32Array,...vars},{timeout:12000});
 }
 test('new detailed storefronts render without covering open physical entrances',()=>{
  const scene={children:[],add(x){this.children.push(x)}};
@@ -43,7 +45,7 @@ test('new detailed storefronts render without covering open physical entrances',
 });
 
 test('the threat model spawns within colliders and moves on actual navigable paths',()=>{
- const scene={children:[],add(o){this.children.push(o)}};
+ const scene={children:[],add(o){this.children.push(o)},remove(o){this.children=this.children.filter(x=>x!==o)}};
  const {createStalker}=evaluate('stalker.mjs','createStalker');
  const threat=createStalker(scene);
  assert(scene.children.includes(threat.group));
@@ -60,14 +62,13 @@ test('the threat model spawns within colliders and moves on actual navigable pat
 
 
 test('entire 3D scene constructs coherently and the alarm opens the visible exit',()=>{
- const scene={children:[],add(o){this.children.push(o)}};
+ const scene={children:[],add(o){this.children.push(o)},remove(o){this.children=this.children.filter(x=>x!==o)}};
  const {addArtPass}=evaluate('detail-pass.mjs','addArtPass');
  const {createLevel}=evaluate('level.mjs','createLevel',{addArtPass});
  const stage=createLevel(scene);
  assert(stage.count>600,'Scene should contain more than a greybox');
  assert(stage.interactive.panel && stage.interactive.exit);
- assert(scene.children.some(o=>o.name==='security desk'));
- assert(scene.children.some(o=>o.name==='ramen counter top'));
+ assert(stage.batching.instances>70,'Static architecture should be instanced');
  assert(scene.children.some(o=>o.name==='public restroom entrance indicator'));
  assert(scene.children.filter(o=>o.name==='toilet rim').length===3);
  assert(scene.children.some(o=>o.name==='fluorescent translucent diffuser'));
@@ -75,7 +76,10 @@ test('entire 3D scene constructs coherently and the alarm opens the visible exit
  assert(scene.children.some(o=>o.name==='service stained bare concrete floor'));
  assert.doesNotThrow(()=>stage.update(16,false));
  assert.doesNotThrow(()=>stage.update(44,true));
- stage.openExit();assert.equal(stage.interactive.exit.visible,false);
+ const closedY=stage.interactive.exit.position.y;
+ stage.openExit(44);stage.update(47,true);
+ assert(stage.interactive.exit.position.y>closedY);
+ assert.equal(stage.isExitPassable(),true);
 });
 
 
@@ -89,5 +93,8 @@ test('phone rendering batches repeated static geometry but keeps the emergency d
  assert(stage.batching.instances>70,'Insufficient mobile instancing');
  assert(scene.children.some(x=>x.isInstancedMesh),'No GPU instanced meshes');
  assert(scene.children.includes(stage.interactive.exit),'Exit door was merged into static geometry');
- stage.openExit();assert.equal(stage.interactive.exit.visible,false);
+ const closedY=stage.interactive.exit.position.y;
+ stage.openExit(0);stage.update(3,true);
+ assert(stage.interactive.exit.position.y>closedY);
+ assert.equal(stage.isExitPassable(),true);
 });

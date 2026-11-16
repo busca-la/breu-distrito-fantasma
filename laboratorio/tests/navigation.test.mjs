@@ -17,7 +17,7 @@ test('monster can travel from storefronts to service area without walking throug
 });
 
 test('visual wall-cladding does not hide an accessible storefront',()=>{
- assert.equal(OPEN_PORTALS.length,4);
+ assert.equal(OPEN_PORTALS.length,9);
  for(const portal of OPEN_PORTALS){
   const middle=(portal.zMin+portal.zMax)/2;
   assert(!facadePanelAllowed(portal.side,middle,.3),`${portal.name} covered by wall panel`);
@@ -33,10 +33,10 @@ test('all map boundaries have physical walls and gameplay props are not phantom'
 });
 
 
-test('renovation choke creates a narrow but walkable passage rather than a decorative wall',()=>{
- const z=-18.6;
+test('collapsed kiosk creates a narrow but walkable passage rather than phantom decoration',()=>{
+ const z=-24;
  assert(circleFits(0,z,.33),'Centre of claustrophobic passage should stay walkable');
- assert(!circleFits(1.2,z,.33)&&!circleFits(-1.2,z,.33),'Renovation barriers should be solid');
+ assert(!circleFits(-1.9,z,.33),'Collapsed kiosk should be solid');
  const route=nav.route({x:0,z:-13},{x:0,z:-24});
  assert(route.length>0,'Choke must not disconnect the main gallery');
 });

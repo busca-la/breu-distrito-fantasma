@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {EscapeSequence} from '../mission.mjs';
+import {BreuStory,EscapeSequence,STORY_RADIO} from '../mission.mjs';
 import fs from 'node:fs';
 
 test('alarm opens real escape only after continuous game time',()=>{
@@ -35,16 +35,19 @@ test('game HUD activates alarm, delays the physical exit and then finishes escap
  const elements=new Map();
  const make=()=>({textContent:'',style:{},classList:{add(){},remove(){},toggle(){}},disabled:false});
  const $=id=>{if(!elements.has(id))elements.set(id,make());return elements.get(id)};
+ const story=new BreuStory();story.phase='security';
  let state={alarm:false,exitOpen:false,escaped:false,interactHeld:false,paused:false,clock:0},openCalls=0,physCalls=0;
  const env={
   Math,setTimeout(){},document:{pointerLockElement:null,exitPointerLock(){}},
   $,objective:$('#objective'),distanceValue:$('#distance-value'),
   hint:$('#hint'),actionButton:$('#action-btn'),intro:make(),hud:make(),
-  sound:{setPaused(){}},physics:{unlockExit(){physCalls++}},stage:{openExit(){openCalls++}},
+  sound:{setPaused(){}},physics:{unlockExit(){physCalls++}},
+  stage:{openExit(){openCalls++},isExitPassable(){return openCalls>0},isSecurityPassable(){return true}},
   escapeSequence:new EscapeSequence(12),INTERACTION:{panel:{x:15.5,z:-51.4,r:1.75},exit:{x:21.05,z:-51,r:1.12}},
+  story,STORY_RADIO,hasLineOfSight(){return true},beginScene(){},environmentCue(){},reachedExit(pos,open){return open&&pos.x>=21},
   touch:false,yaw:0,alarm:false,exitOpen:false,interactHeld:false,escaped:false,paused:false,clock:0
  };
- const app=vm.runInNewContext(fn+'\n;({run(pos,time,pressed=false){clock=time;interactHeld=pressed;updateObjective(pos)},state(){return {alarm,exitOpen,escaped}},turn(radians){yaw=radians}})',env);
+ const app=vm.runInNewContext(fn+'\n;function finishEscape(){escaped=true}\n;({run(pos,time,pressed=false){clock=time;interactHeld=pressed;updateObjective(pos)},state(){return {alarm,exitOpen,escaped}},turn(radians){yaw=radians}})',env);
  app.run({x:0,z:-51.4},0,false);
  const eastAngle=parseFloat($('#needle').style.transform.match(/rotate\(([-.0-9]+)rad\)/)?.[1]);
  assert(eastAngle>1.4&&eastAngle<1.7,'Compass should point east when looking north');
@@ -56,7 +59,10 @@ test('game HUD activates alarm, delays the physical exit and then finishes escap
  app.run({x:20,z:-51},13.99);
  assert.equal(physCalls,0);assert.equal(app.state().exitOpen,false);
  app.run({x:20,z:-51},14);
- assert.equal(openCalls,1);assert.equal(physCalls,1);
+ assert.equal(openCalls,1);
+ // The render loop unlocks Rapier only after the visible door has physically
+ // cleared the capsule; updateObjective must not remove that collider early.
+ assert.equal(physCalls,0);
  app.run({x:21.05,z:-51},14.2,true);
  assert.equal(app.state().escaped,true);
  assert.equal($('#distance-value').textContent,'0 m');
