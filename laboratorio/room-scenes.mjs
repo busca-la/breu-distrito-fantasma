@@ -112,6 +112,30 @@ export function createRoomScenes(scene,{lowPower=false}={}){
  }
  make('Security incident archive',16.2,1.51,-54.14,2.1,.67,.11,mats.paper);
  illuminated('Powered gate status panel',12.35,2.85,-51.2,.15,.45,.61,mats.neon);
+ // Batch the dozens of static room fixtures. Dynamic screens stay separate,
+ // so the nine redesigned rooms cost only a handful of extra draw calls.
+ const animated=new Set(strips);
+ const materialGroups=new Map();
+ for(const obj of [...scene.children]){
+  if(!obj.isMesh||obj.geometry!==geo||animated.has(obj)||!Object.values(mats).includes(obj.material))continue;
+  if(!materialGroups.has(obj.material))materialGroups.set(obj.material,[]);
+  materialGroups.get(obj.material).push(obj);
+ }
+ let batchCount=0;
+ for(const [material,meshes] of materialGroups){
+  if(meshes.length<2)continue;
+  const combined=new THREE.InstancedMesh(geo,material,meshes.length);
+  combined.name='Room detail batched / '+material.color.getHexString();
+  for(let j=0;j<meshes.length;j++){
+   const original=meshes[j];
+   original.updateMatrix();
+   combined.setMatrixAt(j,original.matrix);
+   scene.remove(original);
+  }
+  combined.instanceMatrix.needsUpdate=true;
+  combined.computeBoundingSphere();
+  scene.add(combined);batchCount++;
+ }
  const visited=new Set();
  let lastRoom=null,lastBeat=-100;
  // Emissive-only color animation; no additional shadow-casting light.
@@ -144,5 +168,5 @@ export function createRoomScenes(scene,{lowPower=false}={}){
   }
   return null;
  }
- return {update,roomAt,rooms:ROOM_ZONES,visited,turners};
+ return {update,roomAt,rooms:ROOM_ZONES,visited,turners,batchCount};
 }
