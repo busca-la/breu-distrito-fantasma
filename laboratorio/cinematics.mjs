@@ -1,21 +1,42 @@
 import * as THREE from 'three';
 
-// Non-render-pass film shots: the real Three.js camera watches animated world
-// geometry. No prerecorded cutscenes, paid assets or GPU postprocessing.
+// Longer real-time direction, not a video overlay. Film the actual geometry,
+// with an establishing beat, an action beat and a consequence beat.
 export const SHOTS=Object.freeze({
- reveal:{seconds:1.20,title:'ALGO ESTAVA ESPERANDO AQUI.'},
- power:{seconds:2.25,title:'CIRCUITO RESTAURADO · GRADE DE SEGURANÇA'},
- exit:{seconds:2.25,title:'PORTÃO DE EMERGÊNCIA · SAÍDA LIBERADA'},
- capture:{seconds:2.55,title:'ELE TE PEGOU.'}
+ reveal:{seconds:4.75,title:'ALGO ESTAVA ESPERANDO AQUI.',beats:[
+  {at:0,text:'UM BARULHO VEIO DO FUNDO DA LOJA.',cue:'metal'},
+  {at:.23,text:'NÃO ERA UM FUNCIONÁRIO.',cue:'ambush'},
+  {at:.70,text:'A COISA ESTÁ OLHANDO DIRETO PARA VOCÊ.',cue:'pursuit'}
+ ]},
+ power:{seconds:5.85,title:'A ENERGIA RETORNOU.',beats:[
+  {at:0,text:'DISJUNTOR ATIVADO.',cue:'electric'},
+  {at:.25,text:'MOTORES DE EMERGÊNCIA INICIADOS.',cue:'metal'},
+  {at:.66,text:'A GRADE DA SEGURANÇA SUBIU. O CAMINHO ESTÁ LIVRE.',cue:'electric'}
+ ]},
+ exit:{seconds:5.85,title:'SAÍDA DE INCÊNDIO.',beats:[
+  {at:0,text:'A TRAVA DE INCÊNDIO DESBLOQUEOU.',cue:'alarm'},
+  {at:.30,text:'O PORTÃO ESTÁ SUBINDO.',cue:'metal'},
+  {at:.70,text:'ATRAVESSE ANTES QUE ELE VOLTE.',cue:'pursuit'}
+ ]},
+ capture:{seconds:6.8,title:'ELE TE PEGOU.',beats:[
+  {at:0,text:'VOCÊ NÃO CONSEGUE SE MOVER.',cue:'capture'},
+  {at:.19,text:'AS MÃOS DELE AGARRAM A CÂMERA.',cue:'metal'},
+  {at:.48,text:'ELE TE PUXA PARA PERTO.',cue:'capture'},
+  {at:.78,text:'NÃO HÁ PARA ONDE OLHAR.',cue:'pursuit'}
+ ]}
 });
-const ease=t=>{const v=Math.max(0,Math.min(1,t));return v*v*(3-2*v)};
+const clamp=t=>Math.max(0,Math.min(1,t));
+const ease=t=>{const v=clamp(t);return v*v*(3-2*v)};
+const mix=(a,b,t)=>a+(b-a)*clamp(t);
+const towards=(camera,x,y,z)=>camera.lookAt(x,y,z);
+
 export function createCinematicDirector(camera,stalker){
  let active=null;
  function begin(kind,time){
   const config=SHOTS[kind];
   if(!config||active)return false;
   active={
-   kind,start:time,seconds:config.seconds,
+   kind,start:time,seconds:config.seconds,beat:-1,
    entryPosition:camera.position.clone(),
    entryRotation:camera.quaternion.clone(),
    entryFov:camera.fov,
@@ -26,39 +47,56 @@ export function createCinematicDirector(camera,stalker){
  function update(time){
   if(!active)return null;
   const shot=active;
-  const u=Math.max(0,Math.min(1,(time-shot.start)/shot.seconds));
-  const kind=shot.kind;
+  const u=clamp((time-shot.start)/shot.seconds),kind=shot.kind;
+  const config=SHOTS[kind];
+  let beat=0;for(let i=1;i<config.beats.length;i++)if(u>=config.beats[i].at)beat=i;
+  const cue=beat!==shot.beat?config.beats[beat].cue:null;
+  shot.beat=beat;
   if(kind==='power'||kind==='exit'){
-   // Place the film camera inside the authored service passage, never outside
-   // the map. These shots show the ACTUAL rising shutters in the game scene.
-   const gate=kind==='power';
-   const p=gate?{x:8.0,y:1.87,z:-51.20}:{x:16.2,y:1.77,z:-51.05};
-   const focus=gate?{x:11.45,y:1.5+ease(u)*2.0,z:-51.25}:{x:19.03,y:1.61+ease(u)*2.25,z:-51.0};
-   camera.position.set(p.x+.18*Math.sin(u*Math.PI),p.y,p.z);
-   camera.lookAt(focus.x,focus.y,focus.z);
-   camera.fov=66;
+   // Wide establishing shot, slow dolly, then close-up of the real gate
+   // rising in the actual level. Never fly outside the existing world.
+   const power=kind==='power';
+   const gateX=power?11.45:19.03,gateZ=power?-51.25:-51.0;
+   const startX=power?7.9:15.75,endX=power?10.55:18.12;
+   const dolly=u<.34?ease(u/.34)*.38:u<.79?.38+ease((u-.34)/.45)*.54:.92;
+   camera.position.set(
+    mix(startX,endX,dolly),
+    1.83+Math.sin(u*Math.PI*2)*.065,
+    gateZ+.18+Math.sin(u*Math.PI)*.30
+   );
+   towards(camera,gateX,1.10+ease(u)*2.15,gateZ);
+   camera.fov=64+(1-u)*6;
   }else if(kind==='reveal'){
-   const spot=stalker?.group;
-   if(spot){
-    const target=new THREE.Vector3().setFromMatrixPosition(spot.matrixWorld).add(new THREE.Vector3(0,1.7,0));
-    const look=new THREE.Matrix4().lookAt(camera.position,target,new THREE.Vector3(0,1,0));
-    const q=new THREE.Quaternion().setFromRotationMatrix(look);
-    const amount=u<.62?ease(u/.62):1-ease((u-.62)/.38);
-    camera.quaternion.copy(shot.entryRotation).slerp(q,amount*.85);
+   // A sustained first-person stare, instead of a split-second camera snap.
+   stalker?.poseReveal?.(u,shot.entryPosition);
+   const group=stalker?.group;
+   if(group){
+    group.updateMatrixWorld(true);
+    const target=group.localToWorld(new THREE.Vector3(0,1.70,-.08));
+    const look=new THREE.Matrix4().lookAt(shot.entryPosition,target,new THREE.Vector3(0,1,0));
+    const wanted=new THREE.Quaternion().setFromRotationMatrix(look);
+    const strength=u<.20?ease(u/.20):u>.88?1-ease((u-.88)/.12):1;
+    camera.quaternion.copy(shot.entryRotation).slerp(wanted,strength*.94);
    }
    camera.position.copy(shot.entryPosition);
-   camera.fov=76+Math.sin(u*Math.PI)*4;
+   camera.position.y-=.02*Math.sin(u*Math.PI);
+   camera.fov=shot.entryFov+Math.sin(u*Math.PI)*7;
   }else if(kind==='capture'){
+   // Four complete dramatic beats: shock, raised hands, grip, mouth.
+   // Camera travels toward articulated *real* mesh, without graphics gore.
    const actor=stalker;
    actor?.poseCapture?.(u,shot.entryPosition);
    if(actor?.group){
     actor.group.updateMatrixWorld(true);
-    const face=actor.group.localToWorld(new THREE.Vector3(0,1.98,-.34));
-    const pull=u<.17?0:ease((u-.17)/.83)*.94;
+    const face=actor.group.localToWorld(new THREE.Vector3(0,1.97,-.38));
+    const pull=u<.25?0:ease((u-.25)/.61)*.88;
     camera.position.copy(shot.entryPosition).lerp(face,pull);
-    camera.lookAt(face);
-    camera.rotation.z+=(Math.sin(u*39)*.019+u*.075)*Math.sin(Math.min(1,u*3)*Math.PI/2);
-    camera.fov=74+ease(u)*34;
+    const shake=u>.23?Math.sin(u*67)*.021*(1-u*.55):0;
+    camera.position.x+=shake;
+    camera.position.y+=Math.sin(u*39)*.016*Math.sin(u*Math.PI);
+    towards(camera,face.x,face.y,face.z);
+    camera.rotation.z+=Math.sin(u*47)*.024*Math.sin(u*Math.PI)+ease(u)*.14;
+    camera.fov=76+ease(u)*37;
    }
   }
   camera.updateProjectionMatrix();
@@ -72,7 +110,7 @@ export function createCinematicDirector(camera,stalker){
    }
    active=null;
   }
-  return {kind,progress:u,finished,title:SHOTS[kind].title};
+  return {kind,progress:u,finished,caption:config.beats[beat].text,cue,title:config.title,beat};
  }
  return {begin,update,get active(){return !!active},get kind(){return active?.kind||null}};
 }
