@@ -43,7 +43,7 @@ export function repairPhase(t){
  return 'stable';
 }
 export function eligibleForRepair(player,{time=0,done=false,started=false}={}){
- if(!started||done||time<6||!player)return false;
+ if(started||done||time<6||!player)return false;
  const dx=player.x-REPAIR_LAMP.x,dz=player.z-REPAIR_LAMP.z;
  return Math.hypot(dx,dz)<REPAIR_LAMP.radius&&player.z<REPAIR_LAMP.triggerZ&&player.z>REPAIR_LAMP.z-1.8;
 }
