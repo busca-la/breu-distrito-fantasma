@@ -33,16 +33,16 @@ function texture(lines){
 }
 export function createMissionGuide(scene){
  const records={};
- const ringGeometry=new THREE.RingGeometry(.33,.41,24);
+ const ringGeometry=new THREE.RingGeometry(.39,.51,24);
  for(const [phase,lines] of Object.entries(DISPLAY)){
   const at=INTERACTION[phase];
-  const material=new THREE.SpriteMaterial({map:texture(lines),transparent:true,depthTest:true,depthWrite:false,opacity:.9});
+  const material=new THREE.SpriteMaterial({map:texture(lines),transparent:true,depthTest:true,depthWrite:false,opacity:1});
   const label=new THREE.Sprite(material);
   label.name='Mission instruction / '+phase;
   label.position.set(at.x,Math.max(2.35,at.y+1.35),at.z);
-  label.scale.set(2.8,.75,1);
+  label.scale.set(3.15,.84,1);
   label.visible=false;scene.add(label);
-  const ringMat=new THREE.MeshBasicMaterial({color:'#a9a59c',transparent:true,opacity:.38,side:THREE.DoubleSide,depthWrite:false});
+  const ringMat=new THREE.MeshBasicMaterial({color:'#b5cfc5',transparent:true,opacity:.52,side:THREE.DoubleSide,depthWrite:false});
   const ring=new THREE.Mesh(ringGeometry,ringMat);
   ring.name='Floor marker / '+phase;ring.rotation.x=-Math.PI/2;
   ring.position.set(at.x,.048,at.z);ring.visible=false;scene.add(ring);
@@ -56,7 +56,7 @@ export function createMissionGuide(scene){
    if(visible){
     visual.label.position.y=Math.max(2.35,visual.at.y+1.35)+Math.sin(time*2.5)*.06;
     visual.ring.scale.setScalar(1+.07*Math.sin(time*3.1));
-    visual.ring.material.opacity=.29+.12*Math.sin(time*3.1);
+    visual.ring.material.opacity=.50+.12*Math.sin(time*3.1);
    }
   }
  }
