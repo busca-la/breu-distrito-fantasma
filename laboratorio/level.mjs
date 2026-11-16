@@ -302,7 +302,7 @@ export function createLevel(scene){
    }
    continue;
   }
-  const material=p.name.includes('crate')?palette.wood:p.name.includes('cabinet')?palette.rust:p.name.includes('trolley')?palette.board:palette.frame;
+  const material=p.material&&palette[p.material]?palette[p.material]:p.name.includes('crate')?palette.wood:p.name.includes('cabinet')?palette.rust:p.name.includes('trolley')?palette.board:palette.frame;
   box(p.name,p.x,p.h/2,p.z,p.w,p.h,p.d,material);
   if(p.name==='fallen rack'){
    for(let i=0;i<3;i++)box('buckled shelving',p.x,p.h*.3+i*.12,p.z,p.w+.1,.06,p.d+.09,palette.rust,false);
