@@ -14,6 +14,7 @@ import {createRoomScenes} from './room-scenes.mjs';
 import {createCinematicDirector} from './cinematics.mjs';
 import {createAtmosphere} from './atmosphere.mjs';
 import {createFlashlightRig} from './flashlight-rig.mjs';
+import {AdaptivePerformance} from './adaptive-performance.mjs';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#world'),status=$('#loading-status'),intro=$('#intro'),hud=$('#hud');
@@ -22,8 +23,9 @@ const mapCanvas=$('#map'),mapCtx=mapCanvas.getContext('2d');
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
 const lowPowerDevice=touch||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<=4);
 const quality={ratio:1,min:touch?.62:.72,max:1,seconds:0,frames:0,goodWindows:0};
+const adaptive=new AdaptivePerformance({min:quality.min,max:1.55,initial:1,lowPower:lowPowerDevice});
 let scene,renderer,camera,physics,stage,flashlight,flashlightRig,cutsceneLight,stalker,motion,encounters,missionGuide,roomScenes,director,atmosphere;
-let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
+let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0,renderFrames=0;
 const escapeSequence=new EscapeSequence(12),story=new BreuStory();let exitOpen=false;
 let yaw=0,pitch=0,flashOn=true,interactHeld=false,requestJump=false;
 let flashlightBaseIntensity=55,flashlightOutput=1;
@@ -61,10 +63,12 @@ function renderSetup(){
  quality.max=Math.min(devicePixelRatio||1,touch?1.15:lowPowerDevice?1.3:1.55);
  quality.min=Math.min(quality.max,quality.min);
  quality.ratio=Math.min(quality.max,touch?.95:lowPowerDevice?1.10:1.32);
+ adaptive.min=quality.min;adaptive.max=quality.max;adaptive.ratio=quality.ratio;
  renderer.setPixelRatio(quality.ratio);
  renderer.setSize(innerWidth,innerHeight,false);
  renderer.shadowMap.enabled=!lowPowerDevice;
  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ renderer.shadowMap.autoUpdate=false;
  scene=new THREE.Scene();scene.background=new THREE.Color('#070c0e');scene.fog=new THREE.FogExp2('#080f11',.021);
  camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.035,125);
  camera.rotation.order='YXZ';
@@ -137,6 +141,7 @@ function renderSceneFrame(){
  cutsceneLight.visible=true;
  cutsceneLight.position.copy(camera.position);
  cutsceneLight.target.position.copy(camera.position).add(new THREE.Vector3(0,0,-4).applyQuaternion(camera.quaternion));
+ if(renderer.shadowMap.enabled)renderer.shadowMap.needsUpdate=true;
  renderer.render(scene,camera);
  if(shot.finished){
   overlay?.classList.remove('show','capturing','final-blackout');
@@ -274,25 +279,17 @@ function environmentCue(event,duration=2400){
  environmentCue.timeout=setTimeout(()=>label.classList.remove('show'),duration);
 }
 const fps={last:0,acc:0,second:0,frames:0};
-// Change resolution only every few seconds to avoid constantly reallocating
-// the framebuffer. The scene geometry, textures and collision stay untouched.
 function adjustQuality(elapsed){
  if(!started||paused||document.hidden||!renderer)return;
- quality.seconds+=Math.min(.25,elapsed);quality.frames++;
- if(quality.seconds<2.5)return;
- const frameMs=quality.seconds/quality.frames*1000;
- quality.seconds=0;quality.frames=0;
- let next=quality.ratio;
- if(frameMs>28){next=Math.max(quality.min,next-.10);quality.goodWindows=0;}
- else if(frameMs<18){if(++quality.goodWindows>=3){next=Math.min(quality.max,next+.05);quality.goodWindows=0;}}
- else quality.goodWindows=0;
- if(Math.abs(next-quality.ratio)>.015){
-  quality.ratio=next;
+ const decision=adaptive.sample(elapsed*1000);
+ if(decision?.changed){
+  quality.ratio=decision.ratio;
   renderer.setPixelRatio(quality.ratio);
   renderer.setSize(innerWidth,innerHeight,false);
  }
 }
 function frame(t){requestAnimationFrame(frame);if(!renderer)return;
+ renderFrames++;
  const elapsed=fps.last?Math.min(.25,(t-fps.last)/1000):1/60;
  const dt=Math.min(.05,elapsed);fps.last=t;clock+=(!paused?dt:0);
  if(director?.active){renderSceneFrame();return;}
@@ -362,6 +359,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
  stage?.update(clock,alarm);
  if(stage?.isSecurityPassable()&&!physics?.securityGateUnlocked)physics.unlockSecurityGate();
  if(exitOpen&&stage?.isExitPassable()&&!physics?.exitUnlocked)physics.unlockExit();
+ if(renderer.shadowMap.enabled&&adaptive.shouldUpdateShadow(renderFrames))renderer.shadowMap.needsUpdate=true;
  renderer.render(scene,camera);
 }
 async function boot(){

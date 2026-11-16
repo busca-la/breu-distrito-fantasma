@@ -25,6 +25,10 @@ assert(world.featured.filter(x=>x.kind==='arcade-screen').length>=3,'GAME 99 nee
 assert(world.hero.count>=35,'Priority rooms need detailed hero models, not box dressing');
 for(const name of ['MINATO hero kitchen assembly','DENKI hero repair bench','GAME 99 hero machine island'])
  assert(scene.children.some(x=>x.name===name),'Missing high-detail model: '+name);
+world.hero.updateVisibility({x:0,z:13});
+assert(world.hero.groups.some(x=>!x.visible),'Distant hero assets should be culled');
+world.hero.updateVisibility({x:-6,z:-35});
+assert(scene.children.find(x=>x.name==='GAME 99 hero machine island').visible,'Nearby hero model must retain full quality');
 let time=10,events=[];
 for(const p of [
  {x:7,z:5}, {x:-6.4,z:-11},{x:7,z:-8.5}, {x:-6.4,z:-22},

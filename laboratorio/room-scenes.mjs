@@ -251,6 +251,7 @@ export function createRoomScenes(scene,{lowPower=false}={}){
  // Emissive-only color animation; no additional shadow-casting light.
  function update(time,player,{power=false}={}){
   const current=roomAt(player);
+  hero.updateVisibility(player);
   if(current!==lastRoom){lastRoom=current;if(current&&!roomEntered.has(current))roomEntered.set(current,time)}
   const energy=power?1:.38;
   for(let i=0;i<strips.length;i++){

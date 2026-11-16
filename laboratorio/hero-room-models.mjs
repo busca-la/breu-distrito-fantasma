@@ -54,5 +54,12 @@ export function createHeroRoomModels(scene,{lowPower=false}={}){
  const caseGlass=mesh(new THREE.BoxGeometry(.92,1.13,.70),transparentGlass,'GAME 99 crane glass enclosure');caseGlass.position.y=1.15;prize.add(caseGlass);
  const claw=mesh(new THREE.TorusGeometry(.10,.018,5,10),steel,'GAME 99 hanging crane claw');claw.position.set(0,1.52,0);claw.rotation.x=Math.PI/2;prize.add(claw);
  prize.position.set(-8.38,0,-38.30);scene.add(prize);groups.push(prize);
- return {groups,count:groups.reduce((n,g)=>n+g.children.length,0)};
+ function updateVisibility(player){
+  if(!player)return;
+  for(const group of groups){
+   const distance=Math.hypot(group.position.x-player.x,group.position.z-player.z);
+   group.visible=distance<24;
+  }
+ }
+ return {groups,count:groups.reduce((n,g)=>n+g.children.length,0),updateVisibility};
 }
