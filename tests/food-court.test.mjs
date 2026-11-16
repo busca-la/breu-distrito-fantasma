@@ -13,10 +13,20 @@ for(const [x,z] of [[3.7,6.45],[6.1,6.4],[8.2,6.85],[10.8,6.9]])
  assert(circleFits(x,z,.24),`B1 wayfinding route is physically blocked at ${x},${z}`);
 const scene=new THREE.Scene(),court=createFoodCourt(scene,{lowPower:true});
 assert(court.counters.length===4,'Food court needs four distinct vendors');
-assert(court.tableCount>=8&&scene.children.some(x=>x.name==='Food court instanced chairs'));
+assert(court.tableCount===12&&scene.children.some(x=>x.name==='Food court supported chair seats'));
+assert(scene.children.some(x=>x.name==='Food court chair grounded legs'),'Chairs need legs touching the floor');
+assert(scene.children.some(x=>x.name==='Food court table grounded pedestals'),'Tabletops cannot float');
 assert(scene.children.some(x=>x.name==='FOOD COURT / B1 hanging sign'));
 assert(scene.children.some(x=>x.name==='B1 FOOD COURT corridor sign'),'Wayfinding must be visible before the stair entrance');
 assert.equal(scene.children.filter(x=>x.name==='B1 luminous floor arrow').length,4);
+for(const name of ['food court visible east wall','food court visible north wall','food court visible south wall'])
+ assert(scene.children.some(x=>x.name===name),'Missing visible boundary: '+name);
+assert.equal(scene.children.filter(x=>x.name?.endsWith('unique readable sign')).length,4,'Stores need unique signage');
+assert(scene.children.some(x=>x.name==='KARAAGE industrial extraction hood'));
+assert(scene.children.some(x=>x.name==='CAFE espresso machine body'));
+assert(scene.children.some(x=>x.name==='BENTO refrigerated display'));
+assert(scene.children.some(x=>x.name==='SWEET glass cake display'));
+assert(scene.children.some(x=>x.name==='B1 restroom floor-mounted toilet'),'B1 needs a real restroom');
 const physics=await BreuPhysics.create();
 physics.reset({x:9.7,z:8});
 let minimumY=99,maximumX=0;
