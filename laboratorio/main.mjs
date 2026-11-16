@@ -10,6 +10,8 @@ import {createEnvironmentMotion} from './environment-motion.mjs';
 import {createLiveEncounters} from './live-encounters.mjs';
 import {WING, WALLS, INTERACTION, STORE_SIGNS} from './layout.mjs';
 import {DEFAULT_BRIGHTNESS,normalizeBrightness,getVisibilityPreset} from './visibility.mjs';
+import {createRoomScenes} from './room-scenes.mjs';
+import {createCinematicDirector} from './cinematics.mjs';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#world'),status=$('#loading-status'),intro=$('#intro'),hud=$('#hud');
@@ -18,7 +20,7 @@ const mapCanvas=$('#map'),mapCtx=mapCanvas.getContext('2d');
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
 const lowPowerDevice=touch||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<=4);
 const quality={ratio:1,min:touch?.62:.72,max:1,seconds:0,frames:0,goodWindows:0};
-let scene,renderer,camera,physics,stage,flashlight,stalker,motion,encounters,missionGuide;
+let scene,renderer,camera,physics,stage,flashlight,stalker,motion,encounters,missionGuide,roomScenes,director;
 let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
 const escapeSequence=new EscapeSequence(12),story=new BreuStory();let exitOpen=false;
 let yaw=0,pitch=0,flashOn=true,interactHeld=false,requestJump=false;
@@ -65,7 +67,10 @@ function renderSetup(){
  motion=createEnvironmentMotion(scene,{lowPower:lowPowerDevice});
  encounters=createLiveEncounters(scene);
  missionGuide=createMissionGuide(scene);
- const light=new THREE.SpotLight('#f0e8db',43,28,Math.PI/5,.70,1.6);
+ roomScenes=createRoomScenes(scene,{lowPower:lowPowerDevice});
+ director=createCinematicDirector(camera,stalker);
+ // Focused beam, not a second omnidirectional shopping-mall floodlight.
+ const light=new THREE.SpotLight('#f4eadd',43,15.5,Math.PI/10,.36,2);
  flashlight=light;scene.add(light);scene.add(light.target);
  light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
  const fill=new THREE.SpotLight('#d0d5ce',2,9,Math.PI/2,.8,2);
@@ -89,7 +94,36 @@ function start(){
  $('#pause').textContent='II';
  if(!touch&&canvas.requestPointerLock)canvas.requestPointerLock();
 }
-function pause(){if(!started)return;paused=!paused;sound.setPaused(paused);$('#pause').textContent=paused?'▶':'II';$('#pause-screen').classList.toggle('hide',!paused);if(paused&&document.pointerLockElement)document.exitPointerLock();}
+function beginScene(kind){
+ if(!director?.begin(kind,clock))return false;
+ const overlay=$('#cinematic'),subtitle=$('#cinematic-caption');
+ overlay?.classList.add('show');
+ overlay?.classList.toggle('capturing',kind==='capture');
+ if(subtitle)subtitle.textContent={capture:'ELE TE PEGOU.',reveal:'ALGO ESTAVA ESPERANDO AQUI.',power:'ENERGIA RESTAURADA · GRADE ABRINDO',exit:'PORTÃO DE INCÊNDIO · ABRINDO'}[kind]||'';
+ keys.clear();requestJump=false;interactHeld=false;
+ return true;
+}
+function renderSceneFrame(){
+ const shot=director.update(clock);
+ if(!shot)return;
+ const overlay=$('#cinematic');
+ if(overlay){
+  overlay.classList.toggle('final-blackout',shot.kind==='capture'&&shot.progress>.87);
+  overlay.classList.toggle('show',!shot.finished);
+ }
+ stage?.update(clock,alarm);
+ if(stage?.isSecurityPassable()&&!physics?.securityGateUnlocked)physics.unlockSecurityGate();
+ if(exitOpen&&stage?.isExitPassable()&&!physics?.exitUnlocked)physics.unlockExit();
+ flashlight.visible=flashOn&&shot.kind!=='capture';
+ flashlight.position.copy(camera.position);
+ flashlight.target.position.copy(camera.position).add(new THREE.Vector3(0,0,-12).applyQuaternion(camera.quaternion));
+ renderer.render(scene,camera);
+ if(shot.finished){
+  overlay?.classList.remove('show','capturing','final-blackout');
+  if(shot.kind==='capture')onCaught();
+ }
+}
+function pause(){if(!started||director?.active)return;paused=!paused;sound.setPaused(paused);$('#pause').textContent=paused?'▶':'II';$('#pause-screen').classList.toggle('hide',!paused);if(paused&&document.pointerLockElement)document.exitPointerLock();}
 function inputSetup(){
  window.addEventListener('keydown',e=>{
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault();
@@ -97,7 +131,7 @@ function inputSetup(){
   if(e.code==='Space'&&!e.repeat)requestJump=true;
   if(e.code==='KeyF'&&!e.repeat)flashOn=!flashOn;
   if(e.code==='KeyE'&&!e.repeat)interactHeld=true;
-  if(e.code==='Escape'&&started&&!paused)pause();
+  if(e.code==='Escape'&&started&&!paused&&!director?.active)pause();
  });
  window.addEventListener('keyup',e=>keys.delete(e.code));
  document.addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&!paused){yaw-=e.movementX*.004;pitch=Math.max(-1.25,Math.min(1.25,pitch-e.movementY*.0036));}});
@@ -143,7 +177,7 @@ function updateObjective(pos){
  // Nothing is collected for its own sake: radio explains the power failure,
  // power unlocks the guard post, guard post starts the actual exit motor.
  if(alarm&&!exitOpen&&escapeSequence.update(clock)){
-  exitOpen=true;stage.openExit(clock);
+  exitOpen=true;stage.openExit(clock);beginScene('exit');
   environmentCue({kind:'alarm',text:'PORTÃO DE INCÊNDIO: MECANISMO ACIONADO. AGUENTE MAIS UM POUCO.'},4200);
  }
  const task=story.current;
@@ -182,6 +216,7 @@ function updateObjective(pos){
     }else if(story.phase==='relay'){
      story.advance('relay');
      stage.restorePower(clock);
+     beginScene('power');
      environmentCue({kind:'electric',text:'DISJUNTOR ATIVO: LUZES DA ALA VOLTARAM. A GRADE DA SEGURANÇA ESTÁ SUBINDO.'},4500);
     }else if(story.phase==='security'){
      story.advance('panel');
@@ -235,6 +270,7 @@ function adjustQuality(elapsed){
 function frame(t){requestAnimationFrame(frame);if(!renderer)return;
  const elapsed=fps.last?Math.min(.25,(t-fps.last)/1000):1/60;
  const dt=Math.min(.05,elapsed);fps.last=t;clock+=(!paused?dt:0);
+ if(director?.active){renderSceneFrame();return;}
  if(physics){
   if(started&&!paused){
    const forward=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-joystick.y;
@@ -254,17 +290,21 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
    const actuallySprinting=sprint&&walking;
    const result=stalker?.update(dt,p,alarm,clock,{
     sprinting:actuallySprinting,walking,flashOn,
-    securityOpen:physics.securityGateUnlocked,exitOpen:physics.exitUnlocked
+    securityOpen:physics.securityGateUnlocked,exitOpen:physics.exitUnlocked,
+    facing:{x:-Math.sin(yaw),z:-Math.cos(yaw)}
    });
    const threat=$('#threat-state'),noise=$('#noise-state');
    if(threat)threat.textContent=result?.chasing?'DETECTADO · DESPISTE-O':result?.distance<16?'ALGUÉM ESTÁ PERTO':'AMEAÇA NÃO DETECTADA';
    if(noise)noise.textContent=actuallySprinting?'RUÍDO ALTO · CORRENDO':walking?'RUÍDO BAIXO · ANDANDO':'SILENCIOSO';
-   if(result?.spotted)environmentCue({kind:'pursuit',text:'ELE OUVIU OU VIU VOCÊ. QUEBRE A LINHA DE VISÃO!'},3000);
+   if(result?.ambush){beginScene('reveal');environmentCue({kind:'pursuit',text:'ALGO SAIU DAS SOMBRAS. CORRA OU ESCONDA-SE!'},2800);}
+   else if(result?.spotted)environmentCue({kind:'pursuit',text:'ELE OUVIU OU VIU VOCÊ. QUEBRE A LINHA DE VISÃO!'},3000);
    if(result?.lost)environmentCue({kind:'metal',text:'VOCÊ DESPISTOU A CRIATURA. USE AS LOJAS PARA SE ESCONDER.'},3000);
    $('#danger').style.opacity=String(result?Math.max(0,Math.min(.67,(12-result.distance)/17)):0);
-   if(result?.caught){onCaught();return;}
+   if(result?.caught){beginScene('capture');return;}
    updateObjective(p);
    environmentCue(motion?.update(dt,clock,p,{flashlight:flashOn,alarm}));
+   const roomEvent=roomScenes?.update(clock,p,{power:story.phase!=='radio'&&story.phase!=='relay'});
+   if(roomEvent)environmentCue(roomEvent,2400);
    missionGuide?.update(p,story.target,clock);
    for(const event of encounters?.update(clock,p)||[])environmentCue(event);
    fps.frames++;fps.second+=elapsed;adjustQuality(elapsed);
@@ -274,7 +314,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
   }
  }
  flashlight.visible=flashOn;
- flashlight.position.copy(camera.position);const direction=vec(0,0,-1).applyEuler(camera.rotation);flashlight.target.position.copy(camera.position).add(direction.multiplyScalar(8));
+ flashlight.position.copy(camera.position);const direction=vec(0,0,-1).applyEuler(camera.rotation);flashlight.target.position.copy(camera.position).add(direction.multiplyScalar(13));
  stage?.update(clock,alarm);
  if(stage?.isSecurityPassable()&&!physics?.securityGateUnlocked)physics.unlockSecurityGate();
  if(exitOpen&&stage?.isExitPassable()&&!physics?.exitUnlocked)physics.unlockExit();
