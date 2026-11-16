@@ -6,7 +6,7 @@ import {createCinematicDirector,SHOTS} from '../laboratorio/cinematics.mjs';
 import {createStalker} from '../laboratorio/stalker.mjs';
 import {circleFits} from '../laboratorio/layout.mjs';
 
-assert(LED_SITES.length>=8,'Distinct LED signage required');
+assert(LED_SITES.length>=12,'The corridor and shops need many independent LED strips');
 assert(SMOKE_ZONES.length>=5,'Smoke should be local to several physically authored faults');
 assert(faultIntensity(12.3,0)<.08,'Worn ballast must actually brown out');
 assert(faultIntensity(2,0)>.75,'Normal circuit should not strobe constantly');
@@ -20,7 +20,9 @@ assert(eligibleForRepair(player,{time:12,started:false,done:false}),'Repair shou
 assert(!eligibleForRepair(player,{time:12,started:false,done:true}),'Repair must happen only once');
 
 const scene=new THREE.Scene(),world=createAtmosphere(scene,{lowPower:true});
-assert.equal(world.leds.length,8);
+assert.equal(world.leds.length,12);
+assert(scene.children.some(x=>x.name==='Subtle wet floor patches'&&x.isInstancedMesh),'No realistic wet reflecting floor details');
+assert(world.repair.children.some(x=>x.name==='Loose ceiling electrical cable'),'Repair fixture lacks an actual visible cable');
 assert.equal(world.tinyLights.length,3,'No expensive forest of real shadow lights');
 assert.equal(world.clouds.length,5);
 assert(world.clouds.every(c=>c.seeds.length<=12),'Low power device gets bounded smoke particles');
@@ -53,4 +55,4 @@ shot=director.update(29);
 assert(shot.finished&&!director.active&&!director.arm.visible,'Return to player after automatic shot');
 assert(Math.abs(camera.position.x-player.x)<.01,'Camera must restore the original position');
 assert(BRIGHTNESS_PRESETS.every(x=>x.ambient<.3),'Peripheral darkness must remain dominant');
-console.log('PASS: 8 powered LEDs, deterministic failures, 5 culled smoke zones and automatic physically timed lamp strike');
+console.log('PASS: 12 independent LEDs, wet surfaces, local 5-zone smoke, timed failures and automatic physical first-person lamp repair');
