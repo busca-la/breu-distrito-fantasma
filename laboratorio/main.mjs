@@ -20,7 +20,7 @@ const mapCanvas=$('#map'),mapCtx=mapCanvas.getContext('2d');
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
 const lowPowerDevice=touch||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<=4);
 const quality={ratio:1,min:touch?.62:.72,max:1,seconds:0,frames:0,goodWindows:0};
-let scene,renderer,camera,physics,stage,flashlight,stalker,motion,encounters,missionGuide,roomScenes,director;
+let scene,renderer,camera,physics,stage,flashlight,cutsceneLight,stalker,motion,encounters,missionGuide,roomScenes,director;
 let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
 const escapeSequence=new EscapeSequence(12),story=new BreuStory();let exitOpen=false;
 let yaw=0,pitch=0,flashOn=true,interactHeld=false,requestJump=false;
@@ -74,6 +74,11 @@ function renderSetup(){
  const light=new THREE.SpotLight('#f7eedb',63,17,Math.PI/11,.26,2);
  flashlight=light;scene.add(light);scene.add(light.target);
  light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
+ // Separate short-range film key light: only active during cutscenes, so
+ // the grab-to-mouth is legible without lighting the world during play.
+ cutsceneLight=new THREE.SpotLight('#dfc9b3',27,9,Math.PI/4,.55,2);
+ cutsceneLight.castShadow=false;cutsceneLight.visible=false;
+ scene.add(cutsceneLight,cutsceneLight.target);
  const fill=new THREE.SpotLight('#d0d5ce',.25,6,Math.PI/3,.8,2);
  fill.position.set(0,1.6,12);fill.target.position.set(0,1,-1);scene.add(fill,fill.target);
  setBrightness(brightnessLevel);
@@ -122,6 +127,9 @@ function renderSceneFrame(){
  flashlight.visible=flashOn&&shot.kind!=='capture';
  flashlight.position.copy(camera.position);
  flashlight.target.position.copy(camera.position).add(new THREE.Vector3(0,0,-12).applyQuaternion(camera.quaternion));
+ cutsceneLight.visible=true;
+ cutsceneLight.position.copy(camera.position);
+ cutsceneLight.target.position.copy(camera.position).add(new THREE.Vector3(0,0,-4).applyQuaternion(camera.quaternion));
  renderer.render(scene,camera);
  if(shot.finished){
   overlay?.classList.remove('show','capturing','final-blackout');
@@ -277,6 +285,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
  const elapsed=fps.last?Math.min(.25,(t-fps.last)/1000):1/60;
  const dt=Math.min(.05,elapsed);fps.last=t;clock+=(!paused?dt:0);
  if(director?.active){renderSceneFrame();return;}
+ if(cutsceneLight)cutsceneLight.visible=false;
  if(physics){
   if(started&&!paused){
    const forward=(keys.has('KeyW')||keys.has('ArrowUp')?1:0)-(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-joystick.y;
