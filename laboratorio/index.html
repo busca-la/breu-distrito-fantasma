@@ -11,8 +11,17 @@
 #brightness-control .brightness-ticks{display:flex;justify-content:space-between;gap:5px;color:#a4b4b0;font-size:10px}
 #brightness-control .brightness-help{font-size:11px;color:#aabbb8;margin:12px 0 0;line-height:1.4}
 @media(max-height:520px){#pause-screen{gap:9px;overflow-y:auto;padding:16px}#pause-screen h3{font-size:38px}#brightness-control{padding:9px 14px}#brightness-slider{margin:7px 0}}
+#cinematic{display:none;position:fixed;z-index:23;inset:0;pointer-events:none;background:transparent;transition:background .1s}
+#cinematic.show{display:block}
+#cinematic::before,#cinematic::after{content:'';position:absolute;left:0;right:0;height:9vh;min-height:32px;background:#020607f5}
+#cinematic::before{top:0}#cinematic::after{bottom:0}
+#cinematic-caption{position:absolute;left:50%;bottom:calc(10vh + 20px);transform:translateX(-50%);padding:10px 18px;text-align:center;max-width:88vw;width:max-content;white-space:normal;font-size:12px;font-weight:700;line-height:1.45;letter-spacing:.13em;color:#e2ded5;background:#0b1219bc;text-shadow:0 2px 4px #000}
+#cinematic.capturing::before,#cinematic.capturing::after{background:#010304e8}
+#cinematic.capturing #cinematic-caption{color:#eac4b6}
+#cinematic.final-blackout{background:#010203}
+@media(max-width:600px){#cinematic-caption{font-size:10px;bottom:calc(10vh + 14px);letter-spacing:.06em}}
 </style></head><body>
-<canvas id="world" aria-label="Ambiente 3D do shopping abandonado"></canvas><div id="vignette"></div><div id="noise"></div><div id="danger"></div>
+<canvas id="world" aria-label="Ambiente 3D do shopping abandonado"></canvas><div id="cinematic" aria-live="polite"><div id="cinematic-caption"></div></div><div id="vignette"></div><div id="noise"></div><div id="danger"></div>
 <section id="intro"><div class="inside"><div class="tiny">SHOPPING 09 <span style="color:#d7a69e">/</span> ALA DE SERVIÇO</div><div class="line"></div><h1 id="intro-headline">BREU<span style="color:#a5b1b1">.</span></h1><h2>Não acenda todas as luzes.</h2><p id="intro-copy">Um blecaute travou as saídas. Um funcionário corre para dentro do MINATO e você ouve um rádio de socorro. Descubra o que causou o bloqueio, restabeleça a energia, abra o portão e fuja. A criatura escuta corridas e pode ver a luz da sua lanterna.</p><button id="play" class="menu-btn" disabled>ENTRAR NO SHOPPING</button><div id="loading-status">Preparando o corredor…</div></div><div class="intro-footer"><span>DISTRITO FANTASMA · 02:17 · SHOPPING 09</span><span>WASD ANDAR · SHIFT CORRER (FAZ RUÍDO) · E INTERAGIR · F APAGAR LANTERNA · ESPAÇO PULAR</span></div></section>
 <div id="hud" class="hide"><div id="hud-top"><div class="hud-identity">BREU / ALA 03<small>SHOPPING 09 · EVACUAÇÃO B2</small><small id="threat-state">AMEAÇA NÃO DETECTADA</small><small id="noise-state">SILENCIOSO</small></div><div class="hud-objective"><div id="story-progress">ETAPA 1 / 4</div><div id="objective">DESCUBRA POR QUE AS SAÍDAS TRAVARAM</div><div id="mission-detail">Siga o funcionário até o restaurante MINATO.</div><div id="distance"><span id="needle">▲</span><span id="distance-value">… m</span></div></div></div><canvas id="map" width="160" height="190"></canvas><span id="reticle"></span><div id="hint" class="hide"></div><div id="compass">SHOPPING 09 · ALA EXPLORÁVEL · LOJAS ABERTAS</div><span id="fps"></span><button id="pause" title="Pausar jogo">II</button></div>
 <div id="pause-screen" class="hide"><h3>INTERVALO.</h3><p class="notice-text">Seu progresso continua aqui. Não existe música para esconder o que se move pelos corredores.</p><button id="resume">CONTINUAR</button><button id="sound-btn" class="sound-btn">SOM: LIGADO</button>
