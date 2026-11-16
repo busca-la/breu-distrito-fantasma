@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createHeroRoomModels} from './hero-room-models.mjs';
 
 // Distinct interiors behind the real doorways in layout.mjs. Large fixtures
 // stay at the edges: no uncollided obstacles in walkable room centres.
@@ -18,6 +19,7 @@ export function roomAt(p){
  return ROOM_ZONES.find(r=>p.x>r.x0&&p.x<r.x1&&p.z>r.z0&&p.z<r.z1)?.id||null;
 }
 export function createRoomScenes(scene,{lowPower=false}={}){
+ const hero=createHeroRoomModels(scene,{lowPower});
  const mats={
   porcelain:new THREE.MeshStandardMaterial({color:'#758985',roughness:.36,metalness:.12}),
   paper:new THREE.MeshStandardMaterial({color:'#aaa39a',roughness:1}),
@@ -291,5 +293,5 @@ export function createRoomScenes(scene,{lowPower=false}={}){
   }
   return null;
  }
- return {update,roomAt,rooms:ROOM_ZONES,visited,turners,featured,batchCount};
+ return {update,roomAt,rooms:ROOM_ZONES,visited,turners,featured,hero,batchCount};
 }

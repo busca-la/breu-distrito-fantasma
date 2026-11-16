@@ -22,6 +22,9 @@ assert(world.turners.length>0,'No animated character inside fashion room');
 assert(world.featured.some(x=>x.kind==='falling-bowl'),'MINATO needs a visible physical event');
 assert(world.featured.some(x=>x.kind==='denki-screen'),'DENKI needs a real self-starting monitor');
 assert(world.featured.filter(x=>x.kind==='arcade-screen').length>=3,'GAME 99 needs multiple booting cabinets');
+assert(world.hero.count>=35,'Priority rooms need detailed hero models, not box dressing');
+for(const name of ['MINATO hero kitchen assembly','DENKI hero repair bench','GAME 99 hero machine island'])
+ assert(scene.children.some(x=>x.name===name),'Missing high-detail model: '+name);
 let time=10,events=[];
 for(const p of [
  {x:7,z:5}, {x:-6.4,z:-11},{x:7,z:-8.5}, {x:-6.4,z:-22},
