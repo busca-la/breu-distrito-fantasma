@@ -33,9 +33,9 @@ export function faultIntensity(time,seed=0){
 export function repairPhase(t){
  if(t<0)return 'idle';
  if(t<.23)return 'discover';
- if(t<.50)return 'reach';
- if(t<.67)return 'impact';
- if(t<.87)return 'recover';
+ if(t<.63)return 'reach';
+ if(t<.76)return 'impact';
+ if(t<.90)return 'recover';
  return 'stable';
 }
 export function eligibleForRepair(player,{time=0,done=false,started=false}={}){
@@ -129,7 +129,7 @@ export function createAtmosphere(scene,{lowPower=false}={}){
    const light=tinyLights[i].light;
    light.intensity=1.05*faultIntensity(time,i+1);
   }
-  const phase=started<0?null:repairPhase(Math.min(1,(time-started)/2.75));
+  const phase=started<0?null:repairPhase(Math.min(1,(time-started)/3.75));
   // A failed ballast never turns fully on until a real, visible impact.
   const voltage=repaired?1:(phase==='impact'||phase==='recover'||phase==='stable'?1:faultIntensity(time,4)*.18);
   inspectionLight.intensity=voltage*(repaired?3.5:2.2);
