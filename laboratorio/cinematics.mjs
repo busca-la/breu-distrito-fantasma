@@ -3,6 +3,12 @@ import * as THREE from 'three';
 // Longer real-time direction, not a video overlay. Film the actual geometry,
 // with an establishing beat, an action beat and a consequence beat.
 export const SHOTS=Object.freeze({
+ repair:{seconds:3.75,title:'A LUMINÁRIA VOLTOU A ACENDER.',beats:[
+  {at:0,text:'UMA LUZ FALHANDO. O REATOR ESTÁ SOLTO.',cue:'ballast'},
+  {at:.35,text:'VOCÊ LEVANTA A MÃO PARA ALCANÇAR A LUMINÁRIA.',cue:'cloth'},
+  {at:.63,text:'UM GOLPE NO REFLETOR.',cue:'lamp-hit'},
+  {at:.78,text:'O REATOR PEGA DE NOVO. A LUZ SE ESTABILIZA.',cue:'lamp-restart'}
+ ]},
  reveal:{seconds:4.75,title:'ALGO ESTAVA ESPERANDO AQUI.',beats:[
   {at:0,text:'UM BARULHO VEIO DO FUNDO DA LOJA.',cue:'metal'},
   {at:.23,text:'NÃO ERA UM FUNCIONÁRIO.',cue:'ambush'},
@@ -30,7 +36,24 @@ const ease=t=>{const v=clamp(t);return v*v*(3-2*v)};
 const mix=(a,b,t)=>a+(b-a)*clamp(t);
 const towards=(camera,x,y,z)=>camera.lookAt(x,y,z);
 
-export function createCinematicDirector(camera,stalker){
+export function createCinematicDirector(camera,stalker,atmosphere=null){
+ // In-camera rig: a low-poly glove with articulated knuckles and a jacket
+ // cuff, always hidden outside the single automatic lamp-repair shot.
+ const gloveMaterial=new THREE.MeshStandardMaterial({color:'#4b5352',roughness:.88});
+ const sleeveMaterial=new THREE.MeshStandardMaterial({color:'#303b40',roughness:.93});
+ const cuffMaterial=new THREE.MeshStandardMaterial({color:'#687070',roughness:.82});
+ const arm=new THREE.Group();arm.name='First-person automatic lamp tap';arm.visible=false;
+ const forearm=new THREE.Mesh(new THREE.CylinderGeometry(.105,.15,.62,10),sleeveMaterial);
+ forearm.position.set(0,-.23,.24);forearm.rotation.x=-.42;arm.add(forearm);
+ const cuff=new THREE.Mesh(new THREE.CylinderGeometry(.113,.122,.10,10),cuffMaterial);cuff.position.y=.08;arm.add(cuff);
+ const palm=new THREE.Mesh(new THREE.BoxGeometry(.205,.22,.12),gloveMaterial);palm.position.set(0,.20,-.11);arm.add(palm);
+ for(let i=0;i<4;i++){
+  const finger=new THREE.Mesh(new THREE.CapsuleGeometry(.022,.12,3,5),gloveMaterial);
+  finger.position.set(-.078+i*.052,.34,-.18);finger.rotation.x=-.55;arm.add(finger);
+ }
+ const thumb=new THREE.Mesh(new THREE.CapsuleGeometry(.033,.10,3,5),gloveMaterial);
+ thumb.position.set(.13,.18,-.08);thumb.rotation.z=-.85;arm.add(thumb);
+ camera.add(arm);
  let active=null;
  function begin(kind,time){
   const config=SHOTS[kind];
@@ -66,7 +89,21 @@ export function createCinematicDirector(camera,stalker){
    );
    towards(camera,gateX,1.10+ease(u)*2.15,gateZ);
    camera.fov=64+(1-u)*6;
-  }else if(kind==='reveal'){
+  }else if(kind==='repair'){
+   const lamp=atmosphere?.repair?.position;
+   const target=lamp?lamp.clone():new THREE.Vector3(-1.35,2.14,-17.3);
+   const matrix=new THREE.Matrix4().lookAt(shot.entryPosition,target,new THREE.Vector3(0,1,0));
+   const facing=new THREE.Quaternion().setFromRotationMatrix(matrix);
+   const turn=ease(u/.24);
+   camera.position.copy(shot.entryPosition);
+   camera.position.y+=Math.sin(u*Math.PI)*.035;
+   camera.quaternion.copy(shot.entryRotation).slerp(facing,turn);
+   camera.fov=shot.entryFov-Math.sin(u*Math.PI)*6;
+   const stretch=u<.32?0:u<.64?ease((u-.32)/.32):u<.77?1:1-ease((u-.77)/.23);
+   arm.visible=true;
+   arm.position.set(-.40+stretch*.31,-.50+stretch*.43,-.69-stretch*.72);
+   arm.rotation.set(-.23-stretch*.43,0,-.13+stretch*.12);
+ }else if(kind==='reveal'){
    // A sustained first-person stare, instead of a split-second camera snap.
    stalker?.poseReveal?.(u,shot.entryPosition);
    const group=stalker?.group;
@@ -102,6 +139,7 @@ export function createCinematicDirector(camera,stalker){
   camera.updateProjectionMatrix();
   const finished=u>=1;
   if(finished){
+   arm.visible=false;
    if(kind!=='capture'){
     camera.position.copy(shot.entryPosition);
     camera.quaternion.copy(shot.entryRotation);
@@ -112,5 +150,5 @@ export function createCinematicDirector(camera,stalker){
   }
   return {kind,progress:u,finished,caption:config.beats[beat].text,cue,title:config.title,beat};
  }
- return {begin,update,get active(){return !!active},get kind(){return active?.kind||null}};
+ return {begin,update,arm,get active(){return !!active},get kind(){return active?.kind||null}};
 }
