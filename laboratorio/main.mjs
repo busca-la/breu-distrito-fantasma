@@ -40,6 +40,7 @@ function setBrightness(value){
  if(flashlight)flashlight.intensity=preset.flashlight;
  stage?.setVisibility(preset);
  document.documentElement.style.setProperty('--vignette-edge',String(preset.vignette));
+ document.documentElement.style.setProperty('--beam-edge',String(preset.edge));
  const slider=$('#brightness-slider'),caption=$('#brightness-value');
  if(slider)slider.value=String(brightnessLevel);
  if(caption)caption.textContent=preset.name;
@@ -60,7 +61,7 @@ function renderSetup(){
  renderer.setSize(innerWidth,innerHeight,false);
  renderer.shadowMap.enabled=!lowPowerDevice;
  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
- scene=new THREE.Scene();scene.background=new THREE.Color('#151e21');scene.fog=new THREE.FogExp2('#141b1e',.019);
+ scene=new THREE.Scene();scene.background=new THREE.Color('#070c0e');scene.fog=new THREE.FogExp2('#080f11',.021);
  camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.035,125);
  camera.rotation.order='YXZ';
  stage=createLevel(scene);stalker=createStalker(scene);
@@ -70,10 +71,10 @@ function renderSetup(){
  roomScenes=createRoomScenes(scene,{lowPower:lowPowerDevice});
  director=createCinematicDirector(camera,stalker);
  // Focused beam, not a second omnidirectional shopping-mall floodlight.
- const light=new THREE.SpotLight('#f4eadd',43,15.5,Math.PI/10,.36,2);
+ const light=new THREE.SpotLight('#f7eedb',63,17,Math.PI/11,.26,2);
  flashlight=light;scene.add(light);scene.add(light.target);
  light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
- const fill=new THREE.SpotLight('#d0d5ce',2,9,Math.PI/2,.8,2);
+ const fill=new THREE.SpotLight('#d0d5ce',.25,6,Math.PI/3,.8,2);
  fill.position.set(0,1.6,12);fill.target.position.set(0,1,-1);scene.add(fill,fill.target);
  setBrightness(brightnessLevel);
  camera.position.set(0,1.62,13);scene.add(camera);
@@ -96,6 +97,7 @@ function start(){
 }
 function beginScene(kind){
  if(!director?.begin(kind,clock))return false;
+ document.body.classList.add('cinematic-active');
  if(kind==='capture'||kind==='reveal')sound.cue(kind==='capture'?'capture':'ambush');
  const overlay=$('#cinematic'),subtitle=$('#cinematic-caption');
  overlay?.classList.add('show');
@@ -121,6 +123,7 @@ function renderSceneFrame(){
  renderer.render(scene,camera);
  if(shot.finished){
   overlay?.classList.remove('show','capturing','final-blackout');
+  document.body.classList.remove('cinematic-active');
   if(shot.kind==='capture')onCaught();
  }
 }
@@ -130,7 +133,7 @@ function inputSetup(){
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault();
   keys.add(e.code);
   if(e.code==='Space'&&!e.repeat)requestJump=true;
-  if(e.code==='KeyF'&&!e.repeat)flashOn=!flashOn;
+  if(e.code==='KeyF'&&!e.repeat){flashOn=!flashOn;document.body.classList.toggle('flashlight-off',!flashOn);}
   if(e.code==='KeyE'&&!e.repeat)interactHeld=true;
   if(e.code==='Escape'&&started&&!paused&&!director?.active)pause();
  });
@@ -140,7 +143,7 @@ function inputSetup(){
  $('#play').addEventListener('click',start);
  $('#pause').addEventListener('click',pause);
  $('#resume').addEventListener('click',()=>{pause();if(!touch)canvas.requestPointerLock()});
- $('#flash-btn').addEventListener('click',()=>flashOn=!flashOn);
+ $('#flash-btn').addEventListener('click',()=>{flashOn=!flashOn;document.body.classList.toggle('flashlight-off',!flashOn);});
  $('#sound-btn').addEventListener('click',async()=>{const on=await sound.toggle();if(paused)sound.setPaused(true);$('#sound-btn').textContent=on?'SOM: LIGADO':'SOM: DESLIGADO'});
  $('#brightness-slider').addEventListener('input',e=>setBrightness(e.target.value));
  $('#jump-btn').addEventListener('pointerdown',e=>{e.preventDefault();requestJump=true});
