@@ -80,7 +80,28 @@ export const PROPS = [
  {name:'trolley',x:-1.9,z:-43.3,w:1.35,d:.7,h:.95,blocking:true},
  {name:'ramen counter',x:-7,z:-13.3,w:3.2,d:.85,h:1.07,blocking:true},
  {name:'electronics counter',x:7,z:-29.0,w:3,d:.85,h:1.2,blocking:true},
- {name:'security desk',x:16.2,z:-53.6,w:2.15,d:.6,h:1.04,blocking:true}
+ {name:'security desk',x:16.2,z:-53.6,w:2.15,d:.6,h:1.04,blocking:true},
+ {name:'corridor old vending machine',x:2.28,z:-1,w:0.84,d:0.68,h:1.86,material:'rust',blocking:true},
+ {name:'corridor ticket kiosk',x:-2.34,z:-18.2,w:0.75,d:0.87,h:1.45,material:'frame',blocking:true},
+ {name:'corridor wheeled cleaning cart',x:2.22,z:-33.9,w:0.8,d:0.82,h:0.82,material:'board',blocking:true},
+ {name:'corridor service pallet',x:-2.26,z:-49.6,w:0.72,d:0.86,h:0.44,material:'wood',blocking:true},
+ {name:'restroom linen storage',x:8.17,z:8.88,w:0.6,d:0.55,h:1.48,material:'plastic',blocking:true},
+ {name:'minato standing refrigerator',x:-9.53,z:-9.18,w:0.73,d:0.7,h:1.92,material:'steel',blocking:true},
+ {name:'minato food crates',x:-9.44,z:-14.28,w:0.88,d:0.69,h:0.83,material:'wood',blocking:true},
+ {name:'kino camera display case',x:9.48,z:-6.4,w:0.76,d:0.67,h:1.54,material:'steel',blocking:true},
+ {name:'kino broken lightbox',x:9.45,z:-11.75,w:0.66,d:0.56,h:1.56,material:'board',blocking:true},
+ {name:'fashion folded clothes chest',x:-9.5,z:-20.36,w:0.8,d:0.7,h:0.9,material:'wood',blocking:true},
+ {name:'fashion retail mannequin rack',x:-9.49,z:-25.14,w:0.74,d:0.75,h:1.74,material:'frame',blocking:true},
+ {name:'denki battery cabinet',x:9.55,z:-24.27,w:0.81,d:0.66,h:1.85,material:'steel',blocking:true},
+ {name:'denki replacement part bin',x:9.54,z:-30.43,w:0.85,d:0.63,h:1.11,material:'plastic',blocking:true},
+ {name:'arcade prize machine',x:-9.53,z:-31.33,w:0.8,d:0.75,h:1.93,material:'rust',blocking:true},
+ {name:'arcade token exchanger',x:-9.51,z:-38.31,w:0.77,d:0.64,h:1.78,material:'steel',blocking:true},
+ {name:'pharmacy refrigerated display',x:9.53,z:-37.75,w:0.75,d:0.66,h:1.91,material:'white',blocking:true},
+ {name:'pharmacy storage cupboard',x:9.5,z:-42.35,w:0.8,d:0.72,h:1.77,material:'board',blocking:true},
+ {name:'maintenance spare battery rack',x:-9.51,z:-46.3,w:0.78,d:0.7,h:1.83,material:'steel',blocking:true},
+ {name:'maintenance spare tool case',x:-9.47,z:-50.25,w:0.83,d:0.68,h:1.01,material:'wood',blocking:true},
+ {name:'security control archives',x:17.9,z:-49.1,w:0.59,d:0.53,h:1.72,material:'frame',blocking:true},
+ {name:'security supply locker',x:17.9,z:-53.8,w:0.63,d:0.53,h:1.8,material:'steel',blocking:true}
 ];
 // Openings on the inner corridor must stay clear of purely visual wall panels.
 // The geometry and visual decoration read the same portal definitions.
