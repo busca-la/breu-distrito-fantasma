@@ -12,6 +12,7 @@ import {WING, WALLS, INTERACTION, STORE_SIGNS} from './layout.mjs';
 import {DEFAULT_BRIGHTNESS,normalizeBrightness,getVisibilityPreset} from './visibility.mjs';
 import {createRoomScenes} from './room-scenes.mjs';
 import {createCinematicDirector} from './cinematics.mjs';
+import {createAtmosphere} from './atmosphere.mjs';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#world'),status=$('#loading-status'),intro=$('#intro'),hud=$('#hud');
@@ -20,7 +21,7 @@ const mapCanvas=$('#map'),mapCtx=mapCanvas.getContext('2d');
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
 const lowPowerDevice=touch||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<=4);
 const quality={ratio:1,min:touch?.62:.72,max:1,seconds:0,frames:0,goodWindows:0};
-let scene,renderer,camera,physics,stage,flashlight,cutsceneLight,stalker,motion,encounters,missionGuide,roomScenes,director;
+let scene,renderer,camera,physics,stage,flashlight,cutsceneLight,stalker,motion,encounters,missionGuide,roomScenes,director,atmosphere;
 let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
 const escapeSequence=new EscapeSequence(12),story=new BreuStory();let exitOpen=false;
 let yaw=0,pitch=0,flashOn=true,interactHeld=false,requestJump=false;
@@ -69,9 +70,10 @@ function renderSetup(){
  encounters=createLiveEncounters(scene);
  missionGuide=createMissionGuide(scene);
  roomScenes=createRoomScenes(scene,{lowPower:lowPowerDevice});
- director=createCinematicDirector(camera,stalker);
+ atmosphere=createAtmosphere(scene,{lowPower:lowPowerDevice});
+ director=createCinematicDirector(camera,stalker,atmosphere);
  // Focused beam, not a second omnidirectional shopping-mall floodlight.
- const light=new THREE.SpotLight('#f7eedb',63,17,Math.PI/11,.26,2);
+ const light=new THREE.SpotLight('#f7eedb',63,18.5,Math.PI/9.5,.34,2);
  flashlight=light;scene.add(light);scene.add(light.target);
  light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
  // Separate short-range film key light: only active during cutscenes, so
@@ -102,6 +104,7 @@ function start(){
 }
 function beginScene(kind){
  if(!director?.begin(kind,clock))return false;
+ if(kind==='repair')atmosphere?.beginRepair(clock);
  document.body.classList.add('cinematic-active');
  const overlay=$('#cinematic'),subtitle=$('#cinematic-caption');
  overlay?.classList.add('show');
@@ -113,6 +116,7 @@ function beginScene(kind){
 function renderSceneFrame(){
  const shot=director.update(clock);
  if(!shot)return;
+ atmosphere?.update(clock,physics?.position(),{active:true});
  const overlay=$('#cinematic');
  const caption=$('#cinematic-caption');
  if(caption)caption.textContent=shot.caption;
@@ -320,6 +324,8 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
    environmentCue(motion?.update(dt,clock,p,{flashlight:flashOn,alarm}));
    const roomEvent=roomScenes?.update(clock,p,{power:story.phase!=='radio'&&story.phase!=='relay'});
    if(roomEvent)environmentCue(roomEvent,2400);
+   for(const e of atmosphere?.update(clock,p)||[])environmentCue(e,2600);
+   if(atmosphere?.eligible(p,clock))beginScene('repair');
    missionGuide?.update(p,story.target,clock);
    for(const event of encounters?.update(clock,p)||[])environmentCue(event);
    fps.frames++;fps.second+=elapsed;adjustQuality(elapsed);
@@ -329,7 +335,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
   }
  }
  flashlight.visible=flashOn;
- flashlight.position.copy(camera.position);const direction=vec(0,0,-1).applyEuler(camera.rotation);flashlight.target.position.copy(camera.position).add(direction.multiplyScalar(13));
+ flashlight.position.copy(camera.position);const direction=vec(0,0,-1).applyEuler(camera.rotation);flashlight.target.position.copy(camera.position).add(direction.multiplyScalar(16));
  stage?.update(clock,alarm);
  if(stage?.isSecurityPassable()&&!physics?.securityGateUnlocked)physics.unlockSecurityGate();
  if(exitOpen&&stage?.isExitPassable()&&!physics?.exitUnlocked)physics.unlockExit();
