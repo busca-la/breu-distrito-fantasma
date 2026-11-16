@@ -35,8 +35,21 @@ export function createFoodCourt(scene,{lowPower=false}={}){
   box('upper atrium '+side+' handrail',15.2,1.0,z,8.1,.08,.08,steel);
   for(let x=11.4;x<19;x+=1.05)box('upper atrium railing post',x,.52,z,.06,1,.06,steel);
  }
+ // Wayfinding begins in the original gallery, before the player enters the
+ // restroom-side passage. The previous sign was hidden beyond the stair.
+ box('B1 FOOD COURT corridor sign',3.42,2.82,6.5,.16,.72,2.55,dark);
+ box('B1 FOOD COURT corridor sign glow',3.31,2.82,6.5,.025,.42,2.18,warm);
+ box('B1 stair doorway left jamb',10.48,1.55,6.62,.32,3.1,.24,steel);
+ box('B1 stair doorway right jamb',10.48,1.55,9.38,.32,3.1,.24,steel);
+ box('B1 stair doorway lintel',10.48,3.02,8,.32,.22,3.0,steel);
  box('FOOD COURT / B1 hanging sign',13.4,2.65,10.1,3.6,.55,.12,dark);
  box('FOOD COURT sign glow',13.4,2.65,10.02,3.0,.18,.025,warm);
+ for(let i=0;i<4;i++){
+  const arrow=box('B1 luminous floor arrow',4.8+i*1.55,.075,7.65,.72,.025,.28,warm);
+  arrow.rotation.y=i===3?-.25:0;
+ }
+ const entranceLight=new THREE.PointLight('#d1a477',lowPower?5:10,8,2);
+ entranceLight.position.set(8.8,2.35,8);entranceLight.castShadow=false;scene.add(entranceLight);
  // Physical staircase and side rails use the same measurements as Rapier.
  for(let i=0;i<13;i++){
   const x=11.25+i*.62,top=-i*.35;

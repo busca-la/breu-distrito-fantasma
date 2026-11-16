@@ -108,6 +108,7 @@ export const PROPS = [
 // Openings on the inner corridor must stay clear of purely visual wall panels.
 // The geometry and visual decoration read the same portal definitions.
 export const OPEN_PORTALS=[
+ {name:'B1 food court stair access',side:1,zMin:6.55,zMax:9.45},
  {name:'public restroom entrance',side:1,zMin:4.82,zMax:8.08},
  {name:'camera shop entrance',side:1,zMin:-10.3,zMax:-6.7},
  {name:'fashion shop entrance',side:-1,zMin:-23.8,zMax:-20.2},

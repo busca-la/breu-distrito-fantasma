@@ -17,7 +17,7 @@ test('monster can travel from storefronts to service area without walking throug
 });
 
 test('visual wall-cladding does not hide an accessible storefront',()=>{
- assert.equal(OPEN_PORTALS.length,9);
+ assert.equal(OPEN_PORTALS.length,10);
  for(const portal of OPEN_PORTALS){
   const middle=(portal.zMin+portal.zMax)/2;
   assert(!facadePanelAllowed(portal.side,middle,.3),`${portal.name} covered by wall panel`);

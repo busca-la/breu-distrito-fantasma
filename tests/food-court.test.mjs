@@ -9,10 +9,14 @@ assert.equal(FOOD_COURT_COLLIDERS.filter(x=>x.name.startsWith('food court stair 
 assert.equal(FOOD_COURT_COLLIDERS.filter(x=>x.name.startsWith('food court table ')).length,12);
 assert.equal(FOOD_COURT_COLLIDERS.filter(x=>x.name.startsWith('food vendor counter ')).length,4);
 assert(circleFits(10.8,8,.25),'The original east wall must have a real atrium opening');
+for(const [x,z] of [[3.7,6.45],[6.1,6.4],[8.2,6.85],[10.8,6.9]])
+ assert(circleFits(x,z,.24),`B1 wayfinding route is physically blocked at ${x},${z}`);
 const scene=new THREE.Scene(),court=createFoodCourt(scene,{lowPower:true});
 assert(court.counters.length===4,'Food court needs four distinct vendors');
 assert(court.tableCount>=8&&scene.children.some(x=>x.name==='Food court instanced chairs'));
 assert(scene.children.some(x=>x.name==='FOOD COURT / B1 hanging sign'));
+assert(scene.children.some(x=>x.name==='B1 FOOD COURT corridor sign'),'Wayfinding must be visible before the stair entrance');
+assert.equal(scene.children.filter(x=>x.name==='B1 luminous floor arrow').length,4);
 const physics=await BreuPhysics.create();
 physics.reset({x:9.7,z:8});
 let minimumY=99,maximumX=0;
