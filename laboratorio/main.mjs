@@ -134,7 +134,7 @@ function renderSceneFrame(){
   overlay.classList.toggle('final-blackout',shot.kind==='capture'&&shot.progress>.92);
   overlay.classList.toggle('show',!shot.finished);
  }
- stage?.update(clock,alarm);
+ stage?.update(clock,alarm,physics?.position());
  if(stage?.isSecurityPassable()&&!physics?.securityGateUnlocked)physics.unlockSecurityGate();
  if(exitOpen&&stage?.isExitPassable()&&!physics?.exitUnlocked)physics.unlockExit();
  flashlight.visible=flashOn&&flashlightOutput>.01&&shot.kind!=='capture';
@@ -365,7 +365,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
  }
  flashlight.visible=flashOn&&flashlightOutput>.01;
  flashlight.position.copy(camera.position);const direction=vec(0,0,-1).applyEuler(camera.rotation);flashlight.target.position.copy(camera.position).add(direction.multiplyScalar(28));
- stage?.update(clock,alarm);
+ stage?.update(clock,alarm,physics?.position());
  if(stage?.isSecurityPassable()&&!physics?.securityGateUnlocked)physics.unlockSecurityGate();
  if(exitOpen&&stage?.isExitPassable()&&!physics?.exitUnlocked)physics.unlockExit();
  if(renderer.shadowMap.enabled&&adaptive.shouldUpdateShadow(renderFrames))renderer.shadowMap.needsUpdate=true;

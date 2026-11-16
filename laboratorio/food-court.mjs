@@ -75,6 +75,16 @@ export function createFoodCourt(scene,{lowPower=false}={}){
  box('food court visible west wall north',19.18,-2.2,12.65,.36,4.4,6.7,concrete);
  box('food court visible west wall south',19.18,-2.2,-.65,.36,4.4,14.7,concrete);
  for(const [x,z] of [[20,-7.75],[34,-7.75],[20,15.75],[34,15.75]])box('food court structural column',x,-2.2,z,.48,4.4,.48,concrete);
+ // Ceiling services and trim establish a believable commercial interior.
+ for(let z=-5.5;z<=14;z+=3.25){
+  box('food court ceiling suspension rail',27,-.36,z,15.2,.07,.08,steel);
+  if(!lowPower)box('food court acoustic ceiling panel',27,-.25,z,14.7,.035,2.7,dark);
+ }
+ for(const z of [-5,4,13]){
+  const duct=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,14.2,8),steel);duct.name='food court exposed ventilation duct';duct.position.set(27,-.62,z);duct.rotation.z=Math.PI/2;scene.add(duct);items.push(duct);
+ }
+ box('food court lower wall trim east',34.57,-3.92,4,.08,.18,23.2,steel);
+ box('food court lower wall trim north',27,-3.92,15.58,15.2,.18,.08,steel);
  // Four distinct food counters around a central seating court.
  const counters=[
   {name:'KARAAGE 24',kind:'fryer',x:33.5,z:-4.7,c:warm},{name:'CAFÉ LUMEN',kind:'cafe',x:33.5,z:1.0,c:sick},
@@ -99,17 +109,26 @@ export function createFoodCourt(scene,{lowPower=false}={}){
   const signMat=new THREE.MeshBasicMaterial({map:labelTexture(stall.name,subtitle,stall.kind==='cafe'?'#9fc8ba':'#d9a176'),side:THREE.DoubleSide});
   const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.15,.78),signMat);sign.name=stall.name+' unique readable sign';sign.position.set(33.58,-1.18,stall.z);sign.rotation.y=-Math.PI/2;scene.add(sign);items.push(sign);
   if(stall.kind==='fryer'){
+   for(const dz of [-1.62,1.62])box('KARAAGE red ceramic portal post',32.94,-2.18,stall.z+dz,.20,2.28,.20,plastic);
+   box('KARAAGE red ceramic portal lintel',32.94,-1.08,stall.z,.20,.20,3.45,plastic);
+   for(let z=-1.35;z<=1.35;z+=.45)box('KARAAGE glazed wall tile',34.38,-2.4,stall.z+z,.035,.32,.36,white);
    box('KARAAGE industrial extraction hood',33.25,-1.95,stall.z,1.1,.35,2.6,steel);
    for(let k=-1;k<=1;k++){box('KARAAGE deep fryer vat',32.92,-3.0,stall.z+k*.72,.72,.42,.55,dark);const basket=box('KARAAGE fryer basket',32.58,-2.72,stall.z+k*.72,.08,.30,.42,steel);basket.rotation.z=-.15;}
   }else if(stall.kind==='cafe'){
+   const canopy=new THREE.Mesh(new THREE.TorusGeometry(1.52,.11,8,28,Math.PI),wood);canopy.name='CAFE arched timber canopy';canopy.position.set(32.92,-1.58,stall.z);canopy.rotation.y=Math.PI/2;scene.add(canopy);items.push(canopy);
+   for(const dz of [-1.45,1.45])box('CAFE timber portal post',32.92,-2.72,stall.z+dz,.22,2.15,.20,wood);
    box('CAFE curved wood counter front',32.62,-3.45,stall.z,.42,.82,2.9,wood);
    box('CAFE espresso machine body',32.86,-2.85,stall.z,.72,.62,1.05,white);
    for(const dz of [-.27,.27]){const group=new THREE.Group();group.name='CAFE ceramic cup';const cup=new THREE.Mesh(new THREE.CylinderGeometry(.09,.075,.13,12),white);cup.position.set(32.42,-2.54,stall.z+dz);group.add(cup);scene.add(group);items.push(group)}
   }else if(stall.kind==='bento'){
+   for(const dz of [-1.64,1.64])box('BENTO brushed steel portal post',32.94,-2.18,stall.z+dz,.20,2.35,.18,steel);
+   box('BENTO brushed steel portal lintel',32.94,-1.04,stall.z,.20,.18,3.48,steel);
+   for(let k=-1;k<=1;k++)box('BENTO vertical freezer frame',32.68,-2.3,stall.z+k*1.05,.11,1.95,.08,steel);
    box('BENTO refrigerated display',32.55,-3.18,stall.z,.62,.76,2.9,glass);
    for(let k=-1;k<=1;k++)box('BENTO meal tray',32.20,-2.89,stall.z+k*.82,.18,.07,.55,k===0?plastic:white);
    box('BENTO hanging fabric divider',34.35,-2.15,stall.z,.08,1.9,2.4,plastic);
   }else{
+   for(let k=-2;k<=2;k++){const scallop=new THREE.Mesh(new THREE.SphereGeometry(.34,10,6,0,Math.PI*2,0,Math.PI/2),plastic);scallop.name='SWEET scalloped canopy';scallop.position.set(32.86,-1.78,stall.z+k*.66);scallop.rotation.z=Math.PI/2;scene.add(scallop);items.push(scallop)}
    box('SWEET glass cake display',32.55,-3.10,stall.z,.62,.92,2.8,glass);
    for(let k=-1;k<=1;k++){const cake=new THREE.Mesh(new THREE.CylinderGeometry(.16,.18,.12,14),k===0?plastic:white);cake.name='SWEET abandoned display cake';cake.position.set(32.18,-2.76,stall.z+k*.75);scene.add(cake);items.push(cake)}
    box('SWEET striped canopy',33.20,-1.92,stall.z,.75,.18,3.0,plastic);
@@ -172,11 +191,30 @@ export function createFoodCourt(scene,{lowPower=false}={}){
   const tray=box('Abandoned meal tray',x,BASEMENT_Y+.80,z,.58,.035,.38,dark);tray.rotation.y=r;
   box('Abandoned drink cup',x+.12,BASEMENT_Y+.91,z-.08,.12,.20,.12,white).rotation.y=r;
  }
+ // The evacuation has a readable cause: a barricade was knocked inward,
+ // personal belongings were abandoned, and deep marks lead toward BENTO.
+ const barrier=box('Food court fallen evacuation barricade',29.8,BASEMENT_Y+.34,-6.6,2.3,.16,.72,plastic);barrier.rotation.z=.24;barrier.rotation.y=-.18;
+ for(let i=0;i<4;i++){
+  const mark=box('Villain gouge in food court wall',34.58,-2.05+i*.16,4.0+i*.22,.025,.055,1.45,dark);mark.rotation.x=-.16+i*.08;
+ }
+ const backpack=new THREE.Group();backpack.name='Abandoned backpack on food court floor';
+ const bag=new THREE.Mesh(new THREE.SphereGeometry(.34,10,7),plastic);bag.scale.set(.72,1,.38);bag.position.y=BASEMENT_Y+.28;backpack.add(bag);
+ const strap=new THREE.Mesh(new THREE.TorusGeometry(.28,.025,6,12,Math.PI),dark);strap.position.y=BASEMENT_Y+.42;strap.rotation.x=Math.PI/2;backpack.add(strap);backpack.position.set(25.7,0,-6.2);scene.add(backpack);items.push(backpack);
+ const movingChair=new THREE.Group();movingChair.name='Food court chair that moves by itself';
+ const movingSeat=new THREE.Mesh(new THREE.BoxGeometry(.5,.08,.5),plastic);movingSeat.position.y=BASEMENT_Y+.49;movingChair.add(movingSeat);
+ const movingBack=new THREE.Mesh(new THREE.BoxGeometry(.5,.55,.07),plastic);movingBack.position.set(.21,BASEMENT_Y+.76,0);movingChair.add(movingBack);
+ for(const [x,z] of [[-.17,-.17],[.17,-.17],[-.17,.17],[.17,.17]]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.025,.032,.44,6),steel);leg.position.set(x,BASEMENT_Y+.22,z);movingChair.add(leg)}
+ movingChair.position.set(30.2,0,3.2);scene.add(movingChair);items.push(movingChair);
  // Local pools of light make the lower floor readable without lighting upstairs.
  const lights=[];
  for(const [x,z,color] of [[22,-4,'#d39a72'],[27,1,'#8fb4a9'],[22,7,'#c78c69'],[28,12,'#91aaa0']]){
   const lamp=new THREE.PointLight(color,lowPower?5:9,8,2.2);lamp.position.set(x,-1.05,z);lamp.castShadow=false;scene.add(lamp);lights.push(lamp);
   box('food court pendant shade',x,-.82,z,.72,.12,.72,steel);
  }
- return {items,lights,counters,tableCount,colliders:FOOD_COURT_COLLIDERS};
+ let chairStarted=-1;
+ function update(time,player){
+  if(player?.y< -2&&chairStarted<0&&Math.hypot(player.x-30.2,player.z-3.2)<7)chairStarted=time;
+  if(chairStarted>=0){const u=Math.max(0,Math.min(1,(time-chairStarted)/1.35));const eased=u*u*(3-2*u);movingChair.position.z=3.2+eased*.92;movingChair.rotation.y=eased*.62;}
+ }
+ return {items,lights,counters,tableCount,colliders:FOOD_COURT_COLLIDERS,movingChair,update};
 }

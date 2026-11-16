@@ -364,8 +364,9 @@ export function createLevel(scene){
  // A physical blast door has a visible raising sequence. The collider only
  // unlocks after the lower edge is above the player's capsule height.
  let doorOpeningAt=null,doorClearance=false,securityGateAt=null,securityClear=false,powerAt=null,lightingBoost=.32;
- return {interactive,lights,emergency,box,batching,foodCourt,count:items.length+detail.count+foodCourt.items.length,update(time,alarm){
+ return {interactive,lights,emergency,box,batching,foodCourt,count:items.length+detail.count+foodCourt.items.length,update(time,alarm,player){
   detail.update(time,alarm);
+  foodCourt.update(time,player);
   const power=powerAt===null?0:Math.min(1,Math.max(0,(time-powerAt)/1.8));
   for(const l of lights){
    const strobe=l.flag?(Math.sin(time*11+l.seed)+Math.sin(time*37+l.seed*2))*.5:0;

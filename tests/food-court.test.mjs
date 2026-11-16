@@ -27,6 +27,13 @@ assert(scene.children.some(x=>x.name==='CAFE espresso machine body'));
 assert(scene.children.some(x=>x.name==='BENTO refrigerated display'));
 assert(scene.children.some(x=>x.name==='SWEET glass cake display'));
 assert(scene.children.some(x=>x.name==='B1 restroom floor-mounted toilet'),'B1 needs a real restroom');
+assert(scene.children.filter(x=>x.name==='food court exposed ventilation duct').length===3);
+for(const name of ['KARAAGE red ceramic portal lintel','CAFE arched timber canopy','BENTO brushed steel portal lintel','SWEET scalloped canopy'])
+ assert(scene.children.some(x=>x.name===name),'Vendor architecture is not distinct: '+name);
+assert(scene.children.filter(x=>x.name==='Villain gouge in food court wall').length===4,'Abandonment needs a visible cause');
+assert(scene.children.some(x=>x.name==='Abandoned backpack on food court floor'));
+const chairZ=court.movingChair.position.z;court.update(20,{x:28,y:-3.8,z:4});court.update(22,{x:28,y:-3.8,z:4});
+assert(court.movingChair.position.z>chairZ+.8,'Food court needs a visible physical scare');
 const physics=await BreuPhysics.create();
 physics.reset({x:9.7,z:8});
 let minimumY=99,maximumX=0;
