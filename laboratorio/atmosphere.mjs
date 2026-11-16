@@ -11,7 +11,11 @@ export const LED_SITES=Object.freeze([
  {x:-3.35,z:-34.7,c:'#d07a93',label:'GAME 99'},
  {x:3.35,z:-39.3,c:'#95b29d',label:'PHARMACY'},
  {x:-3.35,z:-47.2,c:'#cca06e',label:'MAINTENANCE'},
- {x:11.42,z:-51.2,c:'#d0bba2',label:'SECURITY'}
+ {x:11.42,z:-51.2,c:'#d0bba2',label:'SECURITY'},
+ {x:-2.86,z:6.9,c:'#b9c5bb',label:'GALLERY ENTRY'},
+ {x:2.82,z:-2.8,c:'#97b4ad',label:'GALLERY CROSSING'},
+ {x:2.78,z:-18.0,c:'#a4b9b6',label:'RETAIL JUNCTION'},
+ {x:-2.82,z:-43.5,c:'#9eaaa6',label:'SERVICE GALLERY'}
 ]);
 export const SMOKE_ZONES=Object.freeze([
  {x:-7.4,z:-12.8,sx:1.0,sz:.85,kind:'kitchen steam'},
@@ -69,7 +73,10 @@ export function createAtmosphere(scene,{lowPower=false}={}){
   led.position.set(site.x,2.55,site.z);
   led.scale.set(1,1,2.15);
   scene.add(led);
-  const collar=new THREE.Mesh(lampGeometry,darkMetal);collar.position.set(site.x,2.58,site.z);collar.scale.set(.62,.8,4.6);scene.add(collar);
+  const collar=new THREE.Mesh(lampGeometry,darkMetal);
+  // Set the steel housing behind the visible diodes, never over the glow.
+  collar.position.set(site.x+Math.sign(site.x)*.16,2.58,site.z);
+  collar.scale.set(.62,.8,4.6);scene.add(collar);
   leds.push({led,mat,index,site});
  }
  // Only a few authentic point sources: emissive strips communicate the rest.
@@ -91,7 +98,41 @@ export function createAtmosphere(scene,{lowPower=false}={}){
  const glowMaterial=new THREE.MeshBasicMaterial({color:'#c8d9c8'});
  const glow=new THREE.Mesh(new THREE.BoxGeometry(.67,.028,.23),glowMaterial);
  glow.position.y=-.13;glow.name='Restarting diode';repair.add(glow);
+ // Real lamp build: dirty diffuser, exposed cage wire, socket screws and a
+ // visibly frayed cable feeding into the ceiling, not a bare floating box.
+ const wireMat=new THREE.MeshStandardMaterial({color:'#12181a',roughness:.92,metalness:.2});
+ const wirePath=new THREE.CatmullRomCurve3([
+  new THREE.Vector3(.11,.12,.03),new THREE.Vector3(.20,.53,.09),
+  new THREE.Vector3(.08,1.01,-.07),new THREE.Vector3(-.10,1.62,-.03),
+  new THREE.Vector3(-.08,2.12,.07)
+ ]);
+ const wire=new THREE.Mesh(new THREE.TubeGeometry(wirePath,20,.018,5,false),wireMat);
+ wire.name='Loose ceiling electrical cable';repair.add(wire);
+ for(const z of [-.13,.13]){
+  const bolt=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.06,7),darkMetal);
+  bolt.rotation.z=Math.PI/2;bolt.position.set(-.38,-.10,z);repair.add(bolt);
+ }
+ for(const z of [-.135,.135]){
+  const grille=new THREE.Mesh(new THREE.BoxGeometry(.74,.035,.026),darkMetal);
+  grille.position.set(0,-.155,z);repair.add(grille);
+ }
  scene.add(repair);
+ // Thin wet patches are instanced surface detail, not furniture or colliders.
+ const waterGeo=new THREE.CircleGeometry(1,20);
+ const waterMat=new THREE.MeshStandardMaterial({
+  color:'#354448',roughness:.19,metalness:.51,transparent:true,opacity:.33,
+  depthWrite:false,side:THREE.DoubleSide
+ });
+ const wetPlaces=[[-2.1,10],[1.7,3.2],[1.9,-7],[-1.55,-12.8],[-2.2,-22.6],
+  [1.6,-26.2],[-2.1,-33.5],[2.1,-38.8],[-1.9,-45.7],[2.0,-50.2]];
+ const water=new THREE.InstancedMesh(waterGeo,waterMat,wetPlaces.length);
+ water.name='Subtle wet floor patches';
+ const temp=new THREE.Object3D();
+ wetPlaces.forEach(([x,z],i)=>{temp.position.set(x,.053,z);temp.rotation.x=-Math.PI/2;
+  temp.rotation.z=i*.33;temp.scale.set(.36+(i%3)*.14,.54+(i%4)*.12,1);
+  temp.updateMatrix();water.setMatrixAt(i,temp.matrix);
+ });
+ water.instanceMatrix.needsUpdate=true;water.computeBoundingSphere();scene.add(water);
  const inspectionLight=new THREE.PointLight('#bbd6c1',0,4.8,2);
  inspectionLight.castShadow=false;inspectionLight.position.copy(repair.position);scene.add(inspectionLight);
  // Billboards use a soft 64px DataTexture. No GPU particle simulation,
@@ -135,7 +176,11 @@ export function createAtmosphere(scene,{lowPower=false}={}){
   inspectionLight.intensity=voltage*(repaired?3.5:2.2);
   glow.visible=voltage>.34;
   glowMaterial.color.set(repaired?'#dcecd7':'#9ba99e');
-  head.rotation.z=started>=0&&!repaired?(phase==='impact'?.14:phase==='recover'?.04:0):0;
+  // The steel cage physically jolts when the first-person hand hits it,
+  // then settles with a brief damped oscillation as the ballast catches.
+  const t=started>=0?(time-started)/3.75:-1;
+  head.rotation.z=t>=.63&&t<.96?Math.sin((t-.63)*38)*.16*Math.max(0,(.96-t)/.33):0;
+  repair.rotation.z=t>=.63&&t<.98?Math.sin((t-.63)*28)*.055*Math.max(0,(.98-t)/.35):0;
   if(started>=0&&!impactPlayed&&phase==='impact'){
    impactPlayed=true;repaired=true;
    events.push({kind:'lamp-hit',text:'UM TOQUE NO REFLETOR. O REATOR VOLTOU A FUNCIONAR.'});
