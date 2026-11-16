@@ -122,7 +122,6 @@ export function createRoomScenes(scene,{lowPower=false}={}){
   for(let i=0;i<strips.length;i++){
    const mesh=strips[i];
    const blink= Math.sin(time*(3.2+i*.21)+i*1.7);
-   mesh.material.color.setScalar(1);
    const base=mesh.name.includes('DENKI')||mesh.name.includes('Security')?energy:1;
    mesh.material.opacity=1;mesh.material.transparent=false;
    mesh.visible=base>.3&&(blink>-.83||i%3!==0);
