@@ -50,7 +50,7 @@ export function createStalker(scene){
   minato:{x:-8.8,z:-11.3},kino:{x:8.9,z:-10.4},
   fashion:{x:-8.85,z:-24.4},arcade:{x:-8.9,z:-36.8},
   pharmacy:{x:8.8,z:-41.5},maintenance:{x:-8.7,z:-48.6},
-  restroom:{x:8.9,z:8.7},denki:{x:8.8,z:-29.3}
+  restroom:{x:7.9,z:8.5},denki:{x:9.15,z:-25.3}
  };
  const initial={x:-8.9,z:-36.8};
  const securityGate={x:11.45,z:-51.25,w:.24,d:3.38};
