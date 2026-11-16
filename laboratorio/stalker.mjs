@@ -30,7 +30,11 @@ export function createStalker(scene){
  const armG=new THREE.CylinderGeometry(.10,.13,.89,6),legG=new THREE.CylinderGeometry(.13,.155,.9,6);
  const armL=part('left long arm',armG,wet,-.47,1.27,-.07,0,0,-.1),armR=part('right long arm',armG,wet,.47,1.27,-.07,0,0,.1);
  const legL=part('left slow leg',legG,cloth,-.22,.32,0),legR=part('right slow leg',legG,cloth,.22,.32,0);
- for(const x of [-.47,.47])part('hanging glove',new THREE.SphereGeometry(.13,6,6),skin,x,.79,-.06);
+ const hands=[];
+ for(const x of [-.47,.47]){
+  const hand=part('reaching glove',new THREE.SphereGeometry(.13,6,6),skin,x,.79,-.06);
+  hands.push(hand);
+ }
  // Face rig is deliberately non-graphic. The mouth opens during the capture
  // shot so the player sees the grab rather than an instant fail screen.
  const mouth=part('dark open mouth',new THREE.BoxGeometry(.31,.12,.085),new THREE.MeshBasicMaterial({color:'#020406'}),0,1.97,-.305);
@@ -166,6 +170,16 @@ export function createStalker(scene){
   group.rotation.y=Math.atan2(-(playerLocation.x-position.x),-(playerLocation.z-position.z));
   armL.rotation.x=-.28-reach*1.18;armR.rotation.x=-.28-reach*1.18;
   armL.rotation.z=-.18-reach*.6;armR.rotation.z=.18+reach*.6;
+  const starting=[-.47,.47];
+  hands.forEach((hand,i)=>{
+   hand.position.set(
+    starting[i]*(1-reach)+starting[i]*.34*reach,
+    .79+reach*.95,
+    -.06-reach*.62
+   );
+   hand.scale.setScalar(1+reach*.24);
+  });
+  group.scale.setScalar(1+reach*.11);
   jaw.position.y=1.90-reach*.14;
   mouth.scale.y=1+reach*3;
   eyeGlimmer.scale.setScalar(1+reach*.9);
@@ -175,7 +189,8 @@ export function createStalker(scene){
   position={...initial};route=[];pathTime=0;steps=0;
   lastKnown={...initial};huntUntil=-1;graceUntil=time+5;
   alarmHeard=alarm;wasChasing=false;hidden=true;nextReveal=time+8;revealUntil=0;
-  jaw.position.y=1.90;mouth.scale.y=1;group.visible=false;
+  hands.forEach((hand,i)=>{hand.position.set(i===0?-.47:.47,.79,-.06);hand.scale.setScalar(1);});
+  group.scale.setScalar(1);jaw.position.y=1.90;mouth.scale.y=1;group.visible=false;
   group.position.set(position.x,0,position.z);
  }
  group.position.set(position.x,0,position.z);
