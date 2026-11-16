@@ -112,6 +112,82 @@ export function createRoomScenes(scene,{lowPower=false}={}){
  }
  make('Security incident archive',16.2,1.51,-54.14,2.1,.67,.11,mats.paper);
  illuminated('Powered gate status panel',12.35,2.85,-51.2,.15,.45,.61,mats.neon);
+ // DENSE, HAND-PLACED ROOM DRESSING: stock, debris, broken shop fixtures
+ // and wall-level detail. Walkable floor is still governed by layout.PROPS.
+ // All meshes use shared geometry/materials and are batched below.
+ const fixtures=[
+  {name:'MINATO',x:-9.91,z:-11.5,side:-1,accent:mats.warm,stock:mats.paper,spread:3.1},
+  {name:'KINO',x:9.89,z:-8.7,side:1,accent:mats.cool,stock:mats.steel,spread:3.1},
+  {name:'A-07',x:-9.91,z:-22.5,side:-1,accent:mats.paper,stock:mats.wood,spread:3.2},
+  {name:'DENKI',x:9.88,z:-27.1,side:1,accent:mats.cool,stock:mats.dark,spread:3.2},
+  {name:'GAME 99',x:-9.89,z:-34.5,side:-1,accent:mats.neon,stock:mats.steel,spread:3.25},
+  {name:'PHARMACY',x:9.89,z:-39.7,side:1,accent:mats.sick,stock:mats.paper,spread:3.0},
+  {name:'MAINTENANCE',x:-9.9,z:-48.5,side:-1,accent:mats.warm,stock:mats.steel,spread:2.8},
+ ];
+ for(const f of fixtures){
+  // A distinct back-wall merchandising system for each shop, offset well
+  // away from the door centre and the player traversable floor.
+  for(let tier=0;tier<3;tier++){
+   const yy=.84+tier*.55;
+   make(f.name+' wall-mounted shelving',f.x,yy,f.z,.21,.085,f.spread,mats.steel);
+   for(let slot=0;slot<6;slot++){
+    const z=f.z-f.spread*.43+slot*f.spread*.172;
+    const width=(slot%3===0?.27:.18);
+    const height=.18+(slot%4)*.065;
+    const material=slot%5===0?f.accent:slot%3===0?f.stock:mats.dark;
+    make(f.name+' authentic merchandise',f.x-f.side*.2,yy+.10+height*.5,z,.25,height,width,material);
+    if(tier===1&&slot%2===0)
+     make(f.name+' paper price label',f.x-f.side*.3,yy-.08,z,.014,.11,.18,mats.paper);
+   }
+  }
+  make(f.name+' scratched wall fascia',f.x,2.83,f.z,.09,.19,f.spread,mats.wood);
+  make(f.name+' broken wall light',f.x-f.side*.19,2.68,f.z,.22,.10,.85,f.accent);
+ }
+ // Bathroom: worn sinks, hand dryers, mirrors and water-stained notices.
+ for(let i=0;i<4;i++){
+  const z=2.8+i*1.56;
+  make('Restroom sink lip',5.04,.88,z,.49,.09,.44,mats.porcelain);
+  make('Restroom chrome tap',5.01,1.01,z,.08,.19,.07,mats.steel);
+  make('Restroom sanitation placard',5.01,2.48,z,.02,.31,.25,mats.paper);
+ }
+ // Clothing store: proper hanging racks and garments along the west wall.
+ for(let i=0;i<8;i++){
+  const z=-24.6+i*.58;
+  make('A-07 steel hanger',-9.53,2.19,z,.37,.035,.04,mats.steel);
+  make('A-07 garment torso',-9.35,1.59,z,.39,.76,.11,i%3===0?mats.paper:i%3===1?mats.dark:mats.wood);
+ }
+ // Arcade: nested screens, token slots and scattered prize cartons.
+ for(let i=0;i<8;i++){
+  const z=-38.1+i*.86;
+  make('GAME 99 color cabinet edge',-9.18,1.18,z,.08,1.65,.08,i%2?mats.neon:mats.cool);
+  make('GAME 99 control panel',-9.08,.91,z,.29,.14,.32,mats.steel);
+  make('GAME 99 coin slot',-9.05,.55,z,.04,.15,.09,mats.paper);
+ }
+ // The shopping gallery itself should not look like a sterile hallway.
+ // Keep the actual corridor centre clear for combat, physical obstacles and
+ // the emergency route. This is only small rubbish, overhead banners and
+ // storefront debris along the edges.
+ let seed=30927;
+ const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ for(let i=0;i<(lowPower?65:125);i++){
+  const z=13-rand()*65;
+  const x=(rand()>.5?1:-1)*(2.20+rand()*.55);
+  const width=.07+rand()*.21,depth=.08+rand()*.25;
+  make('Abandoned shopping flyer',x,.045,z,width,.018,depth,i%4===0?mats.paper:i%3===0?mats.wood:mats.dark);
+ }
+ for(const [z,label] of [[-2,'north'],[-17,'retail'],[-30,'arcade'],[-46,'service']]){
+  make(label+' mall overhead directory',0,3.23,z,3.8,.58,.11,mats.steel);
+  make(label+' mall peeled direction arrow',-.85,3.20,z-.07,1.26,.16,.028,mats.paper);
+  make(label+' mall emergency pointer',.92,3.18,z-.07,.91,.10,.028,mats.warm);
+ }
+ // Shipping boxes cluster beside the real solid shelves, not across doors.
+ for(const f of fixtures){
+  for(let k=0;k<5;k++){
+   const z=f.z-1.05+(k%3)*.7;
+   const x=f.x-f.side*.47;
+   make(f.name+' fallen stock',x,.14+(k%2)*.20,z,.25,.24,.26,k%3===0?mats.paper:mats.wood);
+  }
+ }
  // Batch the dozens of static room fixtures. Dynamic screens stay separate,
  // so the nine redesigned rooms cost only a handful of extra draw calls.
  const animated=new Set(strips);
