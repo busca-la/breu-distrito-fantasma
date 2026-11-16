@@ -264,8 +264,10 @@ function updateObjective(pos){
 }
 function drawMap(pos){
  const c=mapCtx,w=mapCanvas.width,h=mapCanvas.height;c.clearRect(0,0,w,h);c.fillStyle='rgba(5,10,12,.9)';c.fillRect(0,0,w,h);
- const sx=x=>(x+12)/34*w,sy=z=>(z+59)/80*h;
- c.fillStyle='#202d31';c.fillRect(sx(-10.9),sy(-57.5),sx(21.6)-sx(0),sy(75.5)-sy(0));
+ const sx=x=>(x+12)/48*w,sy=z=>(z+59)/80*h;
+ c.fillStyle='#202d31';c.fillRect(sx(-10.9),sy(-57.5),sx(10.9)-sx(-10.9),sy(18)-sy(-57.5));
+ c.fillStyle='#283334';c.fillRect(sx(19),sy(-8),sx(35)-sx(19),sy(16)-sy(-8));
+ c.fillStyle='#53605e';c.fillRect(sx(10.8),sy(7),sx(19)-sx(10.8),sy(9)-sy(7));
  c.strokeStyle='#607276';c.lineWidth=2;c.beginPath();
  for(const o of WALLS)c.strokeRect(sx(o.x-o.w/2),sy(o.z-o.d/2),o.w*w/34,o.d*h/80);c.stroke();
  c.fillStyle=alarm?'#f1b2a3':'#c9d4cf';const target=INTERACTION[story.target]||INTERACTION.exit;c.beginPath();c.arc(sx(target.x),sy(target.z),4,0,Math.PI*2);c.fill();

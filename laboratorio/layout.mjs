@@ -5,7 +5,9 @@ const wall=(name,x,z,w,d,h=4.35,material='concrete')=>({name,x,z,w,d,h,material}
 export const WALLS = [
   wall('north seal',0,18,21.6,.55),
   wall('west outer',-10.8,-19, .55,75),
-  wall('east outer upper',10.8,-14.2,.55,64.4),
+  // Physical opening at z=8 leads to the expanded atrium and B1 food court.
+  wall('east outer south',10.8,-19.95,.55,53.0),
+  wall('east outer north',10.8,13.75,.55,8.5),
   wall('south seal',0,-57.2,21.6,.6),
   wall('north divider left',-3.65,7, .28,21.5,4.35,'tile'),
   wall('left shutter A',-3.65,-6.5,.32,5.0,4.35,'tile'),

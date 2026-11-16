@@ -6,7 +6,7 @@
   "scripts": {
     "test": "node --test tests/layout.test.mjs tests/navigation.test.mjs tests/sound.test.mjs tests/mission.test.mjs tests/runtime.test.mjs",
     "test:physics": "node tests/physics.integration.test.mjs",
-    "check": "node --check adaptive-performance.mjs && node --check engagement-director.mjs && node --check layout.mjs && node --check level.mjs && node --check detail-pass.mjs && node --check hero-room-models.mjs && node --check room-scenes.mjs && node --check ambient-audio.mjs && node --check flashlight-rig.mjs && node --check threat-nav.mjs && node --check stalker.mjs && node --check physics-world.mjs && node --check physics.mjs && node --check main.mjs && node --check mission.mjs"
+    "check": "node --check adaptive-performance.mjs && node --check engagement-director.mjs && node --check food-court.mjs && node --check layout.mjs && node --check level.mjs && node --check detail-pass.mjs && node --check hero-room-models.mjs && node --check room-scenes.mjs && node --check ambient-audio.mjs && node --check flashlight-rig.mjs && node --check threat-nav.mjs && node --check stalker.mjs && node --check physics-world.mjs && node --check physics.mjs && node --check main.mjs && node --check mission.mjs"
   },
   "devDependencies": {
     "@dimforge/rapier3d-compat": "0.21.0"

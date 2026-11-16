@@ -4,6 +4,7 @@ import {createHeroRoomModels} from './hero-room-models.mjs';
 // Distinct interiors behind the real doorways in layout.mjs. Large fixtures
 // stay at the edges: no uncollided obstacles in walkable room centres.
 export const ROOM_ZONES=Object.freeze([
+ {id:'foodcourt',name:'Praça de alimentação B1',x0:19,x1:35,z0:-8,z1:16,yMax:-2},
  {id:'restroom',name:'Banheiro público',x0:4.3,x1:10.35,z0:2.1,z1:9.6},
  {id:'minato',name:'MINATO',x0:-10.35,x1:-4.25,z0:-15.0,z1:-8.2},
  {id:'kino',name:'KINO',x0:4.35,x1:10.4,z0:-12.5,z1:-5.6},
@@ -16,7 +17,7 @@ export const ROOM_ZONES=Object.freeze([
 ]);
 export function roomAt(p){
  if(!p)return null;
- return ROOM_ZONES.find(r=>p.x>r.x0&&p.x<r.x1&&p.z>r.z0&&p.z<r.z1)?.id||null;
+ return ROOM_ZONES.find(r=>p.x>r.x0&&p.x<r.x1&&p.z>r.z0&&p.z<r.z1&&(r.yMax===undefined||p.y<r.yMax))?.id||null;
 }
 export function createRoomScenes(scene,{lowPower=false}={}){
  const hero=createHeroRoomModels(scene,{lowPower});
@@ -289,6 +290,7 @@ export function createRoomScenes(scene,{lowPower=false}={}){
     pharmacy:{kind:'metal',text:'ALGO ARRASTOU UMA GAVETA NA FARMÁCIA.'},
     maintenance:{kind:'metal',text:'PASSOS NO FORRO DA MANUTENÇÃO.'},
     security:{kind:'radio',text:'A CENTRAL ESTÁ REGISTRANDO MOVIMENTO NA ALA.'},
+    foodcourt:{kind:'metal',text:'AS CADEIRAS DA PRAÇA DE ALIMENTAÇÃO RASPAM SOZINHAS NO B1.'},
    };
    return {room:current,...messages[current]};
   }

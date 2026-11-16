@@ -24,9 +24,10 @@ const THREE={Color,Mesh,InstancedMesh,Object3D,Group,Vector3,CatmullRomCurve3:Cu
  SRGBColorSpace:'srgb',RepeatWrapping:1,DoubleSide:2};
 function canvas(){return {width:0,height:0,getContext(){return new Proxy({createRadialGradient(){return {addColorStop(){}}}}, {get(obj,key){return obj[key]??(()=>{})},set(obj,key,value){obj[key]=value;return true}})}}}
 const fakeDoc={createElement(){return canvas()}};
+const createFoodCourt=()=>({items:[],lights:[],counters:[],tableCount:0,colliders:[]});
 function evaluate(file,api,vars={}){
  const src=fs.readFileSync(new URL('../'+file,import.meta.url),'utf8').replace(/^import .*?;\s*$/gm,'').replace(/^export /gm,'');
- return vm.runInNewContext(src+'\n;({'+api+'})',{THREE,document:fakeDoc,window:{navigator:{maxTouchPoints:0}},navigator:{maxTouchPoints:0},STORE_SIGNS,facadePanelAllowed,WALLS,CEILINGS,PROPS,WING,INTERACTION,getNavigation,circleFits,roomAt,canHear,canSee,hasLineOfSight,insideFlashlightBeam,intersectsBarrier,SIGHT_BLOCKERS,Math,Map,Int32Array,...vars},{timeout:12000});
+ return vm.runInNewContext(src+'\n;({'+api+'})',{THREE,document:fakeDoc,window:{navigator:{maxTouchPoints:0}},navigator:{maxTouchPoints:0},STORE_SIGNS,facadePanelAllowed,WALLS,CEILINGS,PROPS,WING,INTERACTION,getNavigation,circleFits,roomAt,createFoodCourt,canHear,canSee,hasLineOfSight,insideFlashlightBeam,intersectsBarrier,SIGHT_BLOCKERS,Math,Map,Int32Array,...vars},{timeout:12000});
 }
 test('new detailed storefronts render without covering open physical entrances',()=>{
  const scene={children:[],add(x){this.children.push(x)}};

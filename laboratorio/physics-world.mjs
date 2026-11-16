@@ -1,4 +1,5 @@
 import {WALLS, PROPS, CEILINGS, WING, PLAYER_RADIUS} from './layout.mjs';
+import {FOOD_COURT_COLLIDERS} from './food-court.mjs';
 
 export function createPhysicsClass(RAPIER){
 return class BreuPhysics {
@@ -15,6 +16,7 @@ return class BreuPhysics {
     for(const w of WALLS)this.addFixed(w.name,w.x,w.h/2,w.z,w.w,w.h,w.d);
     for(const c of CEILINGS)this.addFixed(c.name,c.x,c.h+.13,c.z,c.w,.26,c.d);
     for(const prop of PROPS.filter(p=>p.blocking))this.addFixed(prop.name,prop.x,prop.h/2,prop.z,prop.w,prop.h,prop.d);
+    for(const part of FOOD_COURT_COLLIDERS)this.addFixed(part.name,part.x,part.y,part.z,part.w,part.h,part.d);
     this.exitBody=this.addFixed('sealed exit door',19.03,1.62,-51, .28,3.24,3.45);
     // The security office initially has no electricity. Both its physical
     // gate and the visible shutter rise when the auxiliary breaker is used.

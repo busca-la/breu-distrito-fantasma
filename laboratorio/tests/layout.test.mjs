@@ -4,7 +4,7 @@ assert(WALLS.length>=20,'Missing wall segments');
 assert(CEILINGS.length===2,'All ceilings must be documented');
 assert(STORE_SIGNS.length===7,'Store identity regression');
 assert(PROPS.filter(p=>p.blocking).length>=8,'Collidable set missing');
-const perimeterNames=['north seal','west outer','east outer upper','south seal','east service upper','east service lower','service gate north','service gate south','exit vestibule back'];
+const perimeterNames=['north seal','west outer','east outer north','east outer south','south seal','east service upper','east service lower','service gate north','service gate south','exit vestibule back'];
 for(const name of perimeterNames)assert(WALLS.some(w=>w.name===name),`Open outer boundary: ${name}`);
 // Cross section must be sealed by roof (no see-through to void).
 for(let z=-56;z<=17;z+=1)for(let x=-10;x<=10;x+=1){

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {WALLS, CEILINGS, STORE_SIGNS, PROPS, WING, INTERACTION} from './layout.mjs';
 import {addArtPass} from './detail-pass.mjs';
+import {createFoodCourt} from './food-court.mjs';
 
 const hex=s=>new THREE.Color(s);
 const mat=(color,roughness=.87,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
@@ -356,13 +357,14 @@ export function createLevel(scene){
   for(const dx of [-.85,.85])box('ceiling sign mount',dx,3.62,s.z,.035,1.1,.04,palette.frame,false);
  }
  const detail=addArtPass(scene,{mobile});
+ const foodCourt=createFoodCourt(scene,{lowPower:mobile});
  const amb=new THREE.HemisphereLight('#829496','#25282a',.18);scene.add(amb);
  const emergency=new THREE.PointLight('#b7534e',0,13,2);emergency.position.set(13,2.7,-51);scene.add(emergency);
  const batching=batchStaticGeometry(scene,new Set([interactive.panel,interactive.exit,interactive.radio,interactive.relay,interactive.relayHandle,interactive.relayLamp,interactive.radioDial,doorBand]));
  // A physical blast door has a visible raising sequence. The collider only
  // unlocks after the lower edge is above the player's capsule height.
  let doorOpeningAt=null,doorClearance=false,securityGateAt=null,securityClear=false,powerAt=null,lightingBoost=.32;
- return {interactive,lights,emergency,box,batching,count:items.length+detail.count,update(time,alarm){
+ return {interactive,lights,emergency,box,batching,foodCourt,count:items.length+detail.count+foodCourt.items.length,update(time,alarm){
   detail.update(time,alarm);
   const power=powerAt===null?0:Math.min(1,Math.max(0,(time-powerAt)/1.8));
   for(const l of lights){
