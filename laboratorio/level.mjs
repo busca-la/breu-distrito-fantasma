@@ -356,12 +356,12 @@ export function createLevel(scene){
   for(const dx of [-.85,.85])box('ceiling sign mount',dx,3.62,s.z,.035,1.1,.04,palette.frame,false);
  }
  const detail=addArtPass(scene,{mobile});
- const amb=new THREE.HemisphereLight('#b9c9c7','#444343',.83);scene.add(amb);
+ const amb=new THREE.HemisphereLight('#829496','#25282a',.18);scene.add(amb);
  const emergency=new THREE.PointLight('#b7534e',0,13,2);emergency.position.set(13,2.7,-51);scene.add(emergency);
  const batching=batchStaticGeometry(scene,new Set([interactive.panel,interactive.exit,interactive.radio,interactive.relay,interactive.relayHandle,interactive.relayLamp,interactive.radioDial,doorBand]));
  // A physical blast door has a visible raising sequence. The collider only
  // unlocks after the lower edge is above the player's capsule height.
- let doorOpeningAt=null,doorClearance=false,securityGateAt=null,securityClear=false,powerAt=null,lightingBoost=1.20;
+ let doorOpeningAt=null,doorClearance=false,securityGateAt=null,securityClear=false,powerAt=null,lightingBoost=.32;
  return {interactive,lights,emergency,box,batching,count:items.length+detail.count,update(time,alarm){
   detail.update(time,alarm);
   const power=powerAt===null?0:Math.min(1,Math.max(0,(time-powerAt)/1.8));
@@ -370,7 +370,7 @@ export function createLevel(scene){
    // The service wing is on the emergency circuit: switching the DENKI
    // breaker has an immediately visible effect on the entire far half.
    const circuit=l.light.position.z< -15?(.67+power*.48):1;
-   l.light.intensity=Math.max(.04,l.base*circuit*lightingBoost*(l.flag&&strobe>.45?.12:1+strobe*.09));
+   l.light.intensity=Math.max(.02,l.base*circuit*lightingBoost*(l.flag&&strobe>.45?.12:1+strobe*.09));
   }
   emergency.intensity=alarm?(10+5*Math.sin(time*9)):0;
   if(securityGateAt!==null){
