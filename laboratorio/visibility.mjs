@@ -1,10 +1,10 @@
-// BREU visibility presets: consistent across exposure, fog, practical lights
-// and the screen vignette. Scene complexity stays exactly the same.
+// Darkness belongs to the world; the flashlight should dominate the player's view.
+// Brightness increases useful detail INSIDE the beam, not flood the whole shopping mall.
 export const BRIGHTNESS_PRESETS=Object.freeze([
- Object.freeze({name:'Escuro',exposure:1.12,fog:.029,ambient:.60,lighting:1.07,flashlight:34,vignette:.57}),
- Object.freeze({name:'Padrão',exposure:1.25,fog:.024,ambient:.71,lighting:1.14,flashlight:38,vignette:.49}),
- Object.freeze({name:'Claro',exposure:1.38,fog:.019,ambient:.83,lighting:1.20,flashlight:43,vignette:.39}),
- Object.freeze({name:'Muito claro',exposure:1.53,fog:.014,ambient:.97,lighting:1.28,flashlight:48,vignette:.29}),
+ Object.freeze({name:'Escuro',exposure:1.13,fog:.027,ambient:.11,lighting:.22,flashlight:47,vignette:.58,edge:.94}),
+ Object.freeze({name:'Padrão',exposure:1.28,fog:.023,ambient:.14,lighting:.27,flashlight:55,vignette:.53,edge:.91}),
+ Object.freeze({name:'Claro',exposure:1.42,fog:.019,ambient:.18,lighting:.32,flashlight:63,vignette:.48,edge:.87}),
+ Object.freeze({name:'Muito claro',exposure:1.56,fog:.015,ambient:.24,lighting:.39,flashlight:71,vignette:.42,edge:.82}),
 ]);
 export const DEFAULT_BRIGHTNESS=2;
 export function normalizeBrightness(value){
@@ -13,6 +13,4 @@ export function normalizeBrightness(value){
  if(!Number.isFinite(number))return DEFAULT_BRIGHTNESS;
  return Math.max(0,Math.min(BRIGHTNESS_PRESETS.length-1,Math.round(number)));
 }
-export function getVisibilityPreset(value){
- return BRIGHTNESS_PRESETS[normalizeBrightness(value)];
-}
+export function getVisibilityPreset(value){return BRIGHTNESS_PRESETS[normalizeBrightness(value)];}
