@@ -4,7 +4,7 @@ export class BreuSound {
  constructor(win=window){
   this.win=win;this.ctx=null;this.master=null;this.enabled=true;
   this.playing=false;this.lastFootstep=-1;this.lastDrip=-1;
-  this.lastVent=-1;this.lastAlarm=-1;this.noiseBuffer=null;this.oscillators=[];
+  this.lastVent=-1;this.lastAlarm=-1;this.lastCreak=-1;this.lastRattle=-1;this.noiseBuffer=null;this.oscillators=[];
  }
  async start(){
   if(!this.enabled)return;
@@ -58,6 +58,18 @@ export class BreuSound {
   // Distant drain drops, rhythmic fan rattles and intermittent electrical buzz.
   if(time-this.lastDrip>4.8+zone*.39){this.lastDrip=time;this.tone(320+zone*36,.32,.023,'sine',now)}
   if(time-this.lastVent>8.2){this.lastVent=time;this.filteredNoise(1.65,.037,330,now)}
+  // Degraded wiring and sheet-metal movement respond to the part of the wing.
+  // Sparse one-shots prevent constant noisy looping that masks jumpscares.
+  if(zone>=1&&time-this.lastCreak>10.8+zone*.65){
+   this.lastCreak=time;
+   this.tone(68+zone*7,.48,.018,'sawtooth',now);
+   this.tone(91+zone*8,.38,.012,'triangle',now+.16);
+   this.filteredNoise(.24,.030,290,now+.11);
+  }
+  if(zone>=2&&time-this.lastRattle>14.1+zone*.58){
+   this.lastRattle=time;
+   this.cue('ballast');
+  }
   if(alarm&&time-this.lastAlarm>1.8){
    this.lastAlarm=time;this.tone(620,.45,.045,'triangle',now);this.tone(420,.65,.04,'triangle',now+.5);
   }
@@ -66,7 +78,30 @@ export class BreuSound {
  cue(kind){
   if(!this.ctx||!this.playing)return;
   const now=this.ctx.currentTime;
-  if(kind==='capture'){
+  if(kind==='ballast'){
+   // Worn fluorescent choke: stuttering high-frequency whine and a click.
+   this.tone(1540,.17,.036,'sawtooth',now);
+   this.filteredNoise(.16,.045,1650,now+.05);
+   this.tone(880,.045,.028,'square',now+.24);
+   this.tone(1320,.12,.021,'sawtooth',now+.42);
+  }else if(kind==='cloth'){
+   this.filteredNoise(.24,.043,510,now);
+   this.filteredNoise(.18,.028,690,now+.23);
+  }else if(kind==='lamp-hit'){
+   // Actual gloved strike: soft impact followed by a resonant steel cage.
+   this.filteredNoise(.15,.24,390,now);
+   this.tone(105,.35,.18,'triangle',now);
+   this.tone(410,.48,.052,'sawtooth',now+.042);
+   this.tone(610,.28,.035,'sine',now+.12);
+  }else if(kind==='lamp-restart'){
+   this.tone(1040,.09,.042,'square',now);
+   this.filteredNoise(.26,.085,1900,now+.08);
+   this.tone(740,.10,.023,'triangle',now+.24);
+   this.tone(1310,.19,.023,'sine',now+.32);
+  }else if(kind==='steam'){
+   this.filteredNoise(1.28,.068,730,now);
+   this.filteredNoise(.42,.028,1600,now+.35);
+  }else if(kind==='capture'){
    this.tone(48,1.6,.22,'sine',now);
    this.filteredNoise(.68,.19,390,now+.12);
    this.tone(72,.58,.09,'sawtooth',now+.42);
