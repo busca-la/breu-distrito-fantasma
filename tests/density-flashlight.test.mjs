@@ -31,7 +31,9 @@ const level=readFileSync(new URL('../laboratorio/level.mjs',import.meta.url),'ut
 assert(html.includes('id="flashlight-mask"'),'Missing local first-person flashlight darkness');
 assert(html.includes('body.flashlight-off #flashlight-mask'),'Switching flashlight off should leave the scene dark');
 assert(html.includes('body.cinematic-active #flashlight-mask'),'Darkness overlay must not spoil films');
-assert(main.includes('Math.PI/11'),'Main spotlight must be physically narrow');
+const beam=/new THREE\\.SpotLight\\('#f7eedb',[^,]+,[^,]+,Math\\.PI\\/([\\d.]+)/.exec(main);
+assert(beam&&Number(beam[1])>=8.5&&Number(beam[1])<=12.5,
+ 'Flashlight must remain a directed beam, modestly wider than the original');
 assert(main.includes("document.documentElement.style.setProperty('--beam-edge'"),'Brightness must not flood beam exterior');
 assert(level.includes('lightingBoost=.32'),'World fixtures must not overpower aiming cone');
 assert(BRIGHTNESS_PRESETS.every(x=>x.ambient<=.25&&x.lighting<=.4),
