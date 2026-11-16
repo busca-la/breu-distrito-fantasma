@@ -95,7 +95,14 @@ export function createCinematicDirector(camera,stalker,atmosphere=null){
    const matrix=new THREE.Matrix4().lookAt(shot.entryPosition,target,new THREE.Vector3(0,1,0));
    const facing=new THREE.Quaternion().setFromRotationMatrix(matrix);
    const turn=ease(u/.24);
-   camera.position.copy(shot.entryPosition);
+   // A short first-person step toward the lamp makes actual contact
+   // plausible. At the end return smoothly to the original Rapier viewpoint.
+   const delta=target.clone().sub(shot.entryPosition);
+   delta.y=0;
+   const approachDistance=Math.min(.85,Math.max(0,delta.length()-.9));
+   const forward=delta.length()>1e-3?delta.normalize():new THREE.Vector3(0,0,-1);
+   const dolly=u<.60?ease(u/.60):1-ease((u-.60)/.40);
+   camera.position.copy(shot.entryPosition).addScaledVector(forward,approachDistance*dolly);
    camera.position.y+=Math.sin(u*Math.PI)*.035;
    camera.quaternion.copy(shot.entryRotation).slerp(facing,turn);
    camera.fov=shot.entryFov-Math.sin(u*Math.PI)*6;
