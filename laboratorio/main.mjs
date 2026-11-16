@@ -98,7 +98,6 @@ function start(){
 function beginScene(kind){
  if(!director?.begin(kind,clock))return false;
  document.body.classList.add('cinematic-active');
- if(kind==='capture'||kind==='reveal')sound.cue(kind==='capture'?'capture':'ambush');
  const overlay=$('#cinematic'),subtitle=$('#cinematic-caption');
  overlay?.classList.add('show');
  overlay?.classList.toggle('capturing',kind==='capture');
@@ -110,8 +109,11 @@ function renderSceneFrame(){
  const shot=director.update(clock);
  if(!shot)return;
  const overlay=$('#cinematic');
+ const caption=$('#cinematic-caption');
+ if(caption)caption.textContent=shot.caption;
+ if(shot.cue)sound.cue(shot.cue);
  if(overlay){
-  overlay.classList.toggle('final-blackout',shot.kind==='capture'&&shot.progress>.87);
+  overlay.classList.toggle('final-blackout',shot.kind==='capture'&&shot.progress>.92);
   overlay.classList.toggle('show',!shot.finished);
  }
  stage?.update(clock,alarm);
