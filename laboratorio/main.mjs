@@ -96,6 +96,7 @@ function start(){
 }
 function beginScene(kind){
  if(!director?.begin(kind,clock))return false;
+ if(kind==='capture'||kind==='reveal')sound.cue(kind==='capture'?'capture':'ambush');
  const overlay=$('#cinematic'),subtitle=$('#cinematic-caption');
  overlay?.classList.add('show');
  overlay?.classList.toggle('capturing',kind==='capture');
