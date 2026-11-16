@@ -163,6 +163,16 @@ export function createStalker(scene){
   wasChasing=chasing;
   return {distance:now,chasing,caught,spotted,lost,ambush,hidden:false,visible,location:{...position}};
  }
+ function poseReveal(u,playerLocation){
+  // The reveal is not a frozen statue. The figure notices the player,
+  // slowly turns its shoulders and raises a hand before the chase begins.
+  const t=Math.max(0,Math.min(1,u));
+  group.rotation.y=Math.atan2(-(playerLocation.x-position.x),-(playerLocation.z-position.z));
+  armL.rotation.x=-.12-Math.min(1,t/.66)*.63;
+  armR.rotation.x=-.18-Math.min(1,t/.74)*.35;
+  group.position.y=.018+.05*Math.sin(t*Math.PI);
+  pale.color.setHex(t>.25?0xe1aca0:0x879894);
+ }
  function poseCapture(u,playerLocation){
   hidden=false;group.visible=true;
   const t=Math.max(0,Math.min(1,u));
@@ -194,5 +204,5 @@ export function createStalker(scene){
   group.position.set(position.x,0,position.z);
  }
  group.position.set(position.x,0,position.z);
- return {group,update,reset,poseCapture,position:()=>({...position}),navigation,isHidden:()=>hidden,ambushes:()=>reveals};
+ return {group,update,reset,poseReveal,poseCapture,position:()=>({...position}),navigation,isHidden:()=>hidden,ambushes:()=>reveals};
 }
