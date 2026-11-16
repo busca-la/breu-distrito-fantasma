@@ -66,7 +66,17 @@ export class BreuSound {
  cue(kind){
   if(!this.ctx||!this.playing)return;
   const now=this.ctx.currentTime;
-  if(kind==='radio'){
+  if(kind==='capture'){
+   this.tone(48,1.6,.22,'sine',now);
+   this.filteredNoise(.68,.19,390,now+.12);
+   this.tone(72,.58,.09,'sawtooth',now+.42);
+   this.filteredNoise(.9,.14,120,now+1.0);
+   this.tone(42,.84,.18,'triangle',now+1.12);
+  }else if(kind==='ambush'){
+   this.filteredNoise(.38,.15,840,now);
+   this.tone(64,.57,.15,'sine',now);
+   this.tone(116,.15,.06,'sawtooth',now+.17);
+  }else if(kind==='radio'){
    this.filteredNoise(.95,.12,2400,now);
    this.tone(790,.17,.045,'square',now);
    this.tone(540,.11,.025,'triangle',now+.29);
