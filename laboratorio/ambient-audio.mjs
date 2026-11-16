@@ -84,6 +84,19 @@ export class BreuSound {
    this.filteredNoise(.16,.045,1650,now+.05);
    this.tone(880,.045,.028,'square',now+.24);
    this.tone(1320,.12,.021,'sawtooth',now+.42);
+  }else if(kind==='flashlight-static'||kind==='flashlight-flicker'){
+   this.filteredNoise(kind==='flashlight-static'?.7:.32,.075,2100,now);
+   this.tone(1320,.11,.028,'sawtooth',now+.06);
+   if(kind==='flashlight-flicker')this.tone(610,.045,.04,'square',now+.22);
+  }else if(kind==='flashlight-fail'){
+   this.tone(970,.07,.05,'square',now);this.tone(210,.24,.035,'sawtooth',now+.06);
+  }else if(kind==='flashlight-repair'){
+   this.filteredNoise(.30,.048,520,now);
+  }else if(kind==='flashlight-hit'){
+   this.filteredNoise(.12,.21,330,now);this.tone(118,.27,.14,'triangle',now);
+   this.tone(480,.19,.04,'sine',now+.035);
+  }else if(kind==='flashlight-restart'||kind==='flashlight-stable'){
+   this.tone(920,.08,.04,'square',now);this.filteredNoise(.20,.055,1700,now+.07);
   }else if(kind==='cloth'){
    this.filteredNoise(.24,.043,510,now);
    this.filteredNoise(.18,.028,690,now+.23);

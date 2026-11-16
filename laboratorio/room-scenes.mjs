@@ -36,6 +36,7 @@ export function createRoomScenes(scene,{lowPower=false}={}){
   scene.add(mesh);return mesh;
  };
  const strips=[],turners=[],displayMaterials=[];
+ const featured=[];
  const illuminated=(name,x,y,z,w,h,d,mat)=>{
   const m=mat.clone();displayMaterials.push(m);
   const mesh=make(name,x,y,z,w,h,d,m);strips.push(mesh);return mesh;
@@ -89,6 +90,37 @@ export function createRoomScenes(scene,{lowPower=false}={}){
   make('GAME 99 input deck',-9.34,.88,z,.15,.18,.57,mats.wood);
  }
  illuminated('GAME 99 flickering marquee',-6.0,2.92,-33.7,1.6,.14,.18,mats.neon);
+ // HERO ASSETS: non-box silhouettes where they matter most. These are kept
+ // sparse and hand-authored so older Intel GPUs retain headroom.
+ const bowlProfile=[new THREE.Vector2(.08,0),new THREE.Vector2(.24,.035),new THREE.Vector2(.29,.12),new THREE.Vector2(.31,.20),new THREE.Vector2(.27,.23)];
+ for(let i=0;i<3;i++){
+  const bowl=new THREE.Mesh(new THREE.LatheGeometry(bowlProfile,16),i===0?mats.porcelain:mats.paper);
+  bowl.name='MINATO recognizable ramen bowl';bowl.position.set(-8.55+i*.56,1.23,-13.05);scene.add(bowl);
+  if(i===2)featured.push({kind:'falling-bowl',object:bowl,base:bowl.position.clone(),started:-1});
+ }
+ for(let i=0;i<3;i++){
+  const stool=new THREE.Group();stool.name='MINATO round counter stool';
+  const seat=new THREE.Mesh(new THREE.CylinderGeometry(.24,.27,.12,14),mats.wood);seat.position.y=.68;
+  const post=new THREE.Mesh(new THREE.CylinderGeometry(.035,.055,.65,8),mats.steel);post.position.y=.34;
+  const foot=new THREE.Mesh(new THREE.TorusGeometry(.18,.025,6,14),mats.steel);foot.rotation.x=Math.PI/2;foot.position.y=.18;
+  stool.add(seat,post,foot);stool.position.set(-5.15,0,-12.1-i*.85);scene.add(stool);
+ }
+ const cableMat=new THREE.MeshStandardMaterial({color:'#111719',roughness:.8,metalness:.25});
+ for(let i=0;i<3;i++){
+  const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(8.8,3.4,-24.4-i*2),new THREE.Vector3(8.2,2.7,-25-i*2),new THREE.Vector3(9.0,1.8,-25.5-i*2)]);
+  const cable=new THREE.Mesh(new THREE.TubeGeometry(curve,14,.018,5,false),cableMat);cable.name='DENKI hanging signal cable';scene.add(cable);
+ }
+ const denkiScreen=new THREE.Mesh(new THREE.PlaneGeometry(.73,.48),new THREE.MeshBasicMaterial({color:'#8fbfc1'}));
+ denkiScreen.name='DENKI monitor that visibly powers itself';denkiScreen.position.set(9.245,1.52,-26.25);denkiScreen.rotation.y=-Math.PI/2;scene.add(denkiScreen);
+ featured.push({kind:'denki-screen',object:denkiScreen,started:-1});
+ const cabinetShape=new THREE.Shape();cabinetShape.moveTo(-.38,0);cabinetShape.lineTo(.38,0);cabinetShape.lineTo(.38,1.44);cabinetShape.lineTo(.24,1.91);cabinetShape.lineTo(-.31,1.91);cabinetShape.lineTo(-.38,1.58);cabinetShape.closePath();
+ for(let i=0;i<3;i++){
+  const cabinet=new THREE.Mesh(new THREE.ExtrudeGeometry(cabinetShape,{depth:.66,bevelEnabled:true,bevelSize:.035,bevelThickness:.035,bevelSegments:1}),mats.dark);
+  cabinet.name='GAME 99 sloped arcade cabinet';cabinet.rotation.y=Math.PI/2;cabinet.position.set(-8.72,.05,-37.6+i*1.72);scene.add(cabinet);
+  const screen=new THREE.Mesh(new THREE.PlaneGeometry(.48,.43),new THREE.MeshBasicMaterial({color:i%2?'#9fd0d0':'#c27691'}));
+  screen.name='GAME 99 cabinet boot screen';screen.position.set(-8.365,1.43,-37.22+i*1.72);screen.rotation.y=Math.PI/2;scene.add(screen);
+  featured.push({kind:'arcade-screen',object:screen,index:i,started:-1});
+ }
  // PHARMACY: sickly green prescription area, display cartons, cold counter.
  make('Pharmacy examination curtain',9.76,2.0,-39.9,.07,2.3,1.72,mats.paper);
  for(let i=0;i<3;i++){
@@ -212,12 +244,12 @@ export function createRoomScenes(scene,{lowPower=false}={}){
   combined.computeBoundingSphere();
   scene.add(combined);batchCount++;
  }
- const visited=new Set();
+ const visited=new Set(),roomEntered=new Map();
  let lastRoom=null,lastBeat=-100;
  // Emissive-only color animation; no additional shadow-casting light.
  function update(time,player,{power=false}={}){
   const current=roomAt(player);
-  if(current!==lastRoom)lastRoom=current;
+  if(current!==lastRoom){lastRoom=current;if(current&&!roomEntered.has(current))roomEntered.set(current,time)}
   const energy=power?1:.38;
   for(let i=0;i<strips.length;i++){
    const mesh=strips[i];
@@ -227,6 +259,21 @@ export function createRoomScenes(scene,{lowPower=false}={}){
    mesh.visible=base>.3&&(blink>-.83||i%3!==0);
   }
   for(const t of turners)t.object.rotation.y=(Math.sin(time*.18+t.phase)*.1);
+  const minatoAge=time-(roomEntered.get('minato')??Infinity);
+  const denkiAge=time-(roomEntered.get('denki')??Infinity);
+  const arcadeAge=time-(roomEntered.get('arcade')??Infinity);
+  for(const item of featured){
+   if(item.kind==='falling-bowl'&&minatoAge>1.2){
+    const u=Math.min(1,(minatoAge-1.2)/.85);item.object.position.y=item.base.y-u*u*.95;item.object.rotation.z=u*2.4;
+   }else if(item.kind==='denki-screen'){
+    const live=denkiAge>0&&denkiAge<7;item.object.visible=live&&Math.sin(time*22)>-.35;
+    item.object.material.color.setHex(denkiAge>3.2?0xa7b9ad:0x8fbfc1);
+   }else if(item.kind==='arcade-screen'){
+    const live=arcadeAge>0&&arcadeAge<8;
+    item.object.visible=live&&(Math.sin(time*(8+item.index*2)+item.index)>.05);
+    item.object.scale.setScalar(live?1+Math.sin(time*5+item.index)*.025:1);
+   }
+  }
   if(current&&!visited.has(current)&&time-lastBeat>3.8){
    visited.add(current);lastBeat=time;
    const messages={
@@ -244,5 +291,5 @@ export function createRoomScenes(scene,{lowPower=false}={}){
   }
   return null;
  }
- return {update,roomAt,rooms:ROOM_ZONES,visited,turners,batchCount};
+ return {update,roomAt,rooms:ROOM_ZONES,visited,turners,featured,batchCount};
 }

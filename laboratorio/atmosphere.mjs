@@ -24,7 +24,6 @@ export const SMOKE_ZONES=Object.freeze([
  {x:6.9,z:-40.3,sx:.75,sz:1.1,kind:'pharmacy vapour'},
  {x:-7.7,z:-48.0,sx:1.0,sz:1.3,kind:'pipe leak'}
 ]);
-export const REPAIR_LAMP=Object.freeze({x:-1.35,y:2.14,z:-17.3,radius:2.3,triggerZ:-15.6});
 export function faultIntensity(time,seed=0){
  const cycle=(time+seed*6.73)%17.9;
  // 0–11 s works; 11–13 s strains; a brief low-power failure; then restart.
@@ -33,19 +32,6 @@ export function faultIntensity(time,seed=0){
  if(cycle<12.7)return .065;
  if(cycle<13.7)return Math.sin(time*26+seed)>-.08?1:.12;
  return .85+.07*Math.sin(time*2+seed);
-}
-export function repairPhase(t){
- if(t<0)return 'idle';
- if(t<.23)return 'discover';
- if(t<.63)return 'reach';
- if(t<.76)return 'impact';
- if(t<.90)return 'recover';
- return 'stable';
-}
-export function eligibleForRepair(player,{time=0,done=false,started=false}={}){
- if(started||done||time<6||!player)return false;
- const dx=player.x-REPAIR_LAMP.x,dz=player.z-REPAIR_LAMP.z;
- return Math.hypot(dx,dz)<REPAIR_LAMP.radius&&player.z<REPAIR_LAMP.triggerZ&&player.z>REPAIR_LAMP.z-1.8;
 }
 function smokeTexture(){
  const size=64,data=new Uint8Array(size*size*4);
@@ -62,7 +48,6 @@ function smokeTexture(){
 }
 export function createAtmosphere(scene,{lowPower=false}={}){
  const darkMetal=new THREE.MeshStandardMaterial({color:'#344147',metalness:.65,roughness:.4});
- const dustyLens=new THREE.MeshStandardMaterial({color:'#b0ad9d',roughness:.62,metalness:.16});
  const ledGeometry=new THREE.BoxGeometry(.12,.1,1);
  const lampGeometry=new THREE.BoxGeometry(.52,.16,.32);
  const leds=[],faults=[],tinyLights=[];
@@ -86,37 +71,6 @@ export function createAtmosphere(scene,{lowPower=false}={}){
   light.castShadow=false;scene.add(light);
   tinyLights.push({light,site:p});
  }
- // A physically present, reachable lamp under a hanging cable.
- const repair=new THREE.Group();repair.name='Broken inspection lamp (automatic tap)';
- repair.position.set(REPAIR_LAMP.x,REPAIR_LAMP.y,REPAIR_LAMP.z);
- const stem=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,1.46,7),darkMetal);
- stem.position.y=.81;repair.add(stem);
- const head=new THREE.Mesh(new THREE.BoxGeometry(.83,.16,.35),darkMetal);
- head.name='Lamp steel cage';repair.add(head);
- const glass=new THREE.Mesh(new THREE.BoxGeometry(.7,.047,.29),dustyLens);
- glass.position.y=-.1;glass.name='Dirty diffuser';repair.add(glass);
- const glowMaterial=new THREE.MeshBasicMaterial({color:'#c8d9c8'});
- const glow=new THREE.Mesh(new THREE.BoxGeometry(.67,.028,.23),glowMaterial);
- glow.position.y=-.13;glow.name='Restarting diode';repair.add(glow);
- // Real lamp build: dirty diffuser, exposed cage wire, socket screws and a
- // visibly frayed cable feeding into the ceiling, not a bare floating box.
- const wireMat=new THREE.MeshStandardMaterial({color:'#12181a',roughness:.92,metalness:.2});
- const wirePath=new THREE.CatmullRomCurve3([
-  new THREE.Vector3(.11,.12,.03),new THREE.Vector3(.20,.53,.09),
-  new THREE.Vector3(.08,1.01,-.07),new THREE.Vector3(-.10,1.62,-.03),
-  new THREE.Vector3(-.08,2.12,.07)
- ]);
- const wire=new THREE.Mesh(new THREE.TubeGeometry(wirePath,20,.018,5,false),wireMat);
- wire.name='Loose ceiling electrical cable';repair.add(wire);
- for(const z of [-.13,.13]){
-  const bolt=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.06,7),darkMetal);
-  bolt.rotation.z=Math.PI/2;bolt.position.set(-.38,-.10,z);repair.add(bolt);
- }
- for(const z of [-.135,.135]){
-  const grille=new THREE.Mesh(new THREE.BoxGeometry(.74,.035,.026),darkMetal);
-  grille.position.set(0,-.155,z);repair.add(grille);
- }
- scene.add(repair);
  // Thin wet patches are instanced surface detail, not furniture or colliders.
  const waterGeo=new THREE.CircleGeometry(1,20);
  const waterMat=new THREE.MeshStandardMaterial({
@@ -133,8 +87,6 @@ export function createAtmosphere(scene,{lowPower=false}={}){
   temp.updateMatrix();water.setMatrixAt(i,temp.matrix);
  });
  water.instanceMatrix.needsUpdate=true;water.computeBoundingSphere();scene.add(water);
- const inspectionLight=new THREE.PointLight('#bbd6c1',0,4.8,2);
- inspectionLight.castShadow=false;inspectionLight.position.copy(repair.position);scene.add(inspectionLight);
  // Billboards use a soft 64px DataTexture. No GPU particle simulation,
  // shadows, depth-writing or full-screen postprocessing.
  const smokeMap=smokeTexture(),clouds=[];
@@ -155,13 +107,7 @@ export function createAtmosphere(scene,{lowPower=false}={}){
   plume.name='Localized volumetric-style smoke '+zone.kind;
   plume.frustumCulled=false;scene.add(plume);clouds.push({zone,seeds,positions,geo,material,plume});
  }
- let repaired=false,started=-1,impactPlayed=false,repairEvent=null;
  let lastBuzz=-100,lastSteam=-100;
- function beginRepair(time){
-  if(repaired||started>=0)return false;
-  started=time;impactPlayed=false;
-  return true;
- }
  function update(time,player,{active=true}={}){
   if(!active)return [];
   const events=[];
@@ -170,22 +116,6 @@ export function createAtmosphere(scene,{lowPower=false}={}){
    const light=tinyLights[i].light;
    light.intensity=1.05*faultIntensity(time,i+1);
   }
-  const phase=started<0?null:repairPhase(Math.min(1,(time-started)/3.75));
-  // A failed ballast never turns fully on until a real, visible impact.
-  const voltage=repaired?1:(phase==='impact'||phase==='recover'||phase==='stable'?1:faultIntensity(time,4)*.18);
-  inspectionLight.intensity=voltage*(repaired?3.5:2.2);
-  glow.visible=voltage>.34;
-  glowMaterial.color.set(repaired?'#dcecd7':'#9ba99e');
-  // The steel cage physically jolts when the first-person hand hits it,
-  // then settles with a brief damped oscillation as the ballast catches.
-  const t=started>=0?(time-started)/3.75:-1;
-  head.rotation.z=t>=.63&&t<.96?Math.sin((t-.63)*38)*.16*Math.max(0,(.96-t)/.33):0;
-  repair.rotation.z=t>=.63&&t<.98?Math.sin((t-.63)*28)*.055*Math.max(0,(.98-t)/.35):0;
-  if(started>=0&&!impactPlayed&&phase==='impact'){
-   impactPlayed=true;repaired=true;
-   events.push({kind:'lamp-hit',text:'UM TOQUE NO REFLETOR. O REATOR VOLTOU A FUNCIONAR.'});
-  }
-  if(started>=0&&repaired&&phase==='stable'){head.rotation.z=0;started=-1;}
   const visible=!!player;
   for(const c of clouds){
    const d=visible?Math.hypot(player.x-c.zone.x,player.z-c.zone.z):999;
@@ -210,7 +140,5 @@ export function createAtmosphere(scene,{lowPower=false}={}){
   }
   return events;
  }
- return {update,beginRepair,eligible:(p,t)=>eligibleForRepair(p,{time:t,done:repaired,started:started>=0}),
-  get repaired(){return repaired;},get repairing(){return started>=0;},get startTime(){return started;},
-  repair,inspectionLight,clouds,leds,tinyLights};
+ return {update,clouds,leds,tinyLights};
 }

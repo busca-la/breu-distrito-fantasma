@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {BreuStory,STORY_RADIO} from '../laboratorio/mission.mjs';
 import {INTERACTION,STORE_SIGNS,circleFits} from '../laboratorio/layout.mjs';
-import {hasLineOfSight,canSee,canHear,reachedExit} from '../laboratorio/perception.mjs';
+import {hasLineOfSight,canSee,canHear,insideFlashlightBeam,reachedExit} from '../laboratorio/perception.mjs';
 import {createStalker} from '../laboratorio/stalker.mjs';
 import * as THREE from 'three';
 
@@ -24,6 +24,8 @@ assert.equal(canSee({distance:10,visible:true,flashlight:false,sprinting:false})
 assert.equal(canSee({distance:10,visible:true,flashlight:true}),true,'Flashlight should reveal player');
 assert.equal(canHear({distance:8,sprinting:true}),true,'Running must make audible noise');
 assert.equal(canHear({distance:8,sprinting:false,walking:true}),false,'Walking cannot sound like sprinting');
+assert(insideFlashlightBeam({x:0,z:0},{x:0,z:-8},{x:0,z:-1}),'Target in aimed beam should be illuminated');
+assert(!insideFlashlightBeam({x:0,z:0},{x:7,z:0},{x:0,z:-1}),'Flashlight must not reveal targets outside its cone');
 
 const ramen={x:-5.45,z:-10.9},hallway={x:0,z:-10.9};
 assert(hasLineOfSight(hallway,ramen),'The ramen shop must be visibly reachable through its open door');
@@ -44,6 +46,7 @@ let state=stalker.update(1/60,{x:0,z:-33},false,10,{flashOn:true});
 assert(state.hidden&&!state.chasing,'Threat must stay hidden in a shop, not patrol visibly');
 state=stalker.update(1/60,{x:-6.0,z:-35},false,12,{flashOn:true});
 assert(state.ambush&&state.chasing&&!state.hidden,'Entering the arcade should awaken a hidden threat');
+assert.equal(state.state,'observing','Ambush should telegraph before pursuit');
 assert(stalker.group.visible,'Creature must appear when it lunges out of hiding');
 stalker.reset(13);
 state=stalker.update(1/60,{x:-6.0,z:-35},false,14,{flashOn:true});

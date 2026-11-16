@@ -27,8 +27,15 @@ export function canHear({distance,sprinting=false,walking=false}){
  // Running matters; normal walking is only heard at almost contact distance.
  return (sprinting&&distance<9)||(walking&&distance<2.0);
 }
-export function canSee({distance,visible=false,flashlight=true,sprinting=false}){
- return visible&&distance<(flashlight?13:sprinting?9:7);
+export function insideFlashlightBeam(player,target,facing,{range=14,halfAngle=.34}={}){
+ if(!player||!target||!facing)return false;
+ const dx=target.x-player.x,dz=target.z-player.z,distance=Math.hypot(dx,dz);
+ if(distance<=.001||distance>range)return false;
+ const dot=(dx*facing.x+dz*facing.z)/distance;
+ return dot>=Math.cos(halfAngle);
+}
+export function canSee({distance,visible=false,flashlight=true,illuminated=flashlight,sprinting=false}){
+ return visible&&distance<(flashlight&&illuminated?13:sprinting?9:7);
 }
 export function reachedExit(pos,open=false){
  return !!open&&pos.x>=20.0&&pos.x<=22.05&&Math.abs(pos.z+51)<=1.6;

@@ -13,6 +13,7 @@ import {DEFAULT_BRIGHTNESS,normalizeBrightness,getVisibilityPreset} from './visi
 import {createRoomScenes} from './room-scenes.mjs';
 import {createCinematicDirector} from './cinematics.mjs';
 import {createAtmosphere} from './atmosphere.mjs';
+import {createFlashlightRig} from './flashlight-rig.mjs';
 
 const $=s=>document.querySelector(s);
 const canvas=$('#world'),status=$('#loading-status'),intro=$('#intro'),hud=$('#hud');
@@ -21,10 +22,11 @@ const mapCanvas=$('#map'),mapCtx=mapCanvas.getContext('2d');
 const touch='ontouchstart' in window||navigator.maxTouchPoints>0;
 const lowPowerDevice=touch||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<=4);
 const quality={ratio:1,min:touch?.62:.72,max:1,seconds:0,frames:0,goodWindows:0};
-let scene,renderer,camera,physics,stage,flashlight,cutsceneLight,stalker,motion,encounters,missionGuide,roomScenes,director,atmosphere;
+let scene,renderer,camera,physics,stage,flashlight,flashlightRig,cutsceneLight,stalker,motion,encounters,missionGuide,roomScenes,director,atmosphere;
 let started=false,paused=true,alarm=false,escaped=false,defeated=false,clock=0,walkBob=0;
 const escapeSequence=new EscapeSequence(12),story=new BreuStory();let exitOpen=false;
 let yaw=0,pitch=0,flashOn=true,interactHeld=false,requestJump=false;
+let flashlightBaseIntensity=55,flashlightOutput=1;
 let joystick={x:0,y:0};
 const keys=new Set();
 const sound=new BreuSound();
@@ -38,7 +40,8 @@ function setBrightness(value){
  const preset=getVisibilityPreset(brightnessLevel);
  if(renderer)renderer.toneMappingExposure=preset.exposure;
  if(scene?.fog)scene.fog.density=preset.fog;
- if(flashlight)flashlight.intensity=preset.flashlight;
+ flashlightBaseIntensity=preset.flashlight;
+ if(flashlight)flashlight.intensity=flashlightBaseIntensity*flashlightOutput;
  stage?.setVisibility(preset);
  document.documentElement.style.setProperty('--vignette-edge',String(preset.vignette));
  document.documentElement.style.setProperty('--beam-edge',String(preset.edge));
@@ -71,10 +74,11 @@ function renderSetup(){
  missionGuide=createMissionGuide(scene);
  roomScenes=createRoomScenes(scene,{lowPower:lowPowerDevice});
  atmosphere=createAtmosphere(scene,{lowPower:lowPowerDevice});
- director=createCinematicDirector(camera,stalker,atmosphere);
+ director=createCinematicDirector(camera,stalker);
  // Focused beam, not a second omnidirectional shopping-mall floodlight.
  const light=new THREE.SpotLight('#f7eedb',63,18.5,Math.PI/9.5,.34,2);
  flashlight=light;scene.add(light);scene.add(light.target);
+ flashlightRig=createFlashlightRig(camera);
  light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
  // Separate short-range film key light: only active during cutscenes, so
  // the grab-to-mouth is legible without lighting the world during play.
@@ -104,7 +108,6 @@ function start(){
 }
 function beginScene(kind){
  if(!director?.begin(kind,clock))return false;
- if(kind==='repair')atmosphere?.beginRepair(clock);
  document.body.classList.add('cinematic-active');
  const overlay=$('#cinematic'),subtitle=$('#cinematic-caption');
  overlay?.classList.add('show');
@@ -128,7 +131,7 @@ function renderSceneFrame(){
  stage?.update(clock,alarm);
  if(stage?.isSecurityPassable()&&!physics?.securityGateUnlocked)physics.unlockSecurityGate();
  if(exitOpen&&stage?.isExitPassable()&&!physics?.exitUnlocked)physics.unlockExit();
- flashlight.visible=flashOn&&shot.kind!=='capture';
+ flashlight.visible=flashOn&&flashlightOutput>.01&&shot.kind!=='capture';
  flashlight.position.copy(camera.position);
  flashlight.target.position.copy(camera.position).add(new THREE.Vector3(0,0,-12).applyQuaternion(camera.quaternion));
  cutsceneLight.visible=true;
@@ -142,12 +145,16 @@ function renderSceneFrame(){
  }
 }
 function pause(){if(!started||director?.active)return;paused=!paused;sound.setPaused(paused);$('#pause').textContent=paused?'▶':'II';$('#pause-screen').classList.toggle('hide',!paused);if(paused&&document.pointerLockElement)document.exitPointerLock();}
+function toggleFlashlight(){
+ flashOn=!flashOn;flashlightRig?.setManual(flashOn);
+ document.body.classList.toggle('flashlight-off',!flashOn);
+}
 function inputSetup(){
  window.addEventListener('keydown',e=>{
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code))e.preventDefault();
   keys.add(e.code);
   if(e.code==='Space'&&!e.repeat)requestJump=true;
-  if(e.code==='KeyF'&&!e.repeat){flashOn=!flashOn;document.body.classList.toggle('flashlight-off',!flashOn);}
+  if(e.code==='KeyF'&&!e.repeat)toggleFlashlight();
   if(e.code==='KeyE'&&!e.repeat)interactHeld=true;
   if(e.code==='Escape'&&started&&!paused&&!director?.active)pause();
  });
@@ -157,7 +164,7 @@ function inputSetup(){
  $('#play').addEventListener('click',start);
  $('#pause').addEventListener('click',pause);
  $('#resume').addEventListener('click',()=>{pause();if(!touch)canvas.requestPointerLock()});
- $('#flash-btn').addEventListener('click',()=>{flashOn=!flashOn;document.body.classList.toggle('flashlight-off',!flashOn);});
+ $('#flash-btn').addEventListener('click',toggleFlashlight);
  $('#sound-btn').addEventListener('click',async()=>{const on=await sound.toggle();if(paused)sound.setPaused(true);$('#sound-btn').textContent=on?'SOM: LIGADO':'SOM: DESLIGADO'});
  $('#brightness-slider').addEventListener('input',e=>setBrightness(e.target.value));
  $('#jump-btn').addEventListener('pointerdown',e=>{e.preventDefault();requestJump=true});
@@ -325,7 +332,23 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
    const roomEvent=roomScenes?.update(clock,p,{power:story.phase!=='radio'&&story.phase!=='relay'});
    if(roomEvent)environmentCue(roomEvent,2400);
    for(const e of atmosphere?.update(clock,p)||[])environmentCue(e,2600);
-   if(atmosphere?.eligible(p,clock))beginScene('repair');
+   const lamp=flashlightRig?.update(clock,flashOn);
+   flashlightOutput=lamp?.output??(flashOn?1:0);
+   flashlight.intensity=flashlightBaseIntensity*flashlightOutput;
+   flashlight.visible=flashOn&&flashlightOutput>.01;
+   document.body.classList.toggle('flashlight-failing',flashOn&&flashlightOutput<.4);
+   for(const cue of lamp?.events||[]){
+    const text={
+     'flashlight-static':'A LANTERNA CHIA E PERDE FORÇA.',
+     'flashlight-flicker':'O FEIXE COMEÇA A PISCAR.',
+     'flashlight-fail':'A LANTERNA APAGOU.',
+     'flashlight-repair':'VOCÊ BATE NA PRÓPRIA LANTERNA.',
+     'flashlight-hit':'UM GOLPE SECO NO CORPO DA LANTERNA.',
+     'flashlight-restart':'A LÂMPADA TENTA REACENDER.',
+     'flashlight-stable':'O FEIXE SE ESTABILIZA.'
+    }[cue];
+    environmentCue({kind:cue,text},cue==='flashlight-repair'?2100:1300);
+   }
    missionGuide?.update(p,story.target,clock);
    for(const event of encounters?.update(clock,p)||[])environmentCue(event);
    fps.frames++;fps.second+=elapsed;adjustQuality(elapsed);
@@ -334,7 +357,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
    camera.position.set(Math.sin(t*.00015)*.10,1.62,13);camera.rotation.set(Math.sin(t*.00019)*-.025,Math.sin(t*.0001)*.035,0);
   }
  }
- flashlight.visible=flashOn;
+ flashlight.visible=flashOn&&flashlightOutput>.01;
  flashlight.position.copy(camera.position);const direction=vec(0,0,-1).applyEuler(camera.rotation);flashlight.target.position.copy(camera.position).add(direction.multiplyScalar(16));
  stage?.update(clock,alarm);
  if(stage?.isSecurityPassable()&&!physics?.securityGateUnlocked)physics.unlockSecurityGate();

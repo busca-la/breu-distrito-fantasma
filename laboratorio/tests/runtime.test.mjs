@@ -5,7 +5,7 @@ import vm from 'node:vm';
 import {STORE_SIGNS,facadePanelAllowed,circleFits,WALLS,CEILINGS,PROPS,WING,INTERACTION} from '../layout.mjs';
 import {getNavigation} from '../threat-nav.mjs';
 import {roomAt} from '../room-scenes.mjs';
-import {canHear,canSee,hasLineOfSight,intersectsBarrier,SIGHT_BLOCKERS} from '../perception.mjs';
+import {canHear,canSee,hasLineOfSight,insideFlashlightBeam,intersectsBarrier,SIGHT_BLOCKERS} from '../perception.mjs';
 
 class Color{constructor(value){this.value=value}set(value){this.value=value;return this}setHex(value){this.value=value;return this}}
 let nextMaterialId=0;class Material{constructor(opts={}){Object.assign(this,opts);this.color=new Color(opts.color);this.uuid='mock-'+(++nextMaterialId)}clone(){return new Material({...this,color:this.color.value})}}
@@ -26,7 +26,7 @@ function canvas(){return {width:0,height:0,getContext(){return new Proxy({create
 const fakeDoc={createElement(){return canvas()}};
 function evaluate(file,api,vars={}){
  const src=fs.readFileSync(new URL('../'+file,import.meta.url),'utf8').replace(/^import .*?;\s*$/gm,'').replace(/^export /gm,'');
- return vm.runInNewContext(src+'\n;({'+api+'})',{THREE,document:fakeDoc,window:{navigator:{maxTouchPoints:0}},navigator:{maxTouchPoints:0},STORE_SIGNS,facadePanelAllowed,WALLS,CEILINGS,PROPS,WING,INTERACTION,getNavigation,circleFits,roomAt,canHear,canSee,hasLineOfSight,intersectsBarrier,SIGHT_BLOCKERS,Math,Map,Int32Array,...vars},{timeout:12000});
+ return vm.runInNewContext(src+'\n;({'+api+'})',{THREE,document:fakeDoc,window:{navigator:{maxTouchPoints:0}},navigator:{maxTouchPoints:0},STORE_SIGNS,facadePanelAllowed,WALLS,CEILINGS,PROPS,WING,INTERACTION,getNavigation,circleFits,roomAt,canHear,canSee,hasLineOfSight,insideFlashlightBeam,intersectsBarrier,SIGHT_BLOCKERS,Math,Map,Int32Array,...vars},{timeout:12000});
 }
 test('new detailed storefronts render without covering open physical entrances',()=>{
  const scene={children:[],add(x){this.children.push(x)}};

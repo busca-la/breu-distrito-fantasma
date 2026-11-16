@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {circleFits} from './layout.mjs';
 import {getNavigation} from './threat-nav.mjs';
-import {hasLineOfSight,canSee,canHear,intersectsBarrier,SIGHT_BLOCKERS} from './perception.mjs';
+import {hasLineOfSight,canSee,canHear,insideFlashlightBeam,intersectsBarrier,SIGHT_BLOCKERS} from './perception.mjs';
 import {INTERACTION} from './layout.mjs';
 import {roomAt} from './room-scenes.mjs';
 
@@ -51,10 +51,10 @@ export function createStalker(scene){
  const navigation=getNavigation();
  // The Watchman waits in rooms and is not continuously visible as a patrol.
  const HIDES={
-  minato:{x:-8.8,z:-11.3},kino:{x:8.9,z:-10.4},
-  fashion:{x:-8.85,z:-24.4},arcade:{x:-8.9,z:-36.8},
-  pharmacy:{x:8.8,z:-41.5},maintenance:{x:-8.7,z:-48.6},
-  restroom:{x:7.9,z:8.5},denki:{x:9.15,z:-25.3}
+  minato:[{x:-8.8,z:-11.3},{x:-9.1,z:-14.1}],kino:[{x:8.9,z:-10.4}],
+  fashion:[{x:-8.85,z:-24.4}],arcade:[{x:-8.9,z:-36.8},{x:-8.7,z:-31.5}],
+  pharmacy:[{x:8.8,z:-41.5}],maintenance:[{x:-8.7,z:-48.6},{x:-9.0,z:-46.2}],
+  restroom:[{x:7.9,z:8.5}],denki:[{x:9.15,z:-25.3},{x:8.9,z:-30.1}]
  };
  const initial={x:-8.9,z:-36.8};
  const securityGate={x:11.45,z:-51.25,w:.24,d:3.38};
@@ -75,7 +75,8 @@ export function createStalker(scene){
   if(!securityOpen)gates.push(securityGate);
   if(!exitOpen)gates.push(exitGate);
   let ambush=false;
-  const ambushPosition=HIDES[room];
+  const ambushPosition=HIDES[room]?.filter(p=>circleFits(p.x,p.z,.40))
+   .sort((a,b)=>Math.hypot(b.x-player.x,b.z-player.z)-Math.hypot(a.x-player.x,a.z-player.z))[0];
   // Opening one of the designed rooms is a meaningful risk. The creature
   // emerges from a fixed hiding place, not from thin air at the player.
   if(hidden&&time>=nextReveal&&ambushPosition){
@@ -93,7 +94,7 @@ export function createStalker(scene){
   if(hidden&&alarm){
    // The evacuation siren draws him out from a distant maintenance hiding
    // spot. It doesn't reveal the player's current position through walls.
-   position={...HIDES.maintenance};hidden=false;revealUntil=time+1.0;
+   position={...HIDES.maintenance[0]};hidden=false;revealUntil=time+1.0;
    lastKnown={x:INTERACTION.panel.x,z:INTERACTION.panel.z};
    huntUntil=time+13;route=[];pathTime=40;
    group.position.set(position.x,0,position.z);
@@ -101,13 +102,14 @@ export function createStalker(scene){
   }
   if(hidden){
    group.visible=false;
-   return {distance:999,chasing:false,caught:false,spotted:false,lost:false,ambush:false,hidden:true,location:{...position}};
+   return {state:'hidden',distance:999,chasing:false,caught:false,spotted:false,lost:false,ambush:false,hidden:true,location:{...position}};
   }
   group.visible=true;
   const distance=Math.hypot(player.x-position.x,player.z-position.z);
   const visible=hasLineOfSight(position,player,[...SIGHT_BLOCKERS,...gates]);
+  const illuminated=flashOn&&insideFlashlightBeam(player,position,facing);
   const detected=time>=graceUntil&&(
-   canSee({distance,visible,flashlight:flashOn,sprinting})||
+   canSee({distance,visible,flashlight:flashOn,illuminated,sprinting})||
    canHear({distance,sprinting,walking})
   );
   if(alarm&&!alarmHeard){
@@ -129,7 +131,7 @@ export function createStalker(scene){
   if(!chasing&&time>revealUntil+2&&distance>7&&!playerObserves){
    hidden=true;group.visible=false;nextReveal=time+17;
    route=[];wasChasing=false;
-   return {distance:999,chasing:false,caught:false,spotted:false,lost:true,ambush:false,hidden:true,location:{...position}};
+   return {state:'retreating',distance:999,chasing:false,caught:false,spotted:false,lost:true,ambush:false,hidden:true,location:{...position}};
   }
   pathTime+=dt;if(pathTime>1.15||!route.length)recalc(target);
   const speed=chasing?(alarm?3.25:2.35):.63;
@@ -161,7 +163,8 @@ export function createStalker(scene){
   const spotted=(chasing&&!wasChasing)&&!ambush;
   const lost=!chasing&&wasChasing;
   wasChasing=chasing;
-  return {distance:now,chasing,caught,spotted,lost,ambush,hidden:false,visible,location:{...position}};
+  const state=time<revealUntil?'observing':detected?'pursuing':chasing?'investigating':'searching';
+  return {state,distance:now,chasing,caught,spotted,lost,ambush,hidden:false,visible,illuminated,location:{...position}};
  }
  function poseReveal(u,playerLocation){
   // The reveal is not a frozen statue. The figure notices the player,
