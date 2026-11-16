@@ -33,8 +33,9 @@ assert(html.includes('body.flashlight-off #flashlight-mask'),'Switching flashlig
 assert(html.includes('body.cinematic-active #flashlight-mask'),'Darkness overlay must not spoil films');
 const beamParams=main.split("new THREE.SpotLight('#f7eedb',")[1]?.split(');')[0]||'';
 const beamDivisor=Number(beamParams.split('Math.PI/')[1]?.split(',')[0]);
-assert(beamDivisor>=8.5&&beamDivisor<=12.5,
- 'Flashlight must stay a directed cone, slightly wider than before');
+assert(beamDivisor>=6&&beamDivisor<=7.5,
+ 'Flashlight must provide a broad but still directed exploration cone');
+assert(beamParams.includes(',30,'),'Flashlight must reach the far end of a room');
 assert(level.includes('lightingBoost=.32'),'World fixtures must not overpower aiming cone');
 assert(BRIGHTNESS_PRESETS.every(x=>x.ambient<=.25&&x.lighting<=.4),
  'Brightness settings must illuminate only the beam, not the entire mall');

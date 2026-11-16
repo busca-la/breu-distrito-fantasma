@@ -75,11 +75,11 @@ function renderSetup(){
  roomScenes=createRoomScenes(scene,{lowPower:lowPowerDevice});
  atmosphere=createAtmosphere(scene,{lowPower:lowPowerDevice});
  director=createCinematicDirector(camera,stalker);
- // Focused beam, not a second omnidirectional shopping-mall floodlight.
- const light=new THREE.SpotLight('#f7eedb',63,18.5,Math.PI/9.5,.34,2);
+ // Broad, long exploration beam without becoming an omnidirectional light.
+ const light=new THREE.SpotLight('#f7eedb',82,30,Math.PI/6.8,.52,1.35);
  flashlight=light;scene.add(light);scene.add(light.target);
  flashlightRig=createFlashlightRig(camera);
- light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=18;light.shadow.bias=-.0002;
+ light.castShadow=!lowPowerDevice;light.shadow.mapSize.set(512,512);light.shadow.camera.near=.15;light.shadow.camera.far=30;light.shadow.bias=-.0002;
  // Separate short-range film key light: only active during cutscenes, so
  // the grab-to-mouth is legible without lighting the world during play.
  cutsceneLight=new THREE.SpotLight('#dfc9b3',27,9,Math.PI/4,.55,2);
@@ -358,7 +358,7 @@ function frame(t){requestAnimationFrame(frame);if(!renderer)return;
   }
  }
  flashlight.visible=flashOn&&flashlightOutput>.01;
- flashlight.position.copy(camera.position);const direction=vec(0,0,-1).applyEuler(camera.rotation);flashlight.target.position.copy(camera.position).add(direction.multiplyScalar(16));
+ flashlight.position.copy(camera.position);const direction=vec(0,0,-1).applyEuler(camera.rotation);flashlight.target.position.copy(camera.position).add(direction.multiplyScalar(28));
  stage?.update(clock,alarm);
  if(stage?.isSecurityPassable()&&!physics?.securityGateUnlocked)physics.unlockSecurityGate();
  if(exitOpen&&stage?.isExitPassable()&&!physics?.exitUnlocked)physics.unlockExit();
