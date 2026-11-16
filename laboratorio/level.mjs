@@ -356,12 +356,12 @@ export function createLevel(scene){
   for(const dx of [-.85,.85])box('ceiling sign mount',dx,3.62,s.z,.035,1.1,.04,palette.frame,false);
  }
  const detail=addArtPass(scene,{mobile});
- const amb=new THREE.HemisphereLight('#9eafc1','#262727',.4);scene.add(amb);
+ const amb=new THREE.HemisphereLight('#b9c9c7','#444343',.83);scene.add(amb);
  const emergency=new THREE.PointLight('#b7534e',0,13,2);emergency.position.set(13,2.7,-51);scene.add(emergency);
  const batching=batchStaticGeometry(scene,new Set([interactive.panel,interactive.exit,interactive.radio,interactive.relay,interactive.relayHandle,interactive.relayLamp,interactive.radioDial,doorBand]));
  // A physical blast door has a visible raising sequence. The collider only
  // unlocks after the lower edge is above the player's capsule height.
- let doorOpeningAt=null,doorClearance=false,securityGateAt=null,securityClear=false,powerAt=null;
+ let doorOpeningAt=null,doorClearance=false,securityGateAt=null,securityClear=false,powerAt=null,lightingBoost=1.20;
  return {interactive,lights,emergency,box,batching,count:items.length+detail.count,update(time,alarm){
   detail.update(time,alarm);
   const power=powerAt===null?0:Math.min(1,Math.max(0,(time-powerAt)/1.8));
@@ -369,8 +369,8 @@ export function createLevel(scene){
    const strobe=l.flag?(Math.sin(time*11+l.seed)+Math.sin(time*37+l.seed*2))*.5:0;
    // The service wing is on the emergency circuit: switching the DENKI
    // breaker has an immediately visible effect on the entire far half.
-   const circuit=l.light.position.z< -15?(.46+power*.74):1;
-   l.light.intensity=Math.max(.04,l.base*circuit*(l.flag&&strobe>.45?.12:1+strobe*.09));
+   const circuit=l.light.position.z< -15?(.67+power*.48):1;
+   l.light.intensity=Math.max(.04,l.base*circuit*lightingBoost*(l.flag&&strobe>.45?.12:1+strobe*.09));
   }
   emergency.intensity=alarm?(10+5*Math.sin(time*9)):0;
   if(securityGateAt!==null){
@@ -387,6 +387,9 @@ export function createLevel(scene){
    doorBand.position.y=2.48+lift;
    doorClearance=lift>2.28;
   }else{interactive.exit.position.y=1.61;doorBand.position.y=2.48;}
+ },setVisibility(preset){
+   amb.intensity=preset.ambient;
+   lightingBoost=preset.lighting;
  },openExit(time){if(doorOpeningAt===null)doorOpeningAt=time;},
  restorePower(time){
   if(securityGateAt!==null)return;
