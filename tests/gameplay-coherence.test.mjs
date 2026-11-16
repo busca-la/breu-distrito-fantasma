@@ -41,8 +41,11 @@ assert(reachedExit({x:20.7,z:-51},true),'Crossing open exit must win without a m
 
 const stalker=createStalker(new THREE.Scene());
 let state=stalker.update(1/60,{x:0,z:-33},false,10,{flashOn:true});
-assert(state.chasing&&state.spotted,'Visible player should cause immediate hunt');
-stalker.reset(11);
-state=stalker.update(1/60,{x:0,z:-33},false,12,{flashOn:true});
-assert(!state.chasing&&!state.caught,'Checkpoint respawn must have breathing room');
+assert(state.hidden&&!state.chasing,'Threat must stay hidden in a shop, not patrol visibly');
+state=stalker.update(1/60,{x:-6.0,z:-35},false,12,{flashOn:true});
+assert(state.ambush&&state.chasing&&!state.hidden,'Entering the arcade should awaken a hidden threat');
+assert(stalker.group.visible,'Creature must appear when it lunges out of hiding');
+stalker.reset(13);
+state=stalker.update(1/60,{x:-6.0,z:-35},false,14,{flashOn:true});
+assert(!state.chasing&&!state.caught&&state.hidden,'Checkpoint respawn must have breathing room');
 console.log('PASS: coherent narrative, checkpoints, no wall-hack, light/noise stealth and automatic walk-through escape');
